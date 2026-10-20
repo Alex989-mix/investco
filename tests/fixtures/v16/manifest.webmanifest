@@ -1,0 +1,16 @@
+{
+  "name": "Invest.co",
+  "short_name": "Invest.co",
+  "description": "Suivi de patrimoine : bourse, crypto, épargne et immobilier.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B162A",
+  "theme_color": "#0B162A",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

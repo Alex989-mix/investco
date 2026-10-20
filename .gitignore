@@ -1,0 +1,6 @@
+node_modules/
+*.results.json
+.DS_Store
+# Ne jamais versionner d'export de données personnelles
+*.export.json
+investco-*.json

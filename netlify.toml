@@ -1,0 +1,23 @@
+# Déploiement automatique depuis GitHub : chaque envoi sur la branche main met le site à jour.
+# Pas d'étape de build : le dossier app/ est publié tel quel.
+[build]
+  publish = "app"
+  command = ""
+
+[functions]
+  directory = "netlify/functions"
+
+# Le service worker et le numéro de version ne doivent jamais être servis depuis un cache,
+# sinon les téléphones ne voient pas les nouvelles versions.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/version.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
