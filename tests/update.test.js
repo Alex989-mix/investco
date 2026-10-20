@@ -40,19 +40,18 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   await page.reload(); await controlled();
   log('Départ : v16 installée et contrôlée par son service worker', await page.evaluate(() => typeof APP_V === 'undefined'));
 
-  // --- 2. Déploiement de la version actuelle (même adresse)
+  // --- 2. Cas réel : l'appli v16 est ouverte dans DEUX fenêtres (appli installée + onglet Chrome),
+  //        puis la nouvelle version est déployée. Elle doit remplacer la v16 d'elle-même, sans rien fermer.
+  const tab2 = await ctx.newPage(); await tab2.goto(URL); await sleep(1000);
   deploy(V161);
-  await page.reload(); await sleep(2500);
-  const st = await page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return { waiting: !!(r && r.waiting), bar: document.querySelector('#updbar').className }; });
-  log('v16 → version actuelle : elle est téléchargée en arrière-plan (en attente)', st.waiting, st);
-  console.log('INFO barre affichée par la v16 : ' + (st.bar.includes('on') ? 'oui' : 'non (défaut connu de la v16)'));
-  // Geste unique : fermer complètement l'appli puis la rouvrir
-  await page.close(); await sleep(1500);
+  await page.reload().catch(() => {});            // l'utilisateur rouvre / rafraîchit l'appli une fois
+  const switched = async (p) => { for (let i = 0; i < 60; i++) { const v = await p.evaluate(() => typeof APP_V !== 'undefined' ? APP_V : null).catch(() => null); if (v) return v; await sleep(250); } return null; };
+  const v1 = await switched(page), v2 = await switched(tab2);
+  log('v16 → version actuelle sans rien fermer, dans les deux fenêtres', v1 === CUR && v2 === CUR, { fenêtre1: v1, fenêtre2: v2 });
   const errV16 = errors.splice(0); console.log('INFO erreurs pendant la phase v16 (ancien code) : ' + errV16.length);
-  page = await ctx.newPage(); page.on('pageerror', e => errors.push(String(e)));
-  await page.goto(URL); await controlled();
+  await tab2.close(); await controlled(); errors.splice(0);
   const after = await page.evaluate(() => ({ v: typeof APP_V !== 'undefined' ? APP_V : null, paid: DB.crowd[0].paid, schema: DB.meta.schema, backups: listBackups().map(b => b.reason) }));
-  log('Après le clic : l\'appli tourne dans la version actuelle', after.v === CUR, after);
+  log('L\'appli tourne dans la version actuelle', after.v === CUR, after);
   log('Données conservées et migrées (cases Bricks 10/25, 11/25)', after.paid.join() === '2025-10,2025-11' && after.schema === 2, after);
   log('Sauvegarde de sécurité faite avant la migration', after.backups.some(r => r.startsWith('Avant migration')), after.backups);
   const news = await page.evaluate((v) => !!document.querySelector('#sheet') && document.querySelector('#sheet').textContent.includes('Nouveautés de la version ' + v), CUR);

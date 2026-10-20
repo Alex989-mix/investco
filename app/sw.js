@@ -17,22 +17,35 @@ const LIBS = [
 ];
 
 self.addEventListener('install', e => {
-  // Pas de skipWaiting automatique : l'utilisateur choisit quand appliquer la mise à jour
-  // (l'appli sauvegarde ses données juste avant).
+  // En temps normal, pas de skipWaiting automatique : l'utilisateur choisit quand appliquer
+  // la mise à jour (barre orange), et l'appli sauvegarde ses données juste avant.
   e.waitUntil(caches.open(CACHE).then(async c => {
     await c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })));
     // Librairies : au mieux (si le CDN est injoignable, l'appli démarre sans elles)
     await Promise.all(LIBS.map(u => fetch(new Request(u, { mode: 'no-cors' })).then(r => c.put(u, r)).catch(() => {})));
+    // Exception : remplacement de l'ancienne v16 (cache « investco-v16 »), qui n'affiche jamais
+    // la barre de mise à jour. On active tout de suite ; la page v16 se recharge seule
+    // (controllerchange) et la nouvelle version sauvegarde les données avant de les migrer.
+    const keys = await caches.keys();
+    if (keys.some(k => /^investco-v\d/.test(k))) self.skipWaiting();
   }));
 });
 self.addEventListener('message', e => {
   if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    const fromLegacy = keys.some(k => /^investco-v\d/.test(k));
+    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+    // Remplacement de la v16 : on recharge nous-mêmes chaque fenêtre ouverte
+    // (la v16 ne le fait pas toujours), pour qu'aucune ne reste sur l'ancienne version.
+    if (fromLegacy) {
+      const wins = await self.clients.matchAll({ type: 'window' });
+      await Promise.all(wins.map(w => w.navigate(w.url).catch(() => {})));
+    }
+  })());
 });
 
 // Données en direct : jamais mises en cache (cours, sync Drive, fonction Netlify des cours)
