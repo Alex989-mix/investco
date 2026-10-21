@@ -283,9 +283,9 @@ function load(){const raw=localStorage.getItem('investco_v1')||localStorage.getI
   try{DB=JSON.parse(raw)||structuredClone(DEF);}catch(e){DB=structuredClone(DEF);}
   DB.expenses=DB.expenses||[];DB.recurring=DB.recurring||[];DB.resale=DB.resale||[];
   DB.settings=Object.assign({},DEF.settings,DB.settings);DB.crowd.forEach(c=>c.paid=c.paid||[]);
-  DB.meta=DB.meta||{updatedAt:0};DB.settings.benchSym=Object.assign({},DEF.settings.benchSym,DB.settings.benchSym);DB.settings.indexCache=DB.settings.indexCache||{};migrate();}
+  DB.meta=DB.meta||{updatedAt:0};DB.settings.benchSym=Object.assign({},DEF.settings.benchSym,DB.settings.benchSym);DB.settings.indexCache=DB.settings.indexCache||{};migrate();recalcBalances();}
 let applyingRemote=false;
-function save(){if(!applyingRemote){DB.meta=DB.meta||{updatedAt:0};DB.meta.updatedAt=Date.now();}
+function save(){recalcBalances();if(!applyingRemote){DB.meta=DB.meta||{updatedAt:0};DB.meta.updatedAt=Date.now();}
   try{localStorage.setItem('investco_v1',JSON.stringify(DB));}catch(e){}
   if(DB.settings.autoSync&&DB.settings.gdriveClientId&&!applyingRemote)scheduleAutoSync();}
 
@@ -298,10 +298,16 @@ function quinzDate(dstr,sign,type){
   else { return day<=15?new Date(y,mo,1):new Date(y,mo,16); }
 }
 function findSaving(name){return DB.savings.find(s=>s.name===name);}
-function applyCap(m,sign){if(!m)return;const amt=(m.m||0)*sign;
-  if(m.t==='Dépôt'){const s=findSaving(m.p);if(s)s.cap=(s.cap||0)+amt;}
-  else if(m.t==='Retrait'){const s=findSaving(m.p);if(s)s.cap=(s.cap||0)-amt;}
-  else if(m.t==='Transfert'){const s=findSaving(m.p);if(s)s.cap=(s.cap||0)-amt;const d=findSaving(m.p2);if(d)d.cap=(d.cap||0)+amt;}}
+// Effet d'une opération sur le solde d'un compte d'épargne / courant (+ entrée, − sortie)
+// « Intérêts » et « Ajustement » modifient le solde sans compter comme un versement.
+function movEffect(m,name){const v=+m.m||0;
+  if(m.p===name){if(m.t==='Dépôt'||m.t==='Intérêts'||m.t==='Ajustement')return v;if(m.t==='Retrait'||m.t==='Transfert')return -v;}
+  if(m.t==='Transfert'&&m.p2===name)return v;return 0;}
+// Le solde n'est jamais saisi en dur : il est recalculé depuis les opérations (et les dépenses pour le compte courant).
+// Supprimer toutes les opérations d'un livret ramène donc son solde à 0.
+function savingBalance(s){let b=DB.movements.reduce((a,m)=>a+movEffect(m,s.name),0);
+  if(s.type==='Compte courant')b-=(DB.expenses||[]).reduce((a,e)=>a+(+e.amt||0),0);return r2(b);}
+function recalcBalances(){(DB.savings||[]).forEach(s=>{s.cap=savingBalance(s);});}
 
 function assetCalc(a){
   // Méthode du PRU (prix de revient unitaire moyen pondéré, frais d'achat inclus) :
@@ -328,8 +334,7 @@ function rateAt(type,dstr){const c=DB.rates.filter(r=>r[0]===type&&r[1]<=dstr).s
 // Les quinzaines futures sont projetées avec le solde actuel.
 function quinzInterest(s){
   const now=today(),yr=now.getFullYear(),jan1=new Date(yr,0,1);
-  const eff=m=>{if(m.t==='Dépôt'&&m.p===s.name)return m.m||0;if(m.t==='Retrait'&&m.p===s.name)return -(m.m||0);
-    if(m.t==='Transfert'&&m.p===s.name)return -(m.m||0);if(m.t==='Transfert'&&m.p2===s.name)return m.m||0;return 0;};
+  const eff=m=>movEffect(m,s.name);
   const pts=[];let net=0;
   DB.movements.forEach(m=>{const e=eff(m);if(e===0)return;const ed=quinzDate(m.d,e>0?1:-1,s.type);
     if(ed>=jan1&&ed<=now){pts.push({d:ed,e});net+=e;}});
@@ -340,8 +345,7 @@ function quinzInterest(s){
   return total;}
 function yearAvgBalance(s){
   const now=today(),yr=now.getFullYear(),jan1=new Date(yr,0,1),dec31=new Date(yr,11,31,23,59);
-  const eff=m=>{if(m.t==='Dépôt'&&m.p===s.name)return m.m||0;if(m.t==='Retrait'&&m.p===s.name)return -(m.m||0);
-    if(m.t==='Transfert'&&m.p===s.name)return -(m.m||0);if(m.t==='Transfert'&&m.p2===s.name)return m.m||0;return 0;};
+  const eff=m=>movEffect(m,s.name);
   const pts=[];let net=0;
   DB.movements.forEach(m=>{const e=eff(m);if(e===0)return;const ed=quinzDate(m.d,e>0?1:-1,s.type);
     if(ed>=jan1&&ed<=now){pts.push({d:ed,e});net+=e;}});
@@ -369,7 +373,7 @@ function savingCalc(s){
 const APP_V=self.APP_VERSION||'?';
 // Schéma des données : à incrémenter quand une version change la structure stockée,
 // en ajoutant la migration correspondante dans MIGRATIONS (ne jamais modifier une migration existante).
-const SCHEMA=2;
+const SCHEMA=3;
 const MIGRATIONS={
   // v16 → v16.1 : en v16, la case du versement n°k portait le libellé du mois k-1
   // (mois de souscription compté à tort). On décale chaque case pointée vers le bon mois.
@@ -377,6 +381,12 @@ const MIGRATIONS={
     (DB.crowd||[]).forEach(c=>{const old=c.paid||[];if(!old.length)return;const sch=crowdSchedule(c),nw=new Set();
       for(let j=0;j<sch.length;j++){if(old.includes(ymKey(oldAdd(c.sub,j))))nw.add(sch[j].mk);}
       c.paid=[...nw];});},
+  // v16.1 → v16.2 : le solde devient calculé depuis les opérations. L'écart éventuel avec le
+  // solde affiché jusqu'ici est conservé sous forme d'une opération « Ajustement » (visible et supprimable).
+  3(){(DB.savings||[]).forEach(s=>{const target=+s.cap||0,derived=savingBalance(s);
+      let t=target;if(s.type!=='Compte courant'&&t<0)t=Math.max(0,derived); // un livret ne peut pas être négatif
+      const diff=r2(t-derived);
+      if(Math.abs(diff)>=0.005)DB.movements.push({d:s.open||ymd(today()),p:s.name,t:'Ajustement',q:null,pu:null,m:diff,f:0,n:'Reprise du solde v16'});});},
 };
 function migrate(){DB.meta=DB.meta||{updatedAt:0};let v=DB.meta.schema||1;if(v>=SCHEMA)return;
   if(!isFresh)backupLocal('Avant migration des données (schéma '+v+' → '+SCHEMA+')');
@@ -425,7 +435,7 @@ function runRecurring(){
     let d=new Date(Math.max(new Date(r.start),new Date(last.getFullYear(),last.getMonth(),1)));
     for(let k=0;k<60;k++){const due=new Date(d.getFullYear(),d.getMonth(),Math.min(r.day,28));
       if(due>last&&due<=now){DB.expenses.push({d:ymd(due),label:r.label,amt:r.amt,cat:r.cat,auto:true});
-        if(cc)cc.cap=(cc.cap||0)-r.amt;changed=true;}
+        changed=true;}
       d=addMonths(d,1);if(due>now)break;}
   });
   DB.settings.lastProc=ymd(now);if(changed)save();
@@ -438,7 +448,7 @@ function consolidate(){
   const invested=bI+iI+sI,value=bV+iV+sV;
   const immoMonthly=DB.crowd.filter(c=>c.st==='En cours').reduce((a,c)=>a+crowdCalc(c).monthly*(1-crowdTaxRate()),0);
   const y=today().getFullYear(),jan=new Date(y,0,1);let apports=0;
-  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.t==='Transfert')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
+  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
   DB.crowd.forEach(c=>{if(new Date(c.sub)>=jan)apports+=c.amt;});
   const snap=DB.settings.snapshots[y];const yearGain=snap!=null?value-snap-apports:null;
   const yearPerf=(snap!=null&&(snap+apports)>0)?yearGain/(snap+apports):null;
@@ -652,7 +662,7 @@ function renderDash(){
 function cashFlows(){
   const cf=[];
   DB.movements.forEach(m=>{
-    if(m.t==='Transfert')return;
+    if(m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement')return;
     const g=(m.q!=null&&m.pu!=null&&m.q!==''&&m.pu!=='')?(+m.q)*(+m.pu):(+m.m||0);
     const amt=g+(+m.f||0); if(!amt)return;
     const d=new Date(m.d); if(isNaN(d))return;
@@ -887,8 +897,8 @@ function productDetail(name){
     <div class="card"><div class="twrap"><table><tbody>
     ${ops.map(({m,gi})=>{const isTr=m.t==='Transfert';const dir=isTr?(m.p===name?'↑ sortie':'↓ entrée'):'';
        const detail=isTr?eur0(m.m):(m.q!=null?QTY(m.q)+(m.pu?' @ '+eur(m.pu):''):(m.m!=null?eur0(m.m):'—'));
-       const sign=(m.t==='Vente'||m.t==='Retrait'||(isTr&&m.p===name))?'neg':'';
-       return `<tr><td><div class="t-name">${m.t}${dir?' '+dir:''}</div><div class="t-sub">${new Date(m.d).toLocaleDateString('fr-FR')}${m.n?' · '+m.n:''}</div></td>
+       const sign=(m.t==='Vente'||m.t==='Retrait'||(isTr&&m.p===name)||(m.t==='Ajustement'&&m.m<0))?'neg':'';
+       return `<tr><td><div class="t-name">${esc(m.t)}${dir?' '+dir:''}</div><div class="t-sub">${pd(m.d).toLocaleDateString('fr-FR')}${m.n?' · '+esc(m.n):''}</div></td>
          <td class="${sign}">${detail}</td><td class="t-sub">${m.f?'frais '+eur(m.f):''}</td><td><span class="del" onclick="editMov(${gi})">✎</span></td></tr>`;}).join('')
        ||`<tr><td class="emptybox" colspan="4"><div class="ic">📄</div>Aucune opération enregistrée.</td></tr>`}
     </tbody></table></div></div>
@@ -958,8 +968,10 @@ function placeImmo(){
        <div class="spread" style="margin-top:12px;font-size:12.5px">
          <span class="muted">${cc.next&&crowdActive(c)?'Prochain versement : <b style="color:var(--ink)">'+cc.next.d.toLocaleDateString('fr-FR')+'</b>':'Échéance : <b style="color:var(--ink)">'+cc.ech.toLocaleDateString('fr-FR')+'</b>'}</span>
          ${cc.mature&&crowdActive(c)?`<button class="btn sm" style="color:var(--warn);border-color:var(--warn)" onclick="markRepaid(${i})">Capital reçu ✓</button>`:''}</div>
-       ${crowdActive(c)&&cc.due.length?`<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><div class="sub" style="margin-bottom:6px">Pointer les versements reçus (${eur(cc.monthly)} chacun) :</div>
-         <div style="display:flex;flex-wrap:wrap;gap:7px">${cc.due.map(p=>{const on=paid.has(p.mk);return `<div style="text-align:center"><div class="chk ${on?'on':'miss'}" style="width:30px;height:30px" title="${p.d.toLocaleDateString('fr-FR')}" onclick="togglePaid(${i},'${p.mk}')">${on?'✓':''}</div><div class="sub" style="font-size:9px;margin-top:2px">${p.mk.slice(5)}/${p.mk.slice(2,4)}</div></div>`;}).join('')}</div></div>`:''}
+       ${crowdActive(c)&&cc.sch.length?`<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><div class="sub" style="margin-bottom:6px">Échéancier : coche chaque versement reçu (${eur(cc.monthly)} chacun)</div>
+         <div style="display:flex;flex-wrap:wrap;gap:7px">${cc.sch.map(p=>{const on=paid.has(p.mk),fut=p.d>today();
+           return `<div style="text-align:center"><div class="chk ${on?'on':(fut?'':'miss')}" style="width:30px;height:30px;${fut&&!on?'opacity:.45;border-style:dashed':''}" title="Versement du ${p.d.toLocaleDateString('fr-FR')}${fut?' (à venir)':''}" onclick="togglePaid(${i},'${p.mk}')">${on?'✓':''}</div><div class="sub" style="font-size:9px;margin-top:2px">${p.mk.slice(5)}/${p.mk.slice(2,4)}</div></div>`;}).join('')}</div>
+         <div class="sub" style="margin-top:6px">Case rouge : versement échu non coché · case en pointillés : à venir</div></div>`:''}
      </div>`;}).join('')||`<div class="card"><div class="emptybox"><div class="ic">🏠</div>Aucun projet. Ajoute ton premier investissement Bricks.</div></div>`}
    <div class="note">Le versement mensuel est calculé depuis le taux annuel (capital × taux ÷ 12). Une case rouge = versement échu non encore pointé. Un projet en retard ou en défaut reste compté dans ton patrimoine jusqu'à « Capital reçu ».</div>`;
 }
@@ -1043,6 +1055,7 @@ const assetNames=()=>DB.assets.map(a=>a.name),savingNames=()=>DB.savings.map(s=>
 
 function quickAdd(){openSheet(`<div class="spread"><h2>Ajouter</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editMov(-1)">💹 Opération (achat, vente, dépôt, retrait, transfert)</button></div>
+  <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editCrowd(-1)">🏠 Projet Bricks / crowdfunding</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editExpense(-1)">🧾 Dépense du compte courant</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editResale(-1)">🛍️ Article d'achat-revente</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editRecurring(-1)">🔁 Dépense récurrente</button></div>
@@ -1197,7 +1210,7 @@ function editMov(i){
   const opts=[...assetNames(),...savingNames()],savo=savingNames();
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouvelle'} opération</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="field"><label>Date</label><input type="date" id="f_d" value="${m.d}"></div>
-   <div class="field"><label>Type</label><select id="f_t" onchange="movFields()">${['Achat','Vente','Dépôt','Retrait','Transfert'].map(t=>`<option ${m.t===t?'selected':''}>${t}</option>`).join('')}</select></div>
+   <div class="field"><label>Type</label><select id="f_t" onchange="movFields()">${['Achat','Vente','Dépôt','Retrait','Transfert','Intérêts','Ajustement'].map(t=>`<option ${m.t===t?'selected':''}>${t}</option>`).join('')}</select></div>
    <div class="field"><label id="f_pl">Produit / actif</label><input list="pl" id="f_p" value="${esc(m.p||'')}" placeholder="Bitcoin, Livret A…"><datalist id="pl">${opts.map(o=>`<option value="${o}">`).join('')}</datalist><div class="hint" id="f_ph">Doit correspondre à un actif ou un produit existant.</div></div>
    <div class="field" id="w_dest" style="display:none"><label>Vers (compte destinataire)</label><input list="dl" id="f_p2" value="${esc(m.p2||'')}" placeholder="Compte courant"><datalist id="dl">${savo.map(o=>`<option value="${o}">`).join('')}</datalist></div>
    <div class="two" id="w_qp"><div class="field"><label>Quantité</label><input type="text" inputmode="decimal" autocomplete="off" id="f_q" value="${fin(m.q??'')}"></div><div class="field"><label>Prix unitaire (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="f_pu" value="${fin(m.pu??'')}"></div></div>
@@ -1211,15 +1224,18 @@ function movFields(){const t=$('#f_t').value,tr=(t==='Transfert');
   $('#w_dest').style.display=tr?'block':'none';$('#w_qp').style.display=(t==='Achat'||t==='Vente')?'grid':'none';
   $('#w_f').style.display=(t==='Achat'||t==='Vente')?'block':'none';$('#f_pl').textContent=tr?'Depuis (compte source)':'Produit / actif';
   $('#f_ph').style.display=tr?'none':'block';
-  $('#f_h2').textContent=tr?'Transfert interne : soldes et intérêts se mettent à jour automatiquement.':'Achat crypto : 2 champs sur 3 (Qté, Prix, Montant). Dépôt/retrait : juste le Montant.';}
+  $('#f_h2').textContent=tr?'Transfert interne : soldes et intérêts se mettent à jour automatiquement.'
+    :t==='Intérêts'?'Intérêts crédités sur le compte (ex. Livret A au 1er janvier) : augmentent le solde sans compter comme un versement.'
+    :t==='Ajustement'?'Corrige le solde : montant positif ou négatif (ex. -12,50).'
+    :'Achat crypto : 2 champs sur 3 (Qté, Prix, Montant). Dépôt/retrait : juste le Montant.';}
 function saveMov(i){const t=$('#f_t').value,p=val('f_p');if(!p){toast('Indique un produit',true);return;}
   const old=(i>=0)?DB.movements[i]:null;let o;
   if(t==='Transfert'){const p2=val('f_p2'),amt=num('f_m');if(!p2){toast('Compte destinataire ?',true);return;}if(p2===p){toast('Source = destination',true);return;}if(!amt){toast('Montant ?',true);return;}
     o={d:val('f_d')||ymd(today()),p,p2,t:'Transfert',q:null,pu:null,m:amt,f:0,n:val('f_n')||''};}
   else o={d:val('f_d')||ymd(today()),p,t,q:num('f_q'),pu:num('f_pu'),m:num('f_m'),f:num('f_f')||0,n:val('f_n')||''};
-  applyCap(old,-1);applyCap(o,1);if(i>=0)DB.movements[i]=o;else DB.movements.push(o);
+  if(i>=0)DB.movements[i]=o;else DB.movements.push(o);
   save();closeSheet();renderAll();toast(t==='Transfert'?'Transfert enregistré':'Opération enregistrée');}
-function delMov(i){applyCap(DB.movements[i],-1);DB.movements.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
+function delMov(i){DB.movements.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
 function editAsset(i){const a=i>=0?DB.assets[i]:{name:'',ticker:'',type:'Crypto',env:'Bitstack',price:'',sellFee:0.01,cur:'EUR'};
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouvel'} actif</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
@@ -1232,22 +1248,36 @@ function editAsset(i){const a=i>=0?DB.assets[i]:{name:'',ticker:'',type:'Crypto'
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveAsset(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delAsset(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
 function saveAsset(i){const name=$('#a_name').value.trim();if(!name){toast('Nom ?',true);return;}
   const o={name,ticker:$('#a_ticker').value.trim(),type:$('#a_type').value,env:$('#a_env').value,cur:$('#a_cur').value,price:num('a_price'),sellFee:(num('a_fee')||0)/100,src:$('#a_src').value,ysym:$('#a_ysym').value.trim()};
-  if(i>=0)DB.assets[i]=o;else DB.assets.push(o);save();closeSheet();renderAll();toast('Actif enregistré');}
+  if(i>=0){const old=DB.assets[i].name;if(old!==name)DB.movements.forEach(m=>{if(m.p===old)m.p=name;});DB.assets[i]=o;}else DB.assets.push(o);
+  save();closeSheet();renderAll();toast('Actif enregistré');}
 function delAsset(i){DB.assets.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
 function editSaving(i){const s=i>=0?DB.savings[i]:{name:'',type:'Livret A',bank:'',cap:'',open:ymd(today()),rate:'',tax:'Exonéré',ceil:''};
   const types=['Livret A','LDDS','LEP','Livret Jeune','PEL','CEL','Livret bancaire','Assurance-vie','Compte courant','Autre'],taxes=['Exonéré','PFU standard','PFU assurance-vie','Barème TMI 0%'];
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouveau'} produit</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="two"><div class="field"><label>Nom</label><input id="s_name" value="${esc(s.name)}"></div><div class="field"><label>Type</label><select id="s_type">${types.map(t=>`<option ${s.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
-   <div class="two"><div class="field"><label>Établissement</label><input id="s_bank" value="${esc(s.bank||'')}"></div><div class="field"><label>Capital actuel (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_cap" value="${fin(s.cap??'')}"></div></div>
+   <div class="two"><div class="field"><label>Établissement</label><input id="s_bank" value="${esc(s.bank||'')}"></div><div class="field"><label>Solde actuel (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_cap" value="${fin(s.cap??'')}"></div></div>
    <div class="two"><div class="field"><label>Date d'ouverture</label><input type="date" id="s_open" value="${s.open||''}"></div><div class="field"><label>Taux manuel (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_rate" value="${fin(s.rate!=null&&s.rate!==''?(s.rate*100):'')}" placeholder="auto"></div></div>
    <div class="two"><div class="field"><label>Fiscalité</label><select id="s_tax">${taxes.map(t=>`<option ${s.tax===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="field"><label>Plafond (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_ceil" value="${fin(s.ceil??'')}"></div></div>
-   <div class="hint">Taux vide = automatique (livrets réglementés). Le compte courant sert de base au Budget.</div>
+   <div class="hint">Taux vide = automatique (livrets réglementés). Le solde est calculé depuis les opérations ; si tu le modifies ici, l'écart est enregistré comme une opération (dépôt d'ouverture pour un produit sans opération, sinon « Ajustement » daté d'aujourd'hui). Le compte courant sert de base au Budget.</div>
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveSaving(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delSaving(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
 function saveSaving(i){const name=$('#s_name').value.trim();if(!name){toast('Nom ?',true);return;}const r=num('s_rate');
-  const o={name,type:$('#s_type').value,bank:$('#s_bank').value.trim(),cap:num('s_cap')||0,open:val('s_open'),rate:r==null?null:r/100,tax:$('#s_tax').value,ceil:num('s_ceil')};
-  if(i>=0)DB.savings[i]=o;else DB.savings.push(o);save();closeSheet();renderAll();toast('Produit enregistré');}
-function delSaving(i){DB.savings.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
+  const capIn=num('s_cap'),ceil=num('s_ceil');
+  if(DB.savings.some((x,k)=>k!==i&&x.name===name)){toast('Un produit porte déjà ce nom',true);return;}
+  const o={name,type:$('#s_type').value,bank:$('#s_bank').value.trim(),cap:0,open:val('s_open'),rate:r==null?null:r/100,tax:$('#s_tax').value,ceil};
+  if(i>=0){const old=DB.savings[i].name;
+    if(old!==name)DB.movements.forEach(m=>{if(m.p===old)m.p=name;if(m.p2===old)m.p2=name;}); // les opérations suivent le nouveau nom
+    DB.savings[i]=o;}else DB.savings.push(o);
+  // Capital saisi : on n'écrase pas le solde, on enregistre l'écart comme une opération datée
+  // (produit sans aucune opération → dépôt d'ouverture ; sinon → ajustement daté d'aujourd'hui)
+  if(capIn!=null){const diff=r2(capIn-savingBalance(o)),hasOps=DB.movements.some(m=>m.p===name||m.p2===name);
+    if(Math.abs(diff)>=0.005)DB.movements.push(hasOps
+      ?{d:ymd(today()),p:name,t:'Ajustement',q:null,pu:null,m:diff,f:0,n:'Correction du solde'}
+      :{d:o.open||ymd(today()),p:name,t:'Dépôt',q:null,pu:null,m:diff,f:0,n:'Solde à l\'ouverture'});}
+  save();closeSheet();renderAll();toast('Produit enregistré');}
+function delSaving(i){const n=DB.savings[i].name;const k=DB.movements.filter(m=>m.p===n||m.p2===n).length;
+  if(k&&!confirm('Supprimer « '+n+' » et ses '+k+' opération(s) ?'))return;
+  DB.movements=DB.movements.filter(m=>m.p!==n&&m.p2!==n);DB.savings.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
 function editCrowd(i){const c=i>=0?DB.crowd[i]:{name:'',plat:'Bricks',amt:'',rate:null,sub:ymd(today()),dur:24,day:8,st:'En cours',paid:[]};
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouveau'} projet</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
@@ -1263,7 +1293,7 @@ function saveCrowd(i){const name=$('#c_name').value.trim();if(!name){toast('Nom 
   if(dur!=null&&!(Number.isInteger(dur)&&dur>0)){toast('Durée en mois entiers',true);return;}
   if(day!=null&&!(Number.isInteger(day)&&day>=1&&day<=31)){toast('Jour de versement entre 1 et 31',true);return;}
   const o={name,plat:$('#c_plat').value.trim(),amt:r2(amt),rate:Math.round(rate*1e4)/1e6,sub:val('c_sub')||ymd(today()),dur:dur||12,day:day||8,st:$('#c_st').value,paid:(i>=0?DB.crowd[i].paid:[])||[]};
-  if(i>=0)DB.crowd[i]=o;else DB.crowd.push(o);save();closeSheet();renderAll();toast('Projet enregistré');}
+  if(i>=0)DB.crowd[i]=o;else DB.crowd.push(o);save();closeSheet();renderAll();nav('placements');setPlace('immo');toast('Projet enregistré');}
 function delCrowd(i){DB.crowd.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 function togglePaid(i,mk){const c=DB.crowd[i];c.paid=c.paid||[];const x=c.paid.indexOf(mk);if(x>=0)c.paid.splice(x,1);else c.paid.push(mk);save();renderPlacements();}
 
@@ -1276,9 +1306,9 @@ function editExpense(i){const e=i>=0?DB.expenses[i]:{d:ymd(today()),label:'',amt
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveExpense(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delExpense(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
 function saveExpense(i){const label=$('#e_label').value.trim();const amt=num('e_amt');if(!label||!amt){toast('Libellé et montant ?',true);return;}
   const cc=compteCourant();const o={d:val('e_d')||ymd(today()),label,amt,cat:$('#e_cat').value};
-  if(i>=0){if(cc)cc.cap=(cc.cap||0)+(DB.expenses[i].amt||0);DB.expenses[i]=o;}else DB.expenses.push(o);
-  if(cc)cc.cap=(cc.cap||0)-amt;save();closeSheet();renderAll();toast('Dépense enregistrée');}
-function delExpense(i){const cc=compteCourant();if(cc)cc.cap=(cc.cap||0)+(DB.expenses[i].amt||0);DB.expenses.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
+  if(i>=0)DB.expenses[i]=o;else DB.expenses.push(o);
+  save();closeSheet();renderAll();toast('Dépense enregistrée');}
+function delExpense(i){DB.expenses.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
 function editRecurring(i){const r=i>=0?DB.recurring[i]:{label:'',amt:'',cat:'Abonnements',day:1,start:ymd(today()),active:true};
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouvelle'} récurrente</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
@@ -1357,8 +1387,8 @@ function saveSettings(doSync){const y=today().getFullYear(),s=DB.settings;
   closeSheet();renderAll();toast('Réglages enregistrés');}
 function exportData(){const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='investco.json';a.click();URL.revokeObjectURL(u);DB.settings.lastBackup=ymd(today());save();}
 function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{DB=JSON.parse(r.result);load2();save();closeSheet();renderAll();toast('Importé');}catch(x){toast('Fichier invalide',true);}};r.readAsText(f);}
-function load2(){DB.expenses=DB.expenses||[];DB.recurring=DB.recurring||[];DB.resale=DB.resale||[];DB.settings=Object.assign({},DEF.settings,DB.settings);DB.crowd.forEach(c=>c.paid=c.paid||[]);DB.meta=DB.meta||{updatedAt:0};DB.settings.benchSym=Object.assign({},DEF.settings.benchSym,DB.settings.benchSym);DB.settings.indexCache=DB.settings.indexCache||{};migrate();}
-function resetData(){if(confirm('Revenir aux données d\'exemple ?')){DB=structuredClone(DEF);save();closeSheet();applyTheme();renderAll();toast('Réinitialisé');}}
+function load2(){DB.expenses=DB.expenses||[];DB.recurring=DB.recurring||[];DB.resale=DB.resale||[];DB.settings=Object.assign({},DEF.settings,DB.settings);DB.crowd.forEach(c=>c.paid=c.paid||[]);DB.meta=DB.meta||{updatedAt:0};DB.settings.benchSym=Object.assign({},DEF.settings.benchSym,DB.settings.benchSym);DB.settings.indexCache=DB.settings.indexCache||{};migrate();recalcBalances();}
+function resetData(){if(confirm('Revenir aux données d\'exemple ?')){DB=structuredClone(DEF);isFresh=true;migrate();save();closeSheet();applyTheme();renderAll();toast('Réinitialisé');}}
 
 const CG={BTC:'bitcoin','BTC-EUR':'bitcoin',ETH:'ethereum','ETH-EUR':'ethereum',SOL:'solana','SOL-EUR':'solana',ADA:'cardano',XRP:'ripple',DOGE:'dogecoin',BNB:'binancecoin',DOT:'polkadot'};
 // Déduit le symbole Yahoo Finance (couvre Euronext Paris / PEA / Amundi sans clé API)

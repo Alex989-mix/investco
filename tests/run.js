@@ -8,6 +8,7 @@ let failed = 0;
 for (const [name, args] of [
   ['Bricks', [path.join(__dirname, 'bricks.test.js'), APP]],
   ['Autres modules', [path.join(__dirname, 'others.test.js'), APP]],
+  ['Parcours utilisateur', [path.join(__dirname, 'ui.test.js'), APP]],
   ['Mises à jour', [path.join(__dirname, 'update.test.js'), path.join(__dirname, 'fixtures', 'v16'), APP, path.join(tmp, 'serve')]],
 ]) {
   console.log('\n=== ' + name);

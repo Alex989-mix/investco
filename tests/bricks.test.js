@@ -109,7 +109,7 @@ const typeIn = async (page, sel, txt) => { await page.fill(sel, ''); await page.
 
   // 10) Écran : grille de pointage pour un projet en retard, sans erreur
   const html = await page.evaluate(() => { DB.crowd = [{ name: 'R', plat: 'Bricks', amt: 600, rate: 0.1, sub: '2026-03-08', dur: 12, day: 8, st: 'Retard', paid: [] }]; renderAll(); placeImmo(); return document.querySelector('#place-body').innerHTML; });
-  log('Projet « Retard » : grille de pointage affichée (7 cases)', html.includes('Pointer les versements') && (html.match(/togglePaid\(/g) || []).length === 7, {});
+  log('Projet « Retard » : échéancier complet affiché (12 cases, 7 échues en rouge)', html.includes('Échéancier') && (html.match(/togglePaid\(/g) || []).length === 12 && (html.match(/chk miss/g) || []).length === 7, {});
 
   // 11) Migration des cases pointées en v16 (décalées d'un mois)
   const mig = await page.evaluate(() => {
@@ -117,7 +117,7 @@ const typeIn = async (page, sel, txt) => { await page.fill(sel, ''); await page.
     DB.crowd = [{ name: 'M', plat: 'Bricks', amt: 500, rate: 0.10, sub: '2025-09-08', dur: 24, day: 8, st: 'En cours', paid: ['2025-09', '2025-10'] }];
     migrate(); return { paid: DB.crowd[0].paid, schema: DB.meta.schema };
   });
-  log('Migration : cases v16 « 09/25, 10/25 » → « 10/25, 11/25 »', mig.paid.join() === '2025-10,2025-11' && mig.schema === 2, mig);
+  log('Migration : cases v16 « 09/25, 10/25 » → « 10/25, 11/25 »', mig.paid.join() === '2025-10,2025-11' && mig.schema >= 2, mig);
   const mig2 = await page.evaluate(() => { migrate(); return DB.crowd[0].paid; });
   log('Migration : ne s\'applique qu\'une fois', mig2.join() === '2025-10,2025-11', { paid: mig2 });
 

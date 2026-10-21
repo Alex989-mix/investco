@@ -2,17 +2,16 @@
    C'est le SEUL endroit à modifier à chaque nouvelle version : le service worker (sw.js)
    et l'appli (index.html) lisent tous les deux ce fichier. Changer APP_VERSION suffit
    pour que chaque appareil détecte la mise à jour et propose de l'installer. */
-self.APP_VERSION = '16.1';
+self.APP_VERSION = '16.2';
 self.APP_RELEASE = {
-  date: '2026-10-20',
+  date: '2026-10-21',
   notes: [
-    'Saisie des nombres à la française : « 37,50 » et « 10,5 % » sont bien compris (avant : 3 750 € et 105 %).',
-    'Bricks : calendrier des versements corrigé (premier versement à M+1, fins de mois), montant calculé depuis le taux.',
-    'Bricks : les projets en retard ou en défaut restent comptés dans le patrimoine ; intérêts imposés au PFU par défaut.',
-    'PEA : PRU et plus-values corrects après une vente partielle ; ventes dans le PEA exclues de l\'impôt.',
-    'Livrets : intérêts calculés quinzaine par quinzaine, au taux en vigueur à chaque période.',
-    'Budget : dépenses récurrentes datées du bon jour et du bon mois.',
-    'Cours ETF : ils se rafraîchissent à nouveau à chaque ↻.',
-    'Mises à jour : détection automatique, sauvegarde de tes données avant chaque mise à jour, restauration possible dans Réglages.'
+    'Épargne : le solde de chaque compte est désormais calculé à partir de ses opérations. Supprimer toutes les opérations d\'un livret le ramène à 0 € (avant : -480 €).',
+    'Épargne : modifier le « Solde actuel » d\'un produit enregistre l\'écart comme une opération « Ajustement » datée, visible et supprimable. Nouveaux types d\'opération : Intérêts et Ajustement.',
+    'Épargne : les écarts hérités des anciennes versions ont été repris en opérations « Ajustement » (note « Reprise du solde v16 »), tes soldes ne changent pas. Un solde négatif impossible sur un livret a été corrigé.',
+    'Bricks : l\'échéancier complet s\'affiche dès la création du projet ; les versements à venir sont en pointillés.',
+    'Bricks : nouveau raccourci « Projet Bricks » dans le bouton Ajouter.',
+    'Renommer un produit ou un actif conserve ses opérations.',
+    'Rappel 16.1 : saisie « 37,50 » à la française, calendrier Bricks corrigé, PRU du PEA, intérêts des livrets par quinzaine.'
   ]
 };
