@@ -66,7 +66,10 @@ log('Bitstack (EN) : BUY / ROUND_UP / bonus ; transaction échouée ignorée', k
 const bs3 = 'Date;Opération;Sats reçus;Montant investi\n14/10/2026;Achat programmé;16234;10,00 €\n';
 const c3 = C.readCrypto(bs3);
 log('Quantité en satoshis convertie en BTC (16 234 sats = 0,00016234 BTC)', c3.rows.length === 1 && c3.rows[0].q === 0.00016234 && c3.rows[0].eur === 10, c3.rows);
-log('Détection fichier crypto vs bancaire', C.looksCrypto(bs1) && C.looksCrypto(bs2) && !C.looksCrypto(banks['Crédit Agricole (en-têtes, Débit/Crédit, libellé sur 2 lignes)'][0]));
+log('Détection fichier crypto vs bancaire', C.looksCrypto(bs1) && C.looksCrypto(bs2) && C.looksCrypto(bs3) && !C.looksCrypto(banks['Crédit Agricole (en-têtes, Débit/Crédit, libellé sur 2 lignes)'][0]));
+log('Relevé bancaire qui mentionne Bitstack / Coinbase : reste un relevé bancaire', !C.looksCrypto('Date;Libellé;Montant\n15/10/2026;PRLV SEPA BITSTACK SAS;-10,00\n16/10/2026;CB COINBASE BTC;-50,00\n')
+  && !C.looksCrypto('15/10/2026;-10,00;Prélèvement;;PRLV BITSTACK;0\n'));
+log('Export crypto sans titres (quantités à 8 décimales) reconnu', C.looksCrypto('14/10/2026;Achat;10,00;0,00016234\n13/10/2026;Arrondi;0,37;0,00000601\n'));
 
 console.log(out.every(Boolean) ? `\n✓ csvimport.js : ${out.length} tests OK` : '\n✗ csvimport.js : erreurs');
 process.exitCode = out.every(Boolean) ? 0 : 1;

@@ -26,7 +26,7 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   const re = await page.evaluate(() => ({ e: DB.expenses.find(x => x.label === 'Test 0,1+0,2').amt, cap: compteCourant().cap }));
   log('Après rechargement : 0,1 + 0,2 relu exactement 0,30 €', re.e === 0.3, re);
   await page.evaluate(() => { DB.expenses = DB.expenses.filter(x => x.label !== 'Test 0,1+0,2'); save(); });
-  log('Migration des données d\'exemple : plus de table de taux dans les données', await page.evaluate(() => DB.rates === undefined && DB.pel === undefined && DB.meta.schema === 4));
+  log('Migration des données d\'exemple : plus de table de taux dans les données', await page.evaluate(() => DB.rates === undefined && DB.pel === undefined && DB.meta.schema === 5));
 
   // ===== 2. Fiscalité personnelle et paramètres réglementaires =====
   await page.evaluate(() => openSettings()); await page.waitForTimeout(150);
@@ -129,16 +129,17 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   const v162 = { movements: [{ d: '2024-01-01', p: 'Livret A', t: 'Dépôt', q: null, pu: null, m: 1000.5, f: 0, n: '' }, { d: '2024-02-01', p: 'BTC', t: 'Achat', q: 0.01, pu: 40000, m: null, f: 1.5, n: '' }],
     assets: [{ name: 'BTC', ticker: 'BTC-EUR', type: 'Crypto', env: 'Bitstack', price: 60000, sellFee: 0.01, cur: 'EUR' }],
     savings: [{ name: 'Livret A', type: 'Livret A', bank: '', cap: 1000.5, open: '2024-01-01', rate: null, tax: 'Exonéré', ceil: 22950 }, { name: 'PEL', type: 'PEL', bank: '', cap: 0, open: '2021-04-20', rate: null, tax: 'Barème TMI 0%', ceil: 61200 }, { name: 'Compte courant', type: 'Compte courant', cap: 0, open: null, rate: null, tax: 'Exonéré', ceil: null }],
-    crowd: [], expenses: [], recurring: [], resale: [],
+    crowd: [], expenses: [{ d: '2026-10-01', label: 'PRLV SEPA BITSTACK', amt: 10, cat: 'Autres' }, { d: '2026-10-02', label: 'PRLV COINBASE', amt: 5, cat: 'Loisirs' }], recurring: [], resale: [],
     settings: { crowdTax: 'pfu', flatTax: 0.314, avTax: 0.30, baremeTax: 0.186, cryptoTax: 0.186, peaTax: 0, objNet: 0.1, snapshots: { 2026: 5000 }, goal: 60000, catBudgets: {}, theme: 'dark' },
     meta: { updatedAt: 1, schema: 3 }, rates: [['Livret A', '2026-08-01', 0.017]], pel: { 2021: 0.01 } };
   const mig = await page.evaluate((old) => {
     localStorage.setItem('investco_v1', JSON.stringify(old)); load(); save();
     const st = JSON.parse(localStorage.getItem('investco_v1'));
     return { tmi: DB.settings.tmi, crypto: DB.settings.cryptoRegime, tax: DB.savings[1].tax, ceil: DB.savings[0].ceil, ceilFor: ceilFor(DB.savings[0]), rates: DB.rates, cap: DB.savings[0].cap,
-      goal: DB.goals.map(g => [g.name, g.target, g.accounts.join()]), stockedCap: st.movements[0].m, stockedGoal: st.goals[0].target, flat: DB.settings.flatTax, schema: DB.meta.schema, pel: rateFor(DB.savings[1]) };
+      goal: DB.goals.map(g => [g.name, g.target, g.accounts.join()]), cats: DB.expenses.map(e => e.cat), stockedCap: st.movements[0].m, stockedGoal: st.goals[0].target, flat: DB.settings.flatTax, schema: DB.meta.schema, pel: rateFor(DB.savings[1]) };
   }, v162);
-  log('Migration v16.2 → v17 : TMI 0 %, crypto au barème (ancien choix conservé), « Barème »', mig.tmi === 0 && mig.crypto === 'bareme' && mig.tax === 'Barème' && mig.flat === undefined && mig.schema === 4, mig);
+  log('Migration v16.2 → v17 : TMI 0 %, crypto au barème (ancien choix conservé), « Barème »', mig.tmi === 0 && mig.crypto === 'bareme' && mig.tax === 'Barème' && mig.flat === undefined && mig.schema === 5, mig);
+  log('… versement Bitstack resté en « Autres » → « Investissement » ; catégorie choisie à la main conservée', JSON.stringify(mig.cats) === '["Investissement","Loisirs"]', mig.cats);
   log('… plafond réglementaire repris des paramètres, taux PEL 2021 = 1 %, solde 1 000,50 €', mig.ceil === null && mig.ceilFor === 22950 && mig.pel === 0.01 && mig.cap === 1000.5 && mig.rates === undefined);
   log('… ancien objectif 60 000 € devenu un objectif « Patrimoine » ; stockage en centimes', JSON.stringify(mig.goal) === '[["Patrimoine",60000,"*"]]' && mig.stockedCap === 100050 && mig.stockedGoal === 6000000);
 

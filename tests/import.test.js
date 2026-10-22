@@ -31,6 +31,21 @@ const BITSTACK = 'Date;Type;Montant (EUR);Quantité (BTC);Prix du BTC (EUR);Frai
   const t2 = await page.evaluate(() => document.querySelector('#toast').textContent), ne2 = await page.evaluate(() => DB.expenses.length);
   log('Même fichier réimporté : 3 doublons ignorés, rien ajouté', /0 opération importée · 3 doublons ignorés/.test(t2) && ne2 === ne0 + 2, t2);
 
+  // ===== 1b. Versements vers Bitstack dans le relevé bancaire : budget, catégorie « Investissement »
+  const cc1 = await page.evaluate(() => compteCourant().cap);
+  await openImp();
+  await page.fill('#imp_txt', 'Date;Libellé;Montant\n15/10/2026;PRLV SEPA BITSTACK SAS;-10,00\n16/10/2026;VIR BITSTACK SAS VENTE;150,00\n17/10/2026;CB CARREFOUR;-20,00\n');
+  await page.locator('#sheet button', { hasText: 'Analyser' }).click(); await page.waitForTimeout(200);
+  const kd = await page.evaluate(() => impReview.map(r => [r.kind, r.cat || '']));
+  log('Relevé bancaire : prélèvement Bitstack → Dépense « Investissement », virement reçu → Revenu', JSON.stringify(kd) === '[["Dépense","Investissement"],["Revenu",""],["Dépense","Courses"]]', kd);
+  await page.locator('#imp_body button', { hasText: 'Importer' }).last().click(); await page.waitForTimeout(300);
+  const bi = await page.evaluate(() => { nav('budget'); budMonth = 0; renderBudget(); return { cc: compteCourant().cap, txt: document.querySelector('#v-budget').textContent }; });
+  log('Compte courant : −10 € −20 € +150 € ; budget « dont 10 € investis · … de dépenses courantes »', Math.abs(bi.cc - cc1 - 120) < 0.001 && /dont 10 € investis/.test(N(bi.txt)), { delta: bi.cc - cc1, extrait: (N(bi.txt).match(/dont.{0,60}/) || [])[0] });
+  log('Catégorie « Investissement » visible dans « Prévu vs réel »', /Investissement\s*—\s*10 €/.test(N(bi.txt)), (N(bi.txt).match(/Investissement.{0,30}/) || [])[0]);
+  const apo = await page.evaluate(() => { const a = consolidate().apports; DB.expenses = DB.expenses.filter(e => e.label !== 'PRLV SEPA BITSTACK SAS'); const b = consolidate().apports; return a - b; });
+  log('Gain de l\'année : les 10 € envoyés vers Bitstack ne sont pas comptés comme une perte', Math.abs(apo + 10) < 0.001, apo);
+  await page.evaluate(() => { nav('dash'); });
+
   // ===== 2. Fichier sans titres (LCL) collé dans la zone de texte =====
   await openImp();
   await page.fill('#imp_txt', '14/10/2026;-82,40;Carte;;CB LECLERC 13/10;0\n13/10/2026;-9,99;Prélèvement;;PRLV NETFLIX;0\n');

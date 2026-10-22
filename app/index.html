@@ -212,7 +212,7 @@ function fin(v){if(v===''||v==null)return '';const n=+v;if(!isFinite(n))return '
 // Arrondi au centime (montants en euros)
 const r2=v=>Math.round((v||0)*100)/100;
 const PAL=['#6BA3C6','#A3C4DA','#D4E1EA','#14385C','#3D82AF','#1F5C8C','#0A1A2F','#F7931A'];
-const CATCOL={'Logement':'#F7931A','Courses':'#3D82AF','Transport':'#14385C','Loisirs':'#6BA3C6','Abonnements':'#A3C4DA','Santé':'#4E7A5E','Restau':'#B0743C','Shopping':'#8B5E83','Autres':'#63788A'};
+const CATCOL={'Logement':'#F7931A','Courses':'#3D82AF','Transport':'#14385C','Loisirs':'#6BA3C6','Abonnements':'#A3C4DA','Santé':'#4E7A5E','Restau':'#B0743C','Shopping':'#8B5E83','Investissement':'#2BB673','Autres':'#63788A'};
 const CATS=Object.keys(CATCOL);
 let tT;function toast(m,e){const t=$('#toast');t.textContent=m;t.className='toast on'+(e?' err':'');clearTimeout(tT);tT=setTimeout(()=>t.className='toast',2600);}
 
@@ -382,7 +382,7 @@ function savingCalc(s){
 const APP_V=self.APP_VERSION||'?';
 // Schéma des données : à incrémenter quand une version change la structure stockée,
 // en ajoutant la migration correspondante dans MIGRATIONS (ne jamais modifier une migration existante).
-const SCHEMA=4;
+const SCHEMA=5;
 const MIGRATIONS={
   // v16 → v16.1 : en v16, la case du versement n°k portait le libellé du mois k-1
   // (mois de souscription compté à tort). On décale chaque case pointée vers le bon mois.
@@ -409,6 +409,9 @@ const MIGRATIONS={
       const reg=Fin.getParam('ceil.'+s.type,'9999-12-31');if(reg!=null&&+s.ceil===reg)s.ceil=null;}); // plafond réglementaire → suit les paramètres
     DB.params=DB.params||[];DB.loans=DB.loans||[];DB.properties=DB.properties||[];DB.goals=DB.goals||[];st.catRules=st.catRules||[];
     if(st.goal){DB.goals.push({id:'g'+Date.now(),name:'Patrimoine',target:+st.goal,deadline:null,accounts:['*']});st.goal=null;}},
+  // v17.1 → v17.2 : versements vers les plateformes d'investissement déjà saisis → catégorie « Investissement »
+  // (seulement ceux restés en « Autres » : un choix fait à la main est respecté)
+  5(){(DB.expenses||[]).forEach(e=>{if((e.cat==='Autres'||!e.cat)&&isInvestLabel(e.label))e.cat='Investissement';});},
 };
 function migrate(){DB.meta=DB.meta||{updatedAt:0};let v=DB.meta.schema||1;if(v>=SCHEMA)return;
   if(!isFresh)backupLocal('Avant migration des données (schéma '+v+' → '+SCHEMA+')');
@@ -484,6 +487,8 @@ function consolidate(){
   DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
   DB.crowd.forEach(c=>{if(new Date(c.sub)>=jan)apports+=c.amt;});
   apports+=RE.principalYear; // le capital de crédit remboursé est un effort d'épargne, pas un gain
+  // argent envoyé du compte courant vers une plateforme : il réapparaît dans l'actif acheté (déjà compté en apport)
+  DB.expenses.forEach(e=>{if(e.cat==='Investissement'&&pd(e.d)>=jan)apports-=(+e.amt||0);});
   const snap=DB.settings.snapshots[y];const yearGain=snap!=null?net-snap-apports:null;
   const yearPerf=(snap!=null&&(snap+apports)>0)?yearGain/(snap+apports):null;
   return {invested,value,net,debt:RE.debt,reValue:RE.value,reCashflow:RE.cashflow,pv:value-invested,pvp:invested?(value-invested)/invested:0,bI,bV,iI,iV,sI,sV,sN,dispo,immoMonthly,apports,snap,yearGain,yearPerf};
@@ -1086,7 +1091,8 @@ function renderBudget(){
   const monthLbl=mdate.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
   $('#v-budget').innerHTML=`
    <div class="kpi hero" style="margin-top:16px"><div class="k-l">Solde du compte courant</div><div class="k-v">${eur0(cc?.cap||0)}</div>
-     <div class="k-s"><span class="pos">+${eur0(inThis)}</span> &nbsp; <span class="neg">−${eur0(totOut)}</span> <span class="muted">en ${mdate.toLocaleDateString('fr-FR',{month:'long'})}</span></div></div>
+     <div class="k-s"><span class="pos">+${eur0(inThis)}</span> &nbsp; <span class="neg">−${eur0(totOut)}</span> <span class="muted">en ${mdate.toLocaleDateString('fr-FR',{month:'long'})}</span></div>
+     ${cats.Investissement?`<div class="k-s" style="color:#2BB673">dont ${eur0(cats.Investissement)} investis · ${eur0(totOut-cats.Investissement)} de dépenses courantes</div>`:''}</div>
    <div class="bud-nav" style="margin-top:16px"><button onclick="setBudMonth(-1)">‹</button><span class="lbl">${monthLbl}</span><button onclick="setBudMonth(1)" ${budMonth>=0?'disabled style=opacity:.3':''}>›</button></div>
    ${over.length?`<div class="card pad" style="border:1px solid var(--neg);background:var(--negbg);margin-bottom:12px;font-size:13px;color:var(--neg)">⚠️ Budget dépassé : ${over.join(', ')}.</div>`:''}
    ${(()=>{const B=Fin.budgetVsActual(DB.expenses,cb,ymk);if(!B.rows.length)return '';
@@ -1186,8 +1192,12 @@ const CATKW={Courses:['carrefour','leclerc','e.leclerc','auchan','lidl','interma
  Restau:['restaurant','resto','mcdo','mcdonald','burger','bk ','quick','kfc','uber eats','ubereats','deliveroo','just eat','boulangerie','paul ','café','cafe ','starbucks','sushi','pizza','pizz','brasserie','tacos','subway','o tacos','bar ','snack','traiteur'],
  Logement:['loyer','edf','engie','enedis','eau','veolia','suez','saur','free ','freebox','orange','sfr','bouygues','red by sfr','sosh','assurance habitation','maaf','macif','matmut','gmf','syndic','charges','foncia','nexity'],
  Shopping:['amazon','amzn','fnac','darty','boulanger','zalando','zara','h&m','h & m','uniqlo','decathlon','ikea','leroy merlin','castorama','brico','conforama','but ','maisons du monde','vinted','asos','nike','adidas','action ','primark','shein','aliexpress','cdiscount','sephora','normal ','gifi','kiabi','jules','celio']};
+// Plateformes d'investissement (crypto, bourse, crowdfunding, assurance-vie en ligne) : catégorie « Investissement »
+const INVEST_RX=/\b(bitstack|coinbase|binance|kraken|bitpanda|paymium|meria|deskoin|coinhouse|bitvavo|crypto\.com|swissborg|trade ?republic|degiro|bourse ?direct|boursobank bourse|saxo|interactive brokers|xtb|etoro|scalable|linxea|yomoni|nalo|ramify|goodvest|bricks|la premi[eè]re brique|homunity|anaxago|fundimmo|lendosphere|mintos|wiseed|tudigo|scpi)\b/i;
+const isInvestLabel=(label)=>INVEST_RX.test(label||'');
 function autoCat(label){const l=(label||'').toLowerCase();
   for(const r of (DB.settings.catRules||[]))if(r.kw&&l.includes(r.kw.toLowerCase()))return r.cat; // tes règles d'abord
+  if(isInvestLabel(l))return 'Investissement';
   for(const c in CATKW){if(CATKW[c].some(w=>l.includes(w)))return c;}return 'Autres';}
 function matchAccount(label){const l=(label||'').toLowerCase();return DB.savings.find(s=>s.type!=='Compte courant'&&(l.includes(s.name.toLowerCase())||l.includes((s.type||'').toLowerCase())));}
 function openRules(){const R=DB.settings.catRules||[];

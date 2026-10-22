@@ -303,10 +303,22 @@
     });
     return { rows: out, skipped, delim, headerRow: h, header, map, columns: header || (data[0] || []).map((_, j) => 'Colonne ' + (j + 1)) };
   }
-  // Fichier crypto plutôt que bancaire ?
+  // Fichier crypto plutôt que bancaire ? On regarde la STRUCTURE (titres de colonnes, quantités à 5+ décimales),
+  // jamais les libellés : un relevé bancaire qui mentionne « Bitstack » reste un relevé bancaire.
   function looksCrypto(text) {
-    const head = strip(String(text).slice(0, 3000));
-    return /(btc|bitcoin|satoshi|\bsats\b|crypto|bitstack|quantite|quantity|ethereum|\beth\b|coinbase|binance|kraken)/.test(head);
+    const delim = detectDelim(text), rows = parseCSV(text, delim), h = findHeader(rows);
+    if (h >= 0) {
+      const hs = rows[h].map(strip);
+      return hs.some((c) => /(\bbtc\b|\(btc\)|\bsats?\b|satoshi|crypto|quantit|quantity|\bcoin\b|\basset\b|\bfiat)/.test(c));
+    }
+    const data = rows.filter((r) => r.length > 1).slice(0, 100);
+    if (!data.length) return false;
+    const cols = Math.max(...data.map((r) => r.length));
+    for (let j = 0; j < cols; j++) {
+      const small = data.filter((r) => /^-?0[.,]\d{5,}$/.test(String(r[j] || '').trim())).length;
+      if (small / data.length > 0.6) return true;
+    }
+    return false;
   }
 
   const api = { decode, parseCSV, detectDelim, parseAmount, parseDate, dateOrder, findHeader, mapBank, readBank, readCrypto, cryptoKind, looksCrypto };
