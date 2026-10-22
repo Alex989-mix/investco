@@ -2,6 +2,35 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "19.0",
+      "date": "2026-10-22",
+      "title": "Crypto en direct et sécurité renforcée",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Cours des cryptomonnaies en temps réel tant que l'application est ouverte, avec la variation sur 24 heures et un indicateur « direct » dans vos placements."
+        },
+        {
+          "type": "improved",
+          "text": "Confidentialité : seuls les noms des paires (par exemple BTC/EUR) sont transmis ; la connexion se coupe automatiquement lorsque l'application passe en arrière-plan. Le direct se désactive dans Réglages › Avancé."
+        },
+        {
+          "type": "improved",
+          "text": "Sécurité renforcée : l'application ne peut plus contacter que ses sources de cours, ses bibliothèques techniques et votre Google Drive ; tout autre envoi de données est bloqué par le navigateur."
+        },
+        {
+          "type": "improved",
+          "text": "Fiabilité : les cours reçus sont contrôlés (valeurs invalides ou variations anormales ignorées) et enregistrés sans perturber la synchronisation Google Drive."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "03 · Bourse et crypto : cours en direct",
+        "08 · Questions fréquentes : temps réel et données transmises",
+        "09 · Confidentialité et sécurité"
+      ]
+    },
+    {
       "version": "18.0",
       "date": "2026-10-22",
       "title": "Cash-flow, PEA complet, immobilier détaillé et verrouillage",

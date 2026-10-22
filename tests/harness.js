@@ -18,6 +18,20 @@ async function openApp(browser, { seed, fixedNow } = {}) {
     if (u.href.includes('chart.umd')) return route.fulfill({ body: CHART_STUB, contentType: 'text/javascript' });
     return route.fulfill({ status: 503, body: '' }); // pas de réseau
   });
+  // Flux Kraken simulé : aucune connexion réelle ; le test pilote les messages (window.__ws)
+  await ctx.addInitScript(() => {
+    window.__ws = []; window.__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(e.violatedDirective + ' ' + e.blockedURI));
+    class FakeWS {
+      constructor(url) { this.url = url; this.sent = []; this.readyState = 0; this.closed = false; window.__ws.push(this); }
+      send(d) { this.sent.push(d); }
+      close() { if (this.closed) return; this.closed = true; this.readyState = 3; setTimeout(() => this.onclose && this.onclose({}), 0); }
+      fakeOpen() { this.readyState = 1; this.onopen && this.onopen({}); }
+      fakeMsg(o) { this.onmessage && this.onmessage({ data: typeof o === 'string' ? o : JSON.stringify(o) }); }
+      fakeDrop() { this.readyState = 3; this.onclose && this.onclose({}); }
+    }
+    window.WebSocket = FakeWS;
+  });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));

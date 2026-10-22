@@ -2,6 +2,10 @@
 <html lang="fr" data-theme="dark">
 <head>
 <meta charset="utf-8">
+<!-- Sécurité : l'appli ne peut contacter QUE ces adresses (cours, librairies, Google Drive, Kraken).
+     Toute autre destination est bloquée par le navigateur, même en cas de code injecté. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.coingecko.com https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://api.twelvedata.com https://www.googleapis.com https://accounts.google.com/gsi/ wss://ws.kraken.com; frame-src https://accounts.google.com/gsi/; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Invest.co</title>
 <meta name="theme-color" content="#0B1420">
@@ -114,6 +118,7 @@ input:focus,select:focus{outline:none;border-color:var(--orange);box-shadow:0 0 
 .subtabs{display:flex;gap:6px;margin:16px 0 4px}
 .subtab{flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13px;font-weight:600;color:var(--ink2);background:var(--card);border:1px solid var(--line);cursor:pointer;transition:.15s}
 .subtab.on{color:var(--orange);border-color:var(--orange);background:var(--orange-soft)}
+.live-b{white-space:nowrap;font-size:11px;font-weight:600;color:var(--ink3);margin-left:6px;vertical-align:middle;font-family:inherit}.live-b.on{color:var(--pos)}
 .chk{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:transparent;font-weight:800;transition:.15s;flex:none}
 .chk.on{background:var(--pos);border-color:var(--pos);color:#fff}
 .chk.miss{border-color:var(--neg);color:var(--neg)}
@@ -286,7 +291,7 @@ const DEF={
     {name:'Nike Dunk Low',buyD:'2026-09-05',buy:110,fees:5,sellD:null,sell:null,st:'En vente'},
   ],
   settings:{crowdTax:'pfu',tmi:0,cryptoRegime:'pfu',resaleRegime:'occasionnel',catRules:[],objNet:0.10,
-    snapshots:{2026:48000},dismissY:{},theme:'dark',stockKey:'',eurusd:0.92,lastProc:null,
+    snapshots:{2026:48000},dismissY:{},theme:'dark',stockKey:'',liveCrypto:true,eurusd:0.92,lastProc:null,
     catBudgets:{},lastBackup:null,goal:null,
     gdriveClientId:'',gdriveFileId:null,lastSync:null,autoSync:false,
     indexChoice:'MSCI',benchSym:{MSCI:'URTH',CAC:'CAC'},indexCache:{}},
@@ -954,7 +959,7 @@ function openGuide(){
      <div style="font-size:13px;color:var(--ink2);margin-top:4px">Bonne nouvelle : <b>aucune clé n'est nécessaire</b> pour la plupart des cours. Appuie sur <b>↻</b> dans Placements.</div>
      <ul style="font-size:13px;color:var(--ink);line-height:1.7;padding-left:20px;margin:10px 0 0">
        <li><b>ETF Amundi / PEA</b> (CW8, PE500, PAEEM…) et actions Euronext → via <b>Yahoo</b>, gratuit, sans clé. Mets juste le ticker (ex. <code>CW8</code>) ; l'appli ajoute <code>.PA</code> toute seule.</li>
-       <li><b>Crypto</b> (Bitcoin, Ether…) → via <b>CoinGecko</b>, ticker type <code>BTC-EUR</code>.</li>
+       <li><b>Crypto</b> (Bitcoin, Ether…) → <b>en direct via Kraken</b> tant que l'appli est ouverte (CoinGecko en secours), ticker type <code>BTC-EUR</code>.</li>
        <li>Vérifie le résultat actif par actif avec le bouton <b>ⓘ</b> à côté de ↻.</li>
      </ul>
      <div style="font-weight:650;font-size:13px;margin-top:12px">Clé Twelve Data (facultative, pour les actions US)</div>
@@ -1043,9 +1048,9 @@ function placeBourse(){
      ${P.open?`<div style="font-size:12.5px;margin-top:10px;color:${P.mature?'var(--pos)':'var(--ink2)'}">${P.mature?'✓ Plus de 5 ans : retraits possibles sans clôturer le plan ; seuls les prélèvements sociaux s\'appliquent sur les gains.':'⏳ 5 ans le <b style="color:var(--ink)">'+pd(P.fiveYears).toLocaleDateString('fr-FR')+'</b>. Avant cette date, un retrait entraîne en principe la clôture du plan et l\'imposition des gains.'}</div>`:''}
    </div>`:'';
   $('#place-body').innerHTML=peaHtml+`
-   <div class="sec-h" style="margin-top:14px"><h2>Actions, ETF & crypto</h2><span class="row" style="gap:6px"><button class="btn sm" onclick="refreshPrices()">↻ Cours</button><button class="btn sm" onclick="priceDetail()" title="Détail de l'actualisation">ⓘ</button><button class="btn sm primary" onclick="editAsset(-1)">+ Actif</button></span></div>
+   <div class="sec-h" style="margin-top:14px"><h2>Actions, ETF & crypto <span data-live-badge>${liveBadgeHtml()}</span></h2><span class="row" style="gap:6px"><button class="btn sm" onclick="refreshPrices()">↻ Cours</button><button class="btn sm" onclick="priceDetail()" title="Détail de l'actualisation">ⓘ</button><button class="btn sm primary" onclick="editAsset(-1)">+ Actif</button></span></div>
    <div class="card"><div class="twrap"><table><thead><tr><th>Actif</th><th>Investi</th><th>PRU</th><th>Qté</th><th>Cours</th><th>Valeur</th><th>+/–</th><th>Statut</th><th></th></tr></thead>
-   <tbody>${rows.map(({a,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.assets[${i}].name)"><div class="t-name">${esc(a.name)} ›</div><div class="t-sub">${esc(a.ticker||'')} · ${esc(a.env||a.type)}${c.divs?' · div. '+eur0(c.divs):''}</div></td>
+   <tbody>${rows.map(({a,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.assets[${i}].name)"><div class="t-name">${esc(a.name)} ›</div><div class="t-sub">${esc(a.ticker||'')} · ${esc(a.env||a.type)}${c.divs?' · div. '+eur0(c.divs):''}${liveChg(a)}</div></td>
      <td>${eur0(c.inv)}</td><td>${c.pru?eur(c.pru):'—'}</td><td>${QTY(c.qty)}</td><td>${a.price?eur(a.price):'—'}</td><td>${eur0(c.value)}</td>
      <td class="${c.pv>=0?'pos':'neg'}">${c.pv>=0?'+':''}${eur0(c.pv)}</td><td>${statusPill(c.st)}</td><td><span class="del" onclick="editAsset(${i})">✎</span></td></tr>`).join('')}</tbody>
    <tfoot><tr><td>TOTAL</td><td>${eur0(tI)}</td><td></td><td></td><td></td><td>${eur0(tV)}</td><td class="${tV-tI>=0?'pos':'neg'}">${tV-tI>=0?'+':''}${eur0(tV-tI)}</td><td></td><td></td></tr></tfoot></table></div></div>
@@ -1054,7 +1059,7 @@ function placeBourse(){
      <div class="spread" style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--line)"><span class="muted">Point mort</span><b>${eur(c.pm)}</b></div>
      <div class="spread" style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--line)"><span class="muted">Frais couverts</span><b>${eur(c.fc)}</b></div>
      <div class="spread" style="font-size:13px;padding:3px 0"><span class="muted">+${(DB.settings.objNet*100).toFixed(0)}% net</span><b>${eur(c.po)}</b></div></div>`).join('')}</div></div>
-   <div class="note">↻ actualise crypto (CoinGecko), ETF & actions (Yahoo — couvre Euronext/PEA/Amundi sans clé). Appuie sur ⓘ pour voir, actif par actif, ce qui a réussi ou échoué.</div>`;
+   <div class="note">Crypto : cours en direct (Kraken) tant que l'appli est ouverte. ↻ actualise ETF & actions (Yahoo — couvre Euronext/PEA/Amundi sans clé) et la crypto via CoinGecko. Appuie sur ⓘ pour voir, actif par actif, ce qui a réussi ou échoué.</div>`;
 }
 function placeEpargne(){
   const rows=DB.savings.map((s,i)=>({s,c:savingCalc(s),i}));
@@ -1655,6 +1660,8 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
      <div class="row" style="gap:8px;margin-top:8px"><button class="btn sm" style="flex:1" onclick="closeSheet();openParams()">📐 Paramètres réglementaires</button><button class="btn sm" style="flex:1" onclick="closeSheet();openRules()">🏷️ Règles de catégories</button></div>
    </div>
    <details class="field" style="border-top:1px solid var(--line);padding-top:12px"><summary style="cursor:pointer;color:var(--ink2);font-size:13px">Avancé : sources des cours et indices</summary>
+     <div class="field"><label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:13.5px"><input type="checkbox" id="set_live" ${s.liveCrypto!==false?'checked':''}> Cours crypto en direct (Kraken)</label>
+       <div class="hint">Seuls les noms des paires (ex. BTC/EUR) sont envoyés à Kraken : aucun montant, aucune donnée personnelle. Connexion coupée dès que l'appli passe en arrière-plan.</div></div>
      <div class="field"><label>Clé API Twelve Data (secours pour les actions US)</label><input id="set_key" value="${esc(s.stockKey||'')}" placeholder="facultatif"></div>
      <div class="two"><div class="field"><label>Symbole MSCI World</label><input id="set_bmsci" value="${esc((s.benchSym||{}).MSCI||'URTH')}"></div><div class="field"><label>Symbole CAC 40</label><input id="set_bcac" value="${esc((s.benchSym||{}).CAC||'CAC')}"></div></div>
    </details>
@@ -1693,7 +1700,7 @@ function saveSettings(doSync){const y=today().getFullYear(),s=DB.settings;
   s.theme=$('#set_theme').value;s.stockKey=$('#set_key').value.trim();s.objNet=(vObj||0)/100;
   s.tmi=+$('#set_tmi').value;s.cryptoRegime=$('#set_crypto').value;s.crowdTax=$('#set_crowdtax').value;s.resaleRegime=$('#set_resale').value;
   s.gdriveClientId=($('#set_gid')?$('#set_gid').value.trim():s.gdriveClientId)||'';
-  if($('#set_auto'))s.autoSync=$('#set_auto').checked;
+  if($('#set_auto'))s.autoSync=$('#set_auto').checked;if($('#set_live'))s.liveCrypto=$('#set_live').checked;
   if($('#set_bmsci'))s.benchSym={MSCI:$('#set_bmsci').value.trim()||'URTH',CAC:($('#set_bcac').value.trim()||'CAC')};
   applyTheme();save();
   if(doSync===true){closeSheet();renderAll();syncNow(true);return;}
@@ -1742,7 +1749,9 @@ async function refreshPrices(){
   const ids=[...new Set(cr.map(a=>CG[(a.ticker||'').toUpperCase()]).filter(Boolean))];
   let cg=null;
   if(ids.length){try{const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=eur`);if(r.ok)cg=await r.json();}catch(e){}}
-  cr.forEach(a=>{const id=CG[(a.ticker||'').toUpperCase()];if(id&&cg&&cg[id]&&cg[id].eur){a.price=cg[id].eur;n++;rep.push([a.name,1,'CoinGecko']);}
+  cr.forEach(a=>{const lp=liveAssetPair(a),lq=lp&&LIVE.quotes[lp];
+    if(lq&&Date.now()-lq.t<120000){a.price=lq.px;n++;rep.push([a.name,1,'Kraken (direct)']);return;}
+    const id=CG[(a.ticker||'').toUpperCase()];if(id&&cg&&cg[id]&&cg[id].eur){a.price=cg[id].eur;n++;rep.push([a.name,1,'CoinGecko']);}
     else rep.push([a.name,0,'crypto introuvable — ticker type BTC-EUR']);});
   // 2) Actions & ETF -> Yahoo (défaut, couvre Euronext) puis Twelve Data en secours
   const st=DB.assets.filter(a=>a.type!=='Crypto');
@@ -1775,13 +1784,95 @@ async function refreshPrices(){
 }
 function priceDetail(){
   const r=DB.settings.lastPriceReport;
-  if(!r){openSheet(`<div class="spread"><h2>Détail des cours</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div><div class="note">Appuie d'abord sur ↻ pour actualiser.</div>`);return;}
+  if(!r){openSheet(`<div class="spread"><h2>Détail des cours</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>${liveReportHtml()}<div class="note">Appuie sur ↻ pour actualiser les autres cours.</div>`);return;}
   const rows=r.rep.map(x=>`<div class="spread" style="padding:9px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px">${x[1]===1?'✅':x[1]===2?'✋':'⚠️'} ${x[0]}</span><span style="font-size:11.5px;color:var(--ink3);text-align:right;max-width:55%">${x[2]}</span></div>`).join('');
   openSheet(`<div class="spread"><h2>Détail des cours</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
-   <div class="note" style="margin-top:0">Dernière actualisation : ${new Date(r.t).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}.</div>
+   ${liveReportHtml()}
+   <div class="note">Dernière actualisation : ${new Date(r.t).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}.</div>
    ${rows}
    <div class="hint" style="margin-top:12px">✅ mis à jour · ✋ cours manuel · ⚠️ échec. Si un ETF Amundi échoue : ouvre-le ▸ Modifier, règle <b>Source = Yahoo</b> et vérifie le <b>symbole Yahoo</b> (ex. <code>CW8.PA</code>, <code>PE500.PA</code>, <code>PAEEM.PA</code>). Les cours Euronext ne sont pas couverts par le plan gratuit Twelve Data — Yahoo oui.</div>`);
 }
+
+// ---- Cours crypto en direct : flux public Kraken (WebSocket, sans clé ni compte) ----
+// Sécurité : on n'envoie que des noms de paires (« BTC/EUR »), jamais de montant ni de donnée personnelle ;
+// chaque cours reçu est filtré (Fin.acceptTick) et n'est jamais inséré tel quel dans la page.
+// Connexion ouverte seulement quand l'appli est au premier plan ; coupée en arrière-plan.
+const KRAKEN_WS='wss://ws.kraken.com/v2';
+const LIVE={ws:null,key:'',status:'off',quotes:{},bad:{},retry:0,timer:null,paint:null,persist:null,dirty:false,unsaved:false,lastDash:0};
+function liveOn(){return DB.settings.liveCrypto!==false;}
+function liveAssetPair(a){return a&&a.type==='Crypto'&&(a.src||'auto')!=='manuel'?Fin.krakenPair(a.ticker||''):null;}
+function livePairs(){return [...new Set(DB.assets.map(liveAssetPair).filter(p=>p&&!LIVE.bad[p]))].sort();}
+function liveSync(){
+  const pairs=livePairs(),key=pairs.join(',');
+  const want=liveOn()&&pairs.length>0&&document.visibilityState!=='hidden'&&typeof WebSocket==='function';
+  if(!want){if(LIVE.ws||LIVE.timer)liveStop();LIVE.status=liveOn()?'off':'disabled';return;}
+  if((LIVE.ws||LIVE.timer)&&LIVE.key===key)return;
+  liveStop();LIVE.key=key;liveConnect(pairs);
+}
+function liveConnect(pairs){
+  let ws;try{ws=new WebSocket(KRAKEN_WS);}catch(e){LIVE.status='error';return;}
+  LIVE.ws=ws;LIVE.status='connecting';
+  ws.onopen=()=>{if(LIVE.ws!==ws)return;LIVE.retry=0;LIVE.status='on';
+    ws.send(JSON.stringify({method:'subscribe',params:{channel:'ticker',snapshot:true,symbol:pairs}}));livePaintSoon();};
+  ws.onmessage=(ev)=>{if(LIVE.ws===ws)liveMessage(ev.data);};
+  ws.onerror=()=>{};
+  ws.onclose=()=>{if(LIVE.ws!==ws)return;LIVE.ws=null;
+    if(liveOn()&&document.visibilityState!=='hidden'){const d=Math.min(60000,2000*2**LIVE.retry);LIVE.retry=Math.min(LIVE.retry+1,6);LIVE.status='retry';
+      clearTimeout(LIVE.timer);LIVE.timer=setTimeout(()=>{LIVE.timer=null;LIVE.key='';liveSync();},d);}
+    else LIVE.status='off';
+    livePaintSoon();};
+}
+function liveStop(){clearTimeout(LIVE.timer);LIVE.timer=null;const ws=LIVE.ws;LIVE.ws=null;LIVE.key='';
+  if(ws){try{ws.close();}catch(e){}}LIVE.status='off';livePersist();}
+function liveMessage(raw){
+  if(typeof raw!=='string'||raw.length>100000)return;
+  let m;try{m=JSON.parse(raw);}catch(e){return;}
+  if(!m||typeof m!=='object')return;
+  if(m.method==='subscribe'&&m.success===false){ // paire inconnue de Kraken : on la retire du direct (CoinGecko prend le relais via ↻)
+    const p=String(m.symbol||(m.result&&m.result.symbol)||'').toUpperCase(),q=(String(m.error||'').match(/[A-Z0-9]{2,10}\/EUR/)||[])[0];
+    const bad=/^[A-Z0-9]{2,10}\/EUR$/.test(p)?p:q;if(bad&&!LIVE.bad[bad]){LIVE.bad[bad]=1;setTimeout(liveSync,0);}return;}
+  if(m.channel!=='ticker'||!Array.isArray(m.data))return;
+  const wanted=new Set(livePairs());let changed=false;
+  for(const d of m.data.slice(0,50)){
+    if(!d||typeof d.symbol!=='string'||!wanted.has(d.symbol))continue;
+    const q=LIVE.quotes[d.symbol],px=Fin.acceptTick(q?q.px:null,d.last);if(px==null)continue;
+    const chg=typeof d.change_pct==='number'&&Number.isFinite(d.change_pct)&&Math.abs(d.change_pct)<1000?d.change_pct:null;
+    LIVE.quotes[d.symbol]={px,chg,t:Date.now()};
+    DB.assets.forEach(a=>{if(liveAssetPair(a)===d.symbol&&a.price!==px){a.price=px;changed=true;}});
+  }
+  if(changed){LIVE.dirty=true;LIVE.unsaved=true;livePaintSoon();if(!LIVE.persist)LIVE.persist=setTimeout(livePersist,300000);}
+}
+// Enregistrement discret des derniers cours (au plus toutes les 5 min et à la mise en arrière-plan) :
+// pas de modification de la date de mise à jour des données, donc pas de synchronisation Drive déclenchée.
+function livePersist(){clearTimeout(LIVE.persist);LIVE.persist=null;if(!LIVE.unsaved)return;LIVE.unsaved=false;
+  try{localStorage.setItem('investco_v1',JSON.stringify(Fin.serialize(DB)));}catch(e){}}
+function livePaintSoon(){if(LIVE.paint)return;LIVE.paint=setTimeout(()=>{LIVE.paint=null;livePaint();},2500);}
+function livePaint(){
+  document.querySelectorAll('[data-live-badge]').forEach(el=>{el.innerHTML=liveBadgeHtml();});
+  if(!LIVE.dirty||document.visibilityState==='hidden'||lockIsOn()||$('#ov').classList.contains('on'))return; // jamais sous une fenêtre ouverte
+  const v=document.querySelector('.view.on'),id=v&&v.id,C=window.Chart&&Chart.defaults,an=C?Chart.defaults.animation:undefined;
+  try{if(C)Chart.defaults.animation=false;
+    if(id==='v-placements'&&placeTab==='bourse'){const tw=document.querySelector('#place-body .twrap'),sl=tw?tw.scrollLeft:0;
+      renderPlacements();const tw2=document.querySelector('#place-body .twrap');if(tw2)tw2.scrollLeft=sl;LIVE.dirty=false;}
+    else if(id==='v-dash'&&Date.now()-LIVE.lastDash>30000){renderDash();LIVE.lastDash=Date.now();LIVE.dirty=false;}
+  }finally{if(C)Chart.defaults.animation=an;}
+}
+function liveBadgeHtml(){
+  if(!liveOn()||!livePairs().length)return '';
+  if(LIVE.status==='on')return '<span class="live-b on" title="Cours crypto en direct (Kraken)">● direct</span>';
+  return '<span class="live-b" title="Connexion au flux Kraken">○ connexion…</span>';
+}
+function liveChg(a){const p=liveAssetPair(a),q=p&&LIVE.quotes[p];if(!q||q.chg==null||Date.now()-q.t>600000)return '';
+  return ` · <span class="${q.chg>=0?'pos':'neg'}">${q.chg>=0?'+':''}${fin(r2(q.chg))} % 24 h</span>`;}
+function liveReportHtml(){
+  if(!liveOn())return '<div class="note">Cours crypto en direct désactivés (Réglages ▸ Avancé).</div>';
+  const P=DB.assets.map(liveAssetPair).filter(Boolean);if(!P.length)return '';
+  const st={on:'connecté',connecting:'connexion…',retry:'reconnexion…',off:'en pause',error:'indisponible'}[LIVE.status]||'en pause';
+  const rows=[...new Set(P)].map(p=>{const q=LIVE.quotes[p];return `<div class="spread" style="padding:7px 0;border-bottom:1px solid var(--line);font-size:13px"><span>${LIVE.bad[p]?'⚠️':q?'⚡':'…'} ${esc(p)}</span><span style="font-size:11.5px;color:var(--ink3)">${LIVE.bad[p]?'non coté sur Kraken : CoinGecko via ↻':q?eur(q.px)+' · il y a '+Math.max(0,Math.round((Date.now()-q.t)/1000))+' s':'en attente'}</span></div>`;}).join('');
+  return `<div class="note" style="margin-top:0">⚡ Crypto en direct (Kraken) : <b>${st}</b>.</div>${rows}`;
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')liveStop();else liveSync();});
+window.addEventListener('pagehide',()=>livePersist());
 
 function applyTheme(){document.documentElement.setAttribute('data-theme',DB.settings.theme||'dark');}
 function enableNotif(){if(!('Notification' in window)){toast('Non supporté ici',true);return;}
@@ -1796,7 +1887,7 @@ function nav(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove
 function autoSnapshot(){const now=today();const mk=ymKey(now);const last=DB.settings.lastSnapMonth;
   if(last&&last!==mk){DB.settings.snapshots[last]=DB.settings.snapshots[last]??Math.round(consolidate().net);}
   DB.settings.lastSnapMonth=mk;}
-function renderAll(){renderDash();renderPlacements();renderBudget();renderRevente();}
+function renderAll(){renderDash();renderPlacements();renderBudget();renderRevente();try{liveSync();}catch(e){}}
 function hideSplash(){setTimeout(()=>{const s=$('#splash');if(s){s.style.opacity='0';setTimeout(()=>s.remove(),400);}},550);}
 function boot(){try{load();applyTheme();runRecurring();autoSnapshot();save();
   $('#asof').textContent='mis à jour le '+today().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});

@@ -13,6 +13,7 @@ for (const [name, args] of [
   ['Parcours utilisateur', [path.join(__dirname, 'ui.test.js'), APP]],
   ['Nouveautés v17', [path.join(__dirname, 'v17.test.js'), APP]],
   ['Nouveautés v18', [path.join(__dirname, 'v18.test.js'), APP]],
+  ['Nouveautés v19 (direct, sécurité)', [path.join(__dirname, 'v19.test.js'), APP]],
   ['Import de relevés', [path.join(__dirname, 'import.test.js'), APP]],
   ['Mises à jour', [path.join(__dirname, 'update.test.js'), path.join(__dirname, 'fixtures', 'v16'), APP, path.join(tmp, 'serve')]],
 ]) {

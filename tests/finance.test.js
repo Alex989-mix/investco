@@ -113,6 +113,12 @@ console.log(out.every(Boolean) ? '\n✓ finance.js : tout est bon' : '\n✗ fina
   const salt = '00112233445566778899aabbccddeeff';
   const h1 = await F.hashPin('1234', salt, 1000), h2 = await F.hashPin('1234', salt, 1000), h3 = await F.hashPin('1235', salt, 1000), h4 = await F.hashPin('1234', 'ffeeddccbbaa99887766554433221100', 1000);
   log('Code haché : même code + même sel → même empreinte ; code ou sel différent → empreinte différente ; jamais le code en clair', h1 === h2 && h1 !== h3 && h1 !== h4 && h1.length === 64 && !h1.includes('1234'));
+  // ===== v19 : cours crypto en direct =====
+  log('Paire Kraken : BTC-EUR, btc, XBT-EUR, ETH/EUR, SOL-USD → paire en euros', F.krakenPair('BTC-EUR') === 'BTC/EUR' && F.krakenPair(' btc ') === 'BTC/EUR' && F.krakenPair('XBT-EUR') === 'BTC/EUR' && F.krakenPair('ETH/EUR') === 'ETH/EUR' && F.krakenPair('SOL-USD') === 'SOL/EUR');
+  log('Paire Kraken : ticker invalide ou injecté → aucune paire', [null, '', 'CW8.PA', 'EUR', 'BTC"}];alert(1)', '<img>', 'A', 'BITCOIN-ETHEREUM'].every((t) => F.krakenPair(t) === null));
+  log('Cours reçu : valeurs non numériques, nulles, négatives, infinies ou démesurées rejetées', [null, undefined, 'abc', NaN, 0, -5, Infinity, 2e8, {}, [61000]].every((v) => F.acceptTick(null, v) === null));
+  log('Cours reçu : premier cours valide accepté (nombre ou texte numérique)', F.acceptTick(null, 61234.5) === 61234.5 && F.acceptTick(null, '0.4521') === 0.4521);
+  log('Cours reçu : variation de ±25 % par rapport au dernier cours direct rejetée, petite variation acceptée', F.acceptTick(60000, 80000) === null && F.acceptTick(60000, 40000) === null && F.acceptTick(60000, 60120) === 60120);
   console.log(out.every(Boolean) ? '✓ hachage OK' : '✗ erreurs');
   process.exitCode = out.every(Boolean) ? 0 : 1;
 })();

@@ -28,6 +28,12 @@ async function shots(browser) {
     if (u.href.includes('chart.umd')) return chart ? route.fulfill({ path: chart, contentType: 'text/javascript' }) : route.fulfill({ body: 'window.Chart=function(){return{destroy(){},update(){},data:{datasets:[]},options:{}}};', contentType: 'text/javascript' });
     return route.fulfill({ status: 503, body: '' });
   });
+  // Flux crypto simulé (aucune connexion réelle) : renvoie le cours d'exemple pour afficher le mode « direct »
+  await ctx.addInitScript(() => {
+    window.WebSocket = class { constructor() { setTimeout(() => this.onopen && this.onopen({}), 50); }
+      send(m) { const sy = JSON.parse(m).params.symbol; setTimeout(() => this.onmessage && this.onmessage({ data: JSON.stringify({ channel: 'ticker', type: 'snapshot', data: sy.map((s) => ({ symbol: s, last: s === 'BTC/EUR' ? 61234.5 : 2950.1, change_pct: s === 'BTC/EUR' ? 1.8 : -0.4 })) }) }), 50); }
+      close() {} };
+  });
   const page = await ctx.newPage();
   await page.clock.setFixedTime(new Date(cur.date + 'T10:00:00+02:00'));
   await page.goto('https://app.local/index.html'); await page.waitForTimeout(1500);

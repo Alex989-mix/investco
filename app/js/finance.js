@@ -357,9 +357,30 @@
   const sameExpense = (a, b) => String(a.d) === String(b.d) && Math.round(+a.amt * 100) === Math.round(+b.amt * 100)
     && String(a.label || '').toLowerCase().replace(/\s+/g, ' ').trim() === String(b.label || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
+  // ---------- Cours crypto en direct (Kraken) ----------
+  // Ticker de l'appli (« BTC-EUR », « btc », « XBT-EUR ») -> paire Kraken « BTC/EUR ».
+  // Toujours cotée en euros ; null si le ticker ne ressemble pas à un symbole crypto.
+  function krakenPair(ticker) {
+    const t = String(ticker || '').trim().toUpperCase();
+    const m = t.match(/^([A-Z0-9]{2,10})(?:[-/ ]?(EUR|USD|USDT|USDC))?$/);
+    if (!m) return null;
+    const base = m[1] === 'XBT' ? 'BTC' : m[1];
+    if (base === 'EUR') return null;
+    return base + '/EUR';
+  }
+  // Filtre de sécurité sur un cours reçu : nombre fini, strictement positif, plafonné ;
+  // une mise à jour qui s'écarte de plus de 25 % du dernier cours reçu en direct est ignorée
+  // (donnée aberrante). Le premier cours de la session (ref null) est accepté s'il est valide.
+  function acceptTick(ref, px) {
+    const v = typeof px === 'string' ? Number(px) : px;
+    if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0 || v > 1e8) return null;
+    if (ref != null && ref > 0 && (v > ref * 1.25 || v < ref * 0.75)) return null;
+    return v;
+  }
+
   const api = { round2, budgetVsActual, detectRecurring, sameExpense, toCents, fromCents, MONEY_FIELDS, serialize, deserialize, PARAM_DEFAULTS, getParam, paramHistory, paramKeys,
     addMonthsYmd, monthsDiff, loanPayment, amortization, loanStatus, propertyValue, propertyStats, resaleItem, resaleYear,
-    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin };
+    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick };
   root.Fin = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);
