@@ -14,6 +14,7 @@ app/                    site publié tel quel par Netlify
   js/finance.js         calculs purs (crédit, centimes, paramètres réglementaires datés, revente, budget, objectifs)
   js/csvimport.js       lecture des CSV de toute banque et des exports crypto (Bitstack…)
 netlify/functions/      fonction serveur des cours (Yahoo Finance)
+docs/                   documentation utilisateur : guide de démarrage, notes de version (PDF)
 tests/                  tests automatiques : finance.test.js (calculs, Node seul) + parcours Playwright
 netlify.toml            configuration Netlify
 ```
@@ -31,10 +32,19 @@ netlify.toml            configuration Netlify
 1. Modifier le code dans `app/`.
 2. Si la structure des données change : incrémenter `SCHEMA` dans `index.html` et ajouter
    la migration correspondante dans `MIGRATIONS` (ne jamais modifier une migration existante).
-3. Dans `app/version.js` : nouveau numéro `APP_VERSION`, date et notes.
-4. Lancer `node tests/run.js` : tout doit être « OK ». **Ne pousser que si tous les tests passent** (ne jamais enchaîner test et push dans une même commande sans condition).
-5. `git commit` puis `git push` sur `main` → Netlify déploie en environ une minute.
-6. Sur le téléphone : la barre orange « Nouvelle version » apparaît ; un appui suffit.
+3. Dans `app/version.js` : nouveau numéro `APP_VERSION`, date et notes (affichées dans l'appli).
+4. Documentation (à chaque version) :
+   - ajouter la version **en tête** de `docs/changelog.json` (textes au vouvoiement, types new / improved / fixed) ;
+   - si une fonctionnalité décrite dans le guide change : mettre à jour `docs/guide/guide.html`,
+     puis `"guide": true` et la liste des sections dans `"guideChanges"` ;
+   - `node docs/build.js` → `docs/dist/Invest.co - Guide de démarrage v<version>.pdf` et
+     `docs/dist/Invest.co - Notes de version <version>.pdf` (captures régénérées automatiquement ;
+     le script s'arrête si le changelog ne correspond pas à `version.js` ou si une page déborde).
+     Première fois : `npm install --prefix docs`.
+5. Lancer `node tests/run.js` : tout doit être « OK ». **Ne pousser que si tous les tests passent**
+   (ne jamais enchaîner test et push dans une même commande sans condition).
+6. `git commit` puis `git push` sur `main` → Netlify déploie en environ une minute.
+7. Sur le téléphone : la barre orange « Nouvelle version » apparaît ; un appui suffit.
    Une copie des données est faite automatiquement juste avant.
 
 ## Revenir en arrière

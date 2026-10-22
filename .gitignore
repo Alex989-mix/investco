@@ -4,3 +4,7 @@ node_modules/
 # Ne jamais versionner d'export de données personnelles
 *.export.json
 investco-*.json
+docs/node_modules/
+docs/package-lock.json
+docs/**/.build.html
+docs/.notes.html

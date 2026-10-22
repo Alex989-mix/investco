@@ -1,0 +1,7 @@
+{
+  "name": "investco-docs",
+  "private": true,
+  "description": "Génération des PDF de documentation (guide de démarrage, notes de version)",
+  "scripts": { "build": "node build.js" },
+  "devDependencies": { "chart.js": "4.4.1" }
+}
