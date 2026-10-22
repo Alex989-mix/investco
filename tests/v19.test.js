@@ -126,6 +126,21 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await sleep(200);
   log('Cryptos en cours manuel : aucune connexion', (await page.evaluate(() => window.__ws.length)) === nOff);
 
+  // ===== 9 bis. v19.1 : variation du jour des actions et ETF (via ↻, Yahoo simulé) =====
+  let Q = { 'CW8.PA': { price: 706.12, prev: 712.94, cur: 'EUR' }, AAPL: { price: 230, prev: 228, cur: 'USD' }, 'EURUSD=X': { price: 1.08, prev: 1.08, cur: 'USD' } };
+  await page.route('**/.netlify/functions/quote*', (r) => { const sy = new URL(r.request().url()).searchParams.get('s'); const q = Q[sy];
+    return r.fulfill(q ? { status: 200, contentType: 'application/json', body: JSON.stringify({ ...q, sym: sy }) } : { status: 404, body: '{}' }); });
+  await page.evaluate(async () => { nav('placements'); setPlace('bourse'); await refreshPrices(); });
+  await sleep(300);
+  v = N(await view());
+  log('↻ Cours : variation du jour affichée pour l\'ETF (-0,96 % jour) et l\'action (+0,88 % jour)', /CW8 · PEA[^]{0,40}[-−]0,96 % jour/.test(v) && /AAPL · CTO[^]{0,40}\+0,88 % jour/.test(v), (v.match(/CW8 · PEA[^]{0,60}/) || [])[0]);
+  log('Cours de l\'ETF mis à jour (706,12 €) et variation conservée après enregistrement', /706,12.€/.test(v) && (await page.evaluate(() => { const d = Fin.deserialize(JSON.parse(localStorage.getItem('investco_v1'))); return d.assets.find((a) => a.ticker === 'CW8').chg; })) === -0.96);
+  Q = { 'CW8.PA': { price: 707, cur: 'EUR' }, AAPL: { price: 230, prev: 'n/a', cur: 'USD' }, 'EURUSD=X': { price: 1.08, cur: 'USD' } };
+  await page.evaluate(async () => { await refreshPrices(); }); await sleep(300);
+  v = N(await view());
+  log('Clôture de la veille absente ou invalide : pas de variation affichée (jamais de valeur périmée)', !/% jour/.test(v), (v.match(/.{40}% jour/) || [])[0]);
+  await page.unroute('**/.netlify/functions/quote*');
+
   // ===== 10. Politique de sécurité (CSP) =====
   const csp = await page.evaluate(() => document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content || '');
   const conn = (csp.match(/connect-src ([^;]+)/) || [])[1] || '';

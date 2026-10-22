@@ -14,8 +14,8 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;letter-spacing:-.015em}
 .run{position:absolute;top:9mm;left:18mm;right:18mm;display:flex;justify-content:space-between;align-items:center;font-size:7.5pt;color:var(--ink3);text-transform:uppercase;letter-spacing:.12em}
 .run .dot{color:var(--orange)}
 .foot{position:absolute;bottom:9mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;color:var(--ink3);border-top:1px solid var(--line);padding-top:3mm}
-.logo{display:inline-flex;align-items:center;gap:9px;font-family:'Space Grotesk';font-weight:700;font-size:12pt;color:var(--ink)}
-.logo i{width:26px;height:26px;border-radius:50%;background:var(--hero);border:1px solid var(--line2);display:inline-flex;align-items:center;justify-content:center}
+.logo{display:inline-flex;align-items:center;gap:13px;font-family:'Space Grotesk';font-weight:700;font-size:18pt;letter-spacing:-.01em;color:var(--ink)}
+.logo i{width:44px;height:44px;border-radius:50%;background:var(--hero);border:1px solid var(--line2);display:inline-flex;align-items:center;justify-content:center}
 /* ---------- couverture ---------- */
 .cover{padding:0;background:radial-gradient(120mm 120mm at 100% 0%,rgba(247,147,26,.22),transparent 70%),radial-gradient(90mm 90mm at 0% 100%,rgba(61,130,175,.16),transparent 70%),var(--bg)}
 .cover .in{position:absolute;inset:22mm 18mm 18mm}
@@ -95,7 +95,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
 <!-- ======================= COUVERTURE ======================= -->
 <section class="page cover">
   <div class="in">
-    <span class="logo"><i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg></i>Invest.co</span>
+    <span class="logo"><i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg></i>Invest.co</span>
     <div style="margin-top:28mm">
       <div class="eyebrow">Guide utilisateur</div>
       <h1>Votre patrimoine,<br><span>enfin lisible.</span></h1>
@@ -214,7 +214,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
       <h3 style="margin-top:0">Bourse et crypto</h3>
       <p>Dans <span class="path">Placements › Bourse &amp; crypto › + Actif</span>, indiquez le nom, le symbole et l'enveloppe (PEA, CTO, plateforme crypto). Pour un ETF coté à Paris, le code Euronext suffit (par exemple <span class="k">CW8</span>) ; pour le bitcoin, utilisez <span class="k">BTC-EUR</span>. Le <b>code ISIN</b> (12 caractères, par exemple <span class="k">LU1681043599</span>) est facultatif ; il est vérifié à la saisie.</p>
       <p>Saisissez ensuite vos achats et ventes. Invest.co calcule votre <b>prix de revient unitaire</b>, votre plus-value latente et réalisée.</p>
-      <p><b>Crypto en direct :</b> tant que l'application est ouverte, le cours de vos cryptomonnaies se met à jour en continu, avec la variation sur 24 heures (badge <span class="k">● direct</span>). Pour les actions et les ETF, le bouton <span class="k">↻ Cours</span> actualise les cotations.</p>
+      <p><b>Crypto en direct :</b> tant que l'application est ouverte, le cours de vos cryptomonnaies se met à jour en continu, avec la variation sur 24 heures (badge <span class="k">● direct</span>). Pour les actions et les ETF, le bouton <span class="k">↻ Cours</span> actualise les cotations et affiche la <b>variation du jour</b>, par rapport à la clôture de la séance précédente.</p>
       <h3>La fiche PEA</h3>
       <p>Touchez <b>fiche PEA</b> pour renseigner la date d'ouverture, l'établissement et vos <b>versements</b> d'argent sur le plan. Invest.co affiche alors :</p>
       <ul class="dots">

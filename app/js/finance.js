@@ -378,9 +378,19 @@
     return v;
   }
 
+  // Variation du jour d'une action / d'un ETF : écart du dernier cours avec la clôture de la veille,
+  // en points de pourcentage arrondis au centième ; null si l'une des deux valeurs est invalide ou aberrante.
+  function dayChange(price, prevClose) {
+    const p = Number(price), c = Number(prevClose);
+    if (!Number.isFinite(p) || !Number.isFinite(c) || p <= 0 || c <= 0) return null;
+    const pct = (p / c - 1) * 100;
+    if (Math.abs(pct) >= 100) return null;
+    return Math.round(pct * 100) / 100;
+  }
+
   const api = { round2, budgetVsActual, detectRecurring, sameExpense, toCents, fromCents, MONEY_FIELDS, serialize, deserialize, PARAM_DEFAULTS, getParam, paramHistory, paramKeys,
     addMonthsYmd, monthsDiff, loanPayment, amortization, loanStatus, propertyValue, propertyStats, resaleItem, resaleYear,
-    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick };
+    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange };
   root.Fin = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

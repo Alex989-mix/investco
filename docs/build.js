@@ -98,8 +98,8 @@ function notesHtml() {
 @page{size:A4;margin:0}*{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#0B1420;color:#E6EDF5;font-family:'Inter',sans-serif;font-size:10pt;line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .page{width:210mm;height:297mm;overflow:hidden;page-break-after:always;padding:16mm 18mm 20mm;position:relative;background:radial-gradient(110mm 90mm at 100% 0%,rgba(247,147,26,.18),transparent 70%),#0B1420}
-.logo{display:inline-flex;align-items:center;gap:9px;font:700 12pt 'Space Grotesk'}
-.logo i{width:26px;height:26px;border-radius:50%;background:#091120;border:1px solid #28374a;display:inline-flex;align-items:center;justify-content:center}
+.logo{display:inline-flex;align-items:center;gap:13px;font:700 18pt 'Space Grotesk';letter-spacing:-.01em}
+.logo i{width:44px;height:44px;border-radius:50%;background:#091120;border:1px solid #28374a;display:inline-flex;align-items:center;justify-content:center}
 .eyebrow{font-size:8pt;letter-spacing:.22em;text-transform:uppercase;color:#F7931A;font-weight:600;margin-top:10mm}
 h1{font:700 34pt 'Space Grotesk';letter-spacing:-.02em;line-height:1;margin-top:3mm}
 h1 span{color:#F7931A}
@@ -117,7 +117,7 @@ ol{margin:1.5mm 0 0 5mm}li{margin-bottom:1mm}
 .hist b{font-family:'Space Grotesk';color:#E6EDF5}
 .foot{position:absolute;bottom:9mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#63788A;border-top:1px solid #1e2a3a;padding-top:3mm}
 </style></head><body><section class="page">
-<span class="logo"><i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg></i>Invest.co</span>
+<span class="logo"><i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg></i>Invest.co</span>
 <div class="eyebrow">Notes de version</div>
 <h1>Version <span>${esc(cur.version)}</span></h1>
 <div class="title">${esc(cur.title)}</div><div class="date">Publiée le ${dateFr(cur.date)}</div>
@@ -126,7 +126,7 @@ ${cur.highlights.map((h) => `<div class="item"><span class="tag" style="backgrou
 ${cur.migration ? `<div class="box b2"><b>Vos données.</b> ${esc(cur.migration)}</div>` : ''}
 <div class="foot"><span>Invest.co — Notes de version ${esc(cur.version)}</span><span>1 / 2</span></div>
 </section><section class="page">
-<span class="logo"><i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg></i>Invest.co</span>
+<span class="logo"><i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg></i>Invest.co</span>
 <h2 style="margin-top:10mm">Installer la mise à jour</h2>
 <div class="box b1">La mise à jour est proposée automatiquement à l'ouverture de l'application.<ol><li>Touchez le bandeau orange <b>« Nouvelle version »</b>.</li><li>L'application redémarre et affiche l'écran <b>Nouveautés de la version ${esc(cur.version)}</b>.</li></ol>
 <div style="margin-top:2mm">Une copie de sécurité de vos données est réalisée juste avant, et elle est restaurable dans <b>Réglages › Sauvegardes de sécurité</b>. Pour forcer la vérification : <b>Réglages › Vérifier les mises à jour</b>.</div></div>

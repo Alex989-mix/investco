@@ -2,6 +2,25 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "19.1",
+      "date": "2026-10-22",
+      "title": "Variation du jour sur les actions et ETF",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Actions et ETF : la variation du jour, par rapport à la clôture de la séance précédente, s'affiche sous chaque ligne après l'actualisation des cours, à l'image de la variation sur 24 heures des cryptomonnaies."
+        },
+        {
+          "type": "improved",
+          "text": "Aucune valeur approximative : si la clôture précédente n'est pas disponible, la variation n'est pas affichée ; elle est masquée au-delà de quatre jours."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "03 · Bourse et crypto : variation du jour"
+      ]
+    },
+    {
       "version": "19.0",
       "date": "2026-10-22",
       "title": "Crypto en direct et sécurité renforcée",

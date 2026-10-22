@@ -13,7 +13,7 @@ exports.handler = async (event) => {
       const d = await r.json();
       const m = d && d.chart && d.chart.result && d.chart.result[0] && d.chart.result[0].meta;
       if (m && m.regularMarketPrice != null) {
-        return { statusCode: 200, headers: cors, body: JSON.stringify({ price: m.regularMarketPrice, cur: m.currency || 'EUR', sym: s }) };
+        return { statusCode: 200, headers: cors, body: JSON.stringify({ price: m.regularMarketPrice, prev: m.chartPreviousClose != null ? m.chartPreviousClose : (m.previousClose != null ? m.previousClose : null), cur: m.currency || 'EUR', sym: s }) };
       }
     } catch (e) { /* essaie l'hôte suivant */ }
   }

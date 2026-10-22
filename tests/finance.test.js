@@ -119,6 +119,9 @@ console.log(out.every(Boolean) ? '\n✓ finance.js : tout est bon' : '\n✗ fina
   log('Cours reçu : valeurs non numériques, nulles, négatives, infinies ou démesurées rejetées', [null, undefined, 'abc', NaN, 0, -5, Infinity, 2e8, {}, [61000]].every((v) => F.acceptTick(null, v) === null));
   log('Cours reçu : premier cours valide accepté (nombre ou texte numérique)', F.acceptTick(null, 61234.5) === 61234.5 && F.acceptTick(null, '0.4521') === 0.4521);
   log('Cours reçu : variation de ±25 % par rapport au dernier cours direct rejetée, petite variation acceptée', F.acceptTick(60000, 80000) === null && F.acceptTick(60000, 40000) === null && F.acceptTick(60000, 60120) === 60120);
+  // ===== v19.1 : variation du jour des actions et ETF =====
+  log('Variation du jour : 101,50 € pour une clôture à 100 € → +1,5 % ; 99 € → -1 %', F.dayChange(101.5, 100) === 1.5 && F.dayChange(99, 100) === -1 && F.dayChange(706.12, 712.94) === -0.96);
+  log('Variation du jour : clôture absente, nulle, texte ou écart aberrant (≥ 100 %) → non affichée', [[100, null], [100, 0], [100, 'abc'], [null, 100], [250, 100], [-5, 100], [Infinity, 100]].every(([a, b]) => F.dayChange(a, b) === null));
   console.log(out.every(Boolean) ? '✓ hachage OK' : '✗ erreurs');
   process.exitCode = out.every(Boolean) ? 0 : 1;
 })();
