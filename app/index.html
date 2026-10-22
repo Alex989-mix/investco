@@ -171,6 +171,7 @@ input.bad{border-color:var(--neg)!important;box-shadow:0 0 0 2px var(--negbg)}
 
 <script src="version.js"></script>
 <script src="js/finance.js"></script>
+<script src="js/csvimport.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -1176,8 +1177,7 @@ function quickAdd(){openSheet(`<div class="spread"><h2>Ajouter</h2><button class
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editRecurring(-1)">🔁 Dépense récurrente</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="openImport()">📥 Importer un relevé (CSV / PDF)</button></div>`);}
 
-let impRows=[],impHeaders=[],impDelim=',',impMode='bank',impReview=[],impMap=null;
-function guessColEx(h,keys,excl){for(let i=0;i<h.length;i++){const x=(h[i]||'').toLowerCase();if(excl.some(e=>x.includes(e)))continue;if(keys.some(k=>x.includes(k)))return i;}return -1;}
+let impMode='bank',impReview=[];
 const CATKW={Courses:['carrefour','leclerc','e.leclerc','auchan','lidl','intermarch','monoprix','franprix','casino','super u','superu','systeme u','biocoop','aldi','grand frais','cora','netto','picard','naturalia','course','supermarch','epicerie','g20','spar','proxi'],
  Abonnements:['netflix','spotify','disney','prime video','amazon prime','canal','deezer','youtube','icloud','abonnement','adobe','microsoft','google one','dropbox','onlyfans','paramount','molotov','apple.com/bill','openai','chatgpt'],
  Loisirs:['basic fit','basic-fit','fitness park','fitness','salle de sport','cinema','cinéma','ugc','pathé','gaumont','steam','playstation','nintendo','xbox','concert','spectacle','fnac spectacle','parc','piscine','bowling','escape','ticketmaster'],
@@ -1206,39 +1206,29 @@ function openImport(){openSheet(`<div class="spread"><h2>Importer un relevé</h2
   <div class="two"><div class="field"><button class="btn" style="width:100%" onclick="$('#imp_csv').click()">📄 Fichier CSV</button><input type="file" id="imp_csv" accept=".csv,.txt,text/csv" style="display:none" onchange="impFile(event,'csv')"></div>
     <div class="field"><button class="btn" style="width:100%" onclick="$('#imp_pdf').click()">📕 Fichier PDF</button><input type="file" id="imp_pdf" accept=".pdf,application/pdf" style="display:none" onchange="impFile(event,'pdf')"></div></div>
   <button class="btn primary" style="width:100%;margin-top:8px" onclick="impAnalyze()">Analyser</button>
-  <div class="hint">Relevé bancaire → dépenses classées + transferts détectés. Plateforme (Bitstack…) → achats. Les imports ne modifient pas tes soldes (ton relevé les reflète déjà).</div>
+  <div class="hint">Tout relevé CSV de banque (ligne de titres, colonnes et format reconnus automatiquement) ou export de plateforme crypto (Bitstack, Coinbase…). Les opérations déjà importées sont ignorées.</div>
   <div id="imp_result"></div>`);}
 function impFile(e,kind){const f=e.target.files[0];if(!f)return;
-  if(kind==='csv'){const r=new FileReader();r.onload=()=>{$('#imp_txt').value=r.result;impAnalyze();};r.onerror=()=>toast('Lecture impossible',true);r.readAsText(f,'utf-8');}
+  if(kind==='csv'){const r=new FileReader();r.onload=()=>{$('#imp_txt').value=CsvImp.decode(new Uint8Array(r.result));impAnalyze();};r.onerror=()=>toast('Lecture impossible',true);r.readAsArrayBuffer(f);}
   else{if(!window.pdfjsLib){toast('Lecture PDF indisponible ici',true);return;}toast('Lecture du PDF…');
     const r=new FileReader();r.onload=async()=>{try{const pdf=await pdfjsLib.getDocument({data:new Uint8Array(r.result)}).promise;let txt='';
       for(let p=1;p<=pdf.numPages;p++){const pg=await pdf.getPage(p);const c=await pg.getTextContent();const lines={};
         c.items.forEach(it=>{const yk=Math.round(it.transform[5]);(lines[yk]=lines[yk]||[]).push(it.str);});
         Object.keys(lines).sort((a,b)=>b-a).forEach(k=>{const l=lines[k].join(' ').replace(/\s+/g,' ').trim();if(l)txt+=l+'\n';});}
       $('#imp_txt').value=txt;toast('Texte extrait — clique Analyser');impAnalyze();}catch(x){toast('PDF illisible — copie-colle le texte',true);}};r.readAsArrayBuffer(f);}}
-function detectDelim(txt){const line=(txt.split(/\r?\n/).find(l=>l.trim())||'');let best=',',bc=-1;
-  [[';',/;/g],[',',/,/g],['\t',/\t/g],['|',/\|/g]].forEach(d=>{const c=(line.match(d[1])||[]).length;if(c>bc){bc=c;best=d[0];}});return best;}
-function guessCol(h,keys){for(let i=0;i<h.length;i++){const x=(h[i]||'').toLowerCase();if(keys.some(k=>x.includes(k)))return i;}return -1;}
-function pnum(x){if(x==null)return null;x=x.toString().trim().replace(/\s|\u00a0/g,'').replace(/[€$]/g,'');
-  if(x.indexOf(',')>-1&&x.indexOf('.')>-1)x=x.replace(/\./g,'').replace(',','.');else x=x.replace(',','.');
-  const v=parseFloat(x);return isNaN(v)?null:v;}
 function pdate(x){if(!x)return ymd(today());x=x.toString().trim();
   let m=x.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
   m=x.match(/(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?/);if(m){let yr=m[3]||String(today().getFullYear());if(yr.length===2)yr='20'+yr;return yr+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
   return ymd(today());}
-function impAnalyze(delim){if(!window.Papa){toast('Lecture indisponible hors-ligne',true);return;}
-  let txt=$('#imp_txt').value.trim();if(!txt){toast('Colle ou charge des données',true);return;}
-  impDelim=delim||detectDelim(txt);
-  const res=Papa.parse(txt,{skipEmptyLines:'greedy',delimiter:impDelim});
-  let rows=res.data.filter(r=>r.some(c=>(c||'').toString().trim()!==''));
-  if(!rows.length){toast('Aucune donnée lisible',true);return;}
-  const maxc=Math.max(...rows.map(r=>r.length));rows=rows.map(r=>{while(r.length<maxc)r.push('');return r;});
-  const firstIsHeader=rows[0].some(h=>/date|montant|prix|libell|produit|quantit|amount|price|cours|frais|type|sens|débit|credit/i.test((h||'').toString()));
-  impHeaders=firstIsHeader?rows[0].map(x=>(x||'').toString()||'—'):rows[0].map((_,i)=>'Col. '+(i+1));
-  impRows=firstIsHeader?rows.slice(1):rows;
-  const opsLike=/quantit|cours|prix unit/i.test(impHeaders.join(' '))||maxc<=1&&/0[.,]0{3}/.test(txt);
-  impMode=opsLike?'ops':'bank';impMap=null;
-  impRender();}
+let impCsv=null,impCrypto=null,impBankMap=null,impCryptoMap=null;
+function impAnalyze(){
+  const txt=$('#imp_txt').value.trim();if(!txt){toast('Colle ou charge des données',true);return;}
+  const delim=CsvImp.detectDelim(txt),rows=CsvImp.parseCSV(txt,delim);
+  const tabular=rows.filter(r=>r.length>=2).length>=Math.max(1,rows.length*0.6);
+  impBankMap=null;impCryptoMap=null;impCsv=null;impCrypto=null;
+  if(tabular){impMode=CsvImp.looksCrypto(txt)?'ops':'bank';}else{impMode='bank';}
+  impTabular=tabular;impRender();}
+let impTabular=false;
 function impRender(){
   const tabs=`<div class="subtabs" style="margin:14px 0 10px"><div class="subtab ${impMode==='bank'?'on':''}" onclick="setImpMode('bank')">💳 Relevé bancaire</div><div class="subtab ${impMode==='ops'?'on':''}" onclick="setImpMode('ops')">📈 Plateforme (achats)</div></div>`;
   $('#imp_result').innerHTML=tabs+'<div id="imp_body"></div>';impBuild();}
@@ -1247,18 +1237,16 @@ function impBuild(){
   if(impMode==='ops')return impBuildOps();
   return impBankUI();}
 function impBankUI(){
-  const cols=(impRows[0]||[]).length>=2;
   let ui='';
-  if(cols){
-    const opts=idx=>'<option value="-1">—</option>'+impHeaders.map((h,i)=>`<option value="${i}" ${i===idx?'selected':''}>${h}</option>`).join('');
-    if(!impMap){impMap={date:guessCol(impHeaders,['date','jour']),lib:guessCol(impHeaders,['libell','label','description','nature','motif','intitul']),
-      mont:guessColEx(impHeaders,['montant','amount','somme','valeur'],['solde','balance']),db:guessCol(impHeaders,['débit','debit']),cr:guessCol(impHeaders,['crédit','credit'])};}
-    ui=`<div class="two"><div class="field"><label>Date</label><select id="bm_date" onchange="impMap.date=+this.value;impBankReview()">${opts(impMap.date)}</select></div>
-        <div class="field"><label>Libellé</label><select id="bm_lib" onchange="impMap.lib=+this.value;impBankReview()">${opts(impMap.lib)}</select></div></div>
-      <div class="field"><label>Montant (signé)</label><select id="bm_mont" onchange="impMap.mont=+this.value;impBankReview()">${opts(impMap.mont)}</select></div>
-      <div class="two"><div class="field"><label>ou Débit</label><select id="bm_db" onchange="impMap.db=+this.value;impBankReview()">${opts(impMap.db)}</select></div>
-        <div class="field"><label>ou Crédit</label><select id="bm_cr" onchange="impMap.cr=+this.value;impBankReview()">${opts(impMap.cr)}</select></div></div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2);margin-top:4px"><input type="checkbox" id="bm_nosign" style="width:auto" onchange="impBankReview()"> Les montants n'ont pas de signe → tout en dépenses</label>`;
+  if(impTabular){
+    impCsv=CsvImp.readBank($('#imp_txt').value,{map:impBankMap||undefined});impBankMap=impCsv.map;const m=impCsv.map,cols=impCsv.columns;
+    const opts=(k)=>'<option value="-1">—</option>'+cols.map((h,i)=>`<option value="${i}" ${m[k]===i?'selected':''}>${esc(h||('Colonne '+(i+1)))}</option>`).join('');
+    const sel=(k,l)=>`<div class="field"><label>${l}</label><select onchange="impBankMap.${k}=+this.value;impBankUI()">${opts(k)}</select></div>`;
+    ui=`<div class="hint" style="margin-top:0">✓ Format reconnu : ${impCsv.headerRow>=0?'ligne de titres trouvée'+(impCsv.headerRow?' ('+impCsv.headerRow+' ligne'+(impCsv.headerRow>1?'s':'')+' d\'en-tête ignorée'+(impCsv.headerRow>1?'s':'')+')':''):'fichier sans titres'} · séparateur « ${impCsv.delim==='\t'?'tabulation':impCsv.delim} » · ${impCsv.rows.length} opération${impCsv.rows.length>1?'s':''}${impCsv.skipped?' · '+impCsv.skipped+' ligne'+(impCsv.skipped>1?'s':'')+' ignorée'+(impCsv.skipped>1?'s':'')+' (en-têtes, soldes, refusées)':''}. Corrige une colonne si besoin :</div>
+      <div class="two">${sel('date','Date')}${sel('label','Libellé')}</div>
+      <div class="two">${sel('amount','Montant (signé)')}${sel('sens','Sens (débit / crédit)')}</div>
+      <div class="two">${sel('debit','ou colonne Débit')}${sel('credit','ou colonne Crédit')}</div>
+      ${impCsv.unsigned?`<label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--warn);margin-top:4px"><input type="checkbox" id="bm_nosign" style="width:auto" checked onchange="impBankReview()"> Les montants n'ont pas de signe : tout traiter comme des dépenses</label>`:''}`;
   }else{ui='<div class="hint" style="margin-top:0">Texte libre (PDF) : lecture ligne par ligne. Vérifie bien le sens de chaque montant (dépense/revenu) avant d\'importer.</div>';}
   $('#imp_body').innerHTML=ui+`
     <div class="row" style="gap:8px;margin:12px 0 6px"><span class="sub" style="flex:1">Reclasser d'un coup :</span>
@@ -1269,20 +1257,14 @@ function impBankUI(){
   impBankReview();}
 function impBankReview(){
   impReview=[];
-  const cols=(impRows[0]||[]).length>=2;
-  if(cols&&impMap){
+  if(impTabular&&impCsv){
     const nosign=$('#bm_nosign')&&$('#bm_nosign').checked;
-    impRows.forEach(r=>{let amt;
-      if(impMap.db>=0||impMap.cr>=0){const d=impMap.db>=0?(pnum(r[impMap.db])||0):0,c=impMap.cr>=0?(pnum(r[impMap.cr])||0):0;amt=c-d;}
-      else if(impMap.mont>=0){amt=pnum(r[impMap.mont]);if(amt!=null&&nosign)amt=-Math.abs(amt);}
-      else amt=null;
-      if(amt==null)return;
-      impReview.push({date:impMap.date>=0?pdate(r[impMap.date]):ymd(today()),label:(impMap.lib>=0?(r[impMap.lib]||'').toString():'')||'Opération',amount:amt});});
+    impCsv.rows.forEach(r=>impReview.push({date:r.date,label:r.label,amount:nosign?-Math.abs(r.amount):r.amount}));
   }else{
     ($('#imp_txt').value||'').split(/\n/).forEach(line=>{line=line.replace(/\s+/g,' ').trim();if(!line)return;
       const dm=line.match(/(\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?)/);
       const ams=[...line.matchAll(/(-|\()?\s?(\d[\d  \u00a0]*[.,]\d{2})\)?\s*€?/g)].filter(a=>a[2]);if(!ams.length)return;
-      const pick=ams.length>=2?ams[ams.length-2]:ams[ams.length-1];let amt=pnum(pick[2]);if(amt==null)return;
+      const pick=ams.length>=2?ams[ams.length-2]:ams[ams.length-1];let amt=CsvImp.parseAmount(pick[2]);if(amt==null)return;
       const neg=pick[1]==='-'||pick[1]==='('||(/pai|cb |carte|retrait|prlv|prelev|achat|facture|cotis/i.test(line)&&!/vir.*re[çc]u|salaire|remb|cr[ée]dit|depot|dépôt/i.test(line));
       amt=neg?-Math.abs(amt):Math.abs(amt);
       let label=line.replace(pick[0],'');if(dm)label=label.replace(dm[0],'');label=label.replace(/\d[\d  \u00a0]*[.,]\d{2}/g,'').replace(/\s+/g,' ').trim()||'Opération';
@@ -1314,26 +1296,48 @@ function impDoBank(){const cc=compteCourant();let n=0,dup=0,firstExp=null;
     else if(r.kind==='Dépôt'||r.kind==='Retrait'){DB.movements.push({d:r.date,p:r.acc||(cc&&cc.name),t:r.kind,m:amt,n:'import'});n++;}});
   if(firstExp){const d=new Date(firstExp);budMonth=Math.min(0,(d.getFullYear()-today().getFullYear())*12+(d.getMonth()-today().getMonth()));}
   save();closeSheet();renderAll();if(firstExp)nav('budget');toast(n+' opération'+(n>1?'s':'')+' importée'+(n>1?'s':'')+(dup?' · '+dup+' doublon'+(dup>1?'s':'')+' ignoré'+(dup>1?'s':''):''),n===0&&!dup);}
+let impOps=[];
+function cryptoAssetFor(sym){const s=(sym||'').toUpperCase();
+  return DB.assets.find(a=>a.type==='Crypto'&&s&&((a.ticker||'').toUpperCase().startsWith(s)||a.name.toUpperCase()===s))
+    ||DB.assets.find(a=>a.type==='Crypto'&&/btc|bitcoin/i.test((a.ticker||'')+' '+a.name)&&(!s||s==='BTC'));}
 function impBuildOps(){
-  const opts=idx=>impHeaders.map((h,i)=>`<option value="${i}" ${i===idx?'selected':''}>${h}</option>`).join('');
-  const g={date:guessCol(impHeaders,['date','jour']),prod:guessCol(impHeaders,['produit','actif','crypto','nom','asset']),qte:guessCol(impHeaders,['quantit','qty','btc','nombre']),prix:guessCol(impHeaders,['prix','price','cours','unitaire']),mont:guessCol(impHeaders,['montant','total','somme','eur']),frais:guessCol(impHeaders,['frais','fee','commission'])};
-  $('#imp_body').innerHTML=`<div class="hint" style="margin-top:0">Pour un relevé de plateforme (Bitstack, bourse). Si tes colonnes ci-dessous sont « Col. 1, 2… » sans sens, ce n'est pas le bon mode — reviens sur « Relevé bancaire ».</div>
-    <div class="two"><div class="field"><label>Date</label><select id="mp_date"><option value="-1">—</option>${opts(g.date)}</select></div>
-      <div class="field"><label>Produit</label><select id="mp_prod"><option value="-1">—</option>${opts(g.prod)}</select></div></div>
-    <div class="two"><div class="field"><label>Quantité</label><select id="mp_qte"><option value="-1">—</option>${opts(g.qte)}</select></div>
-      <div class="field"><label>Prix unitaire</label><select id="mp_prix"><option value="-1">—</option>${opts(g.prix)}</select></div></div>
-    <div class="two"><div class="field"><label>Montant</label><select id="mp_mont"><option value="-1">—</option>${opts(g.mont)}</select></div>
-      <div class="field"><label>Frais</label><select id="mp_frais"><option value="-1">—</option>${opts(g.frais)}</select></div></div>
-    <div class="two"><div class="field"><label>Type</label><select id="mp_type">${['Achat','Vente'].map(t=>`<option>${t}</option>`).join('')}</select></div>
-      <div class="field"><label>Produit par défaut</label><input id="mp_pdef" list="assetlist" placeholder="ex. Bitcoin"><datalist id="assetlist">${DB.assets.map(a=>`<option value="${esc(a.name)}">`).join('')}</datalist></div></div>
-    <div class="hint">Le produit doit correspondre à un actif existant.</div>
-    <button class="btn primary" style="width:100%;margin-top:8px" onclick="impDoOps()">Importer les achats</button>`;}
-function impDoOps(){const gv=id=>+$('#'+id).value;const cd=gv('mp_date'),cp=gv('mp_prod'),cq=gv('mp_qte'),cpr=gv('mp_prix'),cm=gv('mp_mont'),cfr=gv('mp_frais');
-  const type=$('#mp_type').value,pdef=$('#mp_pdef').value.trim();let n=0,skip=0;
-  impRows.forEach(r=>{const p=(cp>=0?(r[cp]||'').toString().trim():'')||pdef;const q=cq>=0?pnum(r[cq]):null,pu=cpr>=0?pnum(r[cpr]):null,mo=cm>=0?pnum(r[cm]):null;
-    if(!p||(q==null&&mo==null)){skip++;return;}
-    DB.movements.push({d:cd>=0?pdate(r[cd]):ymd(today()),p,t:type,q,pu,m:mo,f:cfr>=0?(pnum(r[cfr])||0):0,n:'import'});n++;});
-  save();closeSheet();renderAll();toast(n+' importée'+(n>1?'s':'')+(skip?' · '+skip+' ignorée'+(skip>1?'s':''):''),n===0);}
+  if(!impTabular){$('#imp_body').innerHTML='<div class="hint">Les exports de plateforme doivent être au format CSV.</div>';return;}
+  impCrypto=CsvImp.readCrypto($('#imp_txt').value,{map:impCryptoMap||undefined});impCryptoMap=impCrypto.map;const m=impCrypto.map,cols=impCrypto.columns;
+  const opts=(k)=>'<option value="-1">—</option>'+cols.map((h,i)=>`<option value="${i}" ${m[k]===i?'selected':''}>${esc(h||('Colonne '+(i+1)))}</option>`).join('');
+  const sel=(k,l)=>`<div class="field"><label>${l}</label><select onchange="impCryptoMap.${k}=+this.value;impBuildOps()">${opts(k)}</select></div>`;
+  const def=cryptoAssetFor('BTC');
+  impOps=impCrypto.rows.map(r=>Object.assign({},r,{target:(cryptoAssetFor(r.asset)||def||{}).name||''}));
+  const cryptos=DB.assets.filter(a=>a.type==='Crypto');
+  $('#imp_body').innerHTML=`<div class="hint" style="margin-top:0">✓ Export de plateforme crypto reconnu (Bitstack, Coinbase…) · ${impOps.length} opération${impOps.length>1?'s':''}${impCrypto.skipped?' · '+impCrypto.skipped+' ignorée'+(impCrypto.skipped>1?'s':'')+' (échouées, sans montant)':''}. Corrige une colonne si besoin :</div>
+    <div class="two">${sel('date','Date')}${sel('type','Type d\'opération')}</div>
+    <div class="two">${sel('qty','Quantité de crypto')}${sel('eur','Montant en €')}</div>
+    <div class="two">${sel('fee','Frais')}<div class="field"><label>Actif dans l'appli</label><select id="op_asset" onchange="impOps.forEach(o=>o.target=this.value);renderOpsReview()">${cryptos.map(a=>`<option ${def&&def.name===a.name?'selected':''}>${esc(a.name)}</option>`).join('')}<option value="__new">+ Créer « Bitcoin »</option></select></div></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)"><input type="checkbox" id="op_feeincl" checked style="width:auto"> Le montant en € inclut déjà les frais (montant débité de ton compte)</label>
+    <div id="op_review" style="margin-top:10px"></div>
+    <button class="btn primary" style="width:100%;margin-top:10px" onclick="impDoOps()">Importer</button>
+    <div class="hint">Achat : ajouté à ton prix de revient. Gratuit (parrainage, bonus) : bitcoins reçus à coût nul. Ignorer : retrait vers ton portefeuille ou dépôt d'euros, qui ne sont ni des achats ni des ventes.</div>`;
+  if(!cryptos.length)$('#op_asset').value='__new';
+  renderOpsReview();}
+function renderOpsReview(){const K=['Achat','Vente','Gratuit','Ignorer'];
+  $('#op_review').innerHTML=impOps.length?`<div style="max-height:300px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:0 10px">`+impOps.map((o,i)=>`<div class="row" style="gap:6px;padding:8px 2px;border-bottom:1px solid var(--line)">
+      <div style="flex:1;min-width:0"><div class="t-name" style="font-size:12.5px">${o.q!=null?QTY(o.q)+' '+esc(o.asset||'BTC'):'—'}${o.eur!=null?' · '+eur(o.eur):''}</div>
+        <div class="t-sub">${pd(o.date).toLocaleDateString('fr-FR')}${o.raw?' · '+esc(o.raw):''}${o.fee?' · frais '+eur(o.fee):''}</div></div>
+      <select onchange="impOps[${i}].kind=this.value" style="width:auto;padding:5px;font-size:11px">${K.map(k=>`<option ${o.kind===k?'selected':''}>${k}</option>`).join('')}</select></div>`).join('')+'</div>'
+    :'<div class="emptybox"><div class="ic">🧐</div>Aucune opération reconnue. Vérifie les colonnes Date, Quantité et Montant.</div>';}
+function impDoOps(){
+  let target=$('#op_asset').value;
+  if(target==='__new'){if(!DB.assets.some(a=>a.name==='Bitcoin'))DB.assets.push({name:'Bitcoin',ticker:'BTC-EUR',type:'Crypto',env:'Bitstack',price:null,sellFee:0.01,cur:'EUR',src:'auto'});target='Bitcoin';impOps.forEach(o=>o.target='Bitcoin');}
+  const feeIncl=$('#op_feeincl').checked;let n=0,dup=0,ign=0;
+  impOps.forEach(o=>{if(o.kind==='Ignorer'){ign++;return;}
+    const p=o.target||target,t=o.kind==='Vente'?'Vente':'Achat';
+    const fee=o.kind==='Gratuit'?0:(o.fee||0);
+    // Achat « frais inclus » : prix de revient = montant débité (montant − frais + frais)
+    const m=o.kind==='Gratuit'?0:(o.eur==null?null:(t==='Achat'&&feeIncl?r2(o.eur-fee):o.eur));
+    const mv={d:o.date,p,t,q:o.q,pu:null,m,f:fee,n:o.kind==='Gratuit'?'import · gratuit'+(o.raw?' ('+o.raw+')':''):'import'+(o.raw?' · '+o.raw:'')};
+    if(DB.movements.some(x=>x.d===mv.d&&x.p===mv.p&&x.t===mv.t&&Math.abs((x.q||0)-(mv.q||0))<1e-10&&Math.round((x.m||0)*100)===Math.round((mv.m||0)*100))){dup++;return;}
+    DB.movements.push(mv);n++;});
+  save();closeSheet();renderAll();nav('placements');setPlace('bourse');
+  toast(n+' opération'+(n>1?'s':'')+' importée'+(n>1?'s':'')+(dup?' · '+dup+' doublon'+(dup>1?'s':'')+' ignoré'+(dup>1?'s':''):'')+(ign?' · '+ign+' ignorée'+(ign>1?'s':''):''),n===0&&!dup);}
 
 let dupTemplate=null;
 function editMov(i){

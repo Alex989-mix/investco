@@ -12,6 +12,7 @@ app/                    site publié tel quel par Netlify
   sw.js                 service worker (hors ligne + mises à jour)
   version.js            numéro de version + notes « Nouveautés »  ← à modifier à chaque version
   js/finance.js         calculs purs (crédit, centimes, paramètres réglementaires datés, revente, budget, objectifs)
+  js/csvimport.js       lecture des CSV de toute banque et des exports crypto (Bitstack…)
 netlify/functions/      fonction serveur des cours (Yahoo Finance)
 tests/                  tests automatiques : finance.test.js (calculs, Node seul) + parcours Playwright
 netlify.toml            configuration Netlify
