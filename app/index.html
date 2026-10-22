@@ -170,6 +170,7 @@ input.bad{border-color:var(--neg)!important;box-shadow:0 0 0 2px var(--negbg)}
 <div class="toast" id="toast"></div>
 
 <script src="version.js"></script>
+<script src="js/finance.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -209,7 +210,7 @@ function parseNum(str){
 function fin(v){if(v===''||v==null)return '';const n=+v;if(!isFinite(n))return '';return String(Math.round(n*1e8)/1e8).replace('.',',');}
 // Arrondi au centime (montants en euros)
 const r2=v=>Math.round((v||0)*100)/100;
-const PAL=['#6BA3C6','#A3C4DA','#D4E1EA','#14385C','#3D82AF','#1F5C8C','#0A1A2F'];
+const PAL=['#6BA3C6','#A3C4DA','#D4E1EA','#14385C','#3D82AF','#1F5C8C','#0A1A2F','#F7931A'];
 const CATCOL={'Logement':'#F7931A','Courses':'#3D82AF','Transport':'#14385C','Loisirs':'#6BA3C6','Abonnements':'#A3C4DA','Santé':'#4E7A5E','Restau':'#B0743C','Shopping':'#8B5E83','Autres':'#63788A'};
 const CATS=Object.keys(CATCOL);
 let tT;function toast(m,e){const t=$('#toast');t.textContent=m;t.className='toast on'+(e?' err':'');clearTimeout(tT);tT=setTimeout(()=>t.className='toast',2600);}
@@ -238,7 +239,7 @@ const DEF={
   savings:[
     {name:'Livret A',type:'Livret A',bank:'Ma banque',cap:14520,open:'2015-06-01',rate:null,tax:'Exonéré',ceil:22950},
     {name:'LDDS',type:'LDDS',bank:'Ma banque',cap:5180,open:'2018-03-12',rate:null,tax:'Exonéré',ceil:12000},
-    {name:'PEL 2021',type:'PEL',bank:'Ma banque',cap:9650,open:'2021-04-20',rate:null,tax:'Barème TMI 0%',ceil:61200},
+    {name:'PEL 2021',type:'PEL',bank:'Ma banque',cap:9650,open:'2021-04-20',rate:null,tax:'Barème',ceil:61200},
     {name:'Assurance-vie',type:'Assurance-vie',bank:'Linxea',cap:13100,open:'2020-09-05',rate:0.025,tax:'PFU assurance-vie',ceil:null},
     {name:'Compte courant',type:'Compte courant',bank:'Ma banque',cap:2500,open:null,rate:null,tax:'Exonéré',ceil:null},
     {name:'LEP',type:'LEP',bank:'Ma banque',cap:0,open:'2026-07-01',rate:null,tax:'Exonéré',ceil:10000},
@@ -264,29 +265,23 @@ const DEF={
     {name:'iPhone 13 reconditionné',buyD:'2026-08-01',buy:280,fees:8,sellD:'2026-08-20',sell:410,st:'Vendu'},
     {name:'Nike Dunk Low',buyD:'2026-09-05',buy:110,fees:5,sellD:null,sell:null,st:'En vente'},
   ],
-  settings:{crowdTax:'pfu',flatTax:0.314,avTax:0.30,baremeTax:0.186,cryptoTax:0.186,peaTax:0,objNet:0.10,
+  settings:{crowdTax:'pfu',tmi:0,cryptoRegime:'pfu',resaleRegime:'occasionnel',catRules:[],objNet:0.10,
     snapshots:{2026:48000},dismissY:{},theme:'dark',stockKey:'',eurusd:0.92,lastProc:null,
     catBudgets:{},lastBackup:null,goal:null,
     gdriveClientId:'',gdriveFileId:null,lastSync:null,autoSync:false,
     indexChoice:'MSCI',benchSym:{MSCI:'URTH',CAC:'CAC'},indexCache:{}},
   meta:{updatedAt:0,schema:2},
-  rates:[
-    ['Livret A','2025-02-01',0.024],['Livret A','2025-08-01',0.017],['Livret A','2026-02-01',0.015],['Livret A','2026-08-01',0.017],
-    ['LDDS','2025-02-01',0.024],['LDDS','2025-08-01',0.017],['LDDS','2026-02-01',0.015],['LDDS','2026-08-01',0.017],
-    ['LEP','2026-02-01',0.025],['LEP','2026-08-01',0.025],['CEL','2026-02-01',0.010],['CEL','2026-08-01',0.0125],
-    ['Livret Jeune','2026-02-01',0.015],['Livret Jeune','2026-08-01',0.017],
-  ],
-  pel:{2026:0.020,2025:0.0175,2024:0.0225,2023:0.020,2022:0.010,2021:0.010,2020:0.010,2019:0.010,2018:0.010,2017:0.010,2016:0.010},
+  params:[],loans:[],properties:[],goals:[],
 };
 let DB;
 function load(){const raw=localStorage.getItem('investco_v1')||localStorage.getItem('patrimoine_v1');isFresh=!raw;
-  try{DB=JSON.parse(raw)||structuredClone(DEF);}catch(e){DB=structuredClone(DEF);}
+  try{DB=raw?Fin.deserialize(JSON.parse(raw)):structuredClone(DEF);}catch(e){DB=structuredClone(DEF);}
   DB.expenses=DB.expenses||[];DB.recurring=DB.recurring||[];DB.resale=DB.resale||[];
   DB.settings=Object.assign({},DEF.settings,DB.settings);DB.crowd.forEach(c=>c.paid=c.paid||[]);
   DB.meta=DB.meta||{updatedAt:0};DB.settings.benchSym=Object.assign({},DEF.settings.benchSym,DB.settings.benchSym);DB.settings.indexCache=DB.settings.indexCache||{};migrate();recalcBalances();}
 let applyingRemote=false;
 function save(){recalcBalances();if(!applyingRemote){DB.meta=DB.meta||{updatedAt:0};DB.meta.updatedAt=Date.now();}
-  try{localStorage.setItem('investco_v1',JSON.stringify(DB));}catch(e){}
+  try{localStorage.setItem('investco_v1',JSON.stringify(Fin.serialize(DB)));}catch(e){} // montants stockés en centimes entiers
   if(DB.settings.autoSync&&DB.settings.gdriveClientId&&!applyingRemote)scheduleAutoSync();}
 
 const QUINZ=new Set(['Livret A','LDDS','LEP','Livret Jeune','CEL']);
@@ -320,16 +315,28 @@ function assetCalc(a){
     else if(m.t==='Vente'){const unit=qty?cost/qty:0,qs=Math.min(q,qty),out=unit*qs;
       realized.push({d:m.d,pv:(g-(m.f||0))-out});cost-=out;qty-=qs;if(qty<=1e-9){qty=0;cost=0;}}});
   const inv=cost,pru=qty?cost/qty:0,value=qty*(a.price||0),pv=value-inv,pvp=inv?pv/inv:0;
-  const pm=pru,fv=a.sellFee||0,fc=pm/(1-fv),tax=a.env==='PEA'?DB.settings.peaTax:DB.settings.cryptoTax,obj=DB.settings.objNet;
+  const pm=pru,fv=a.sellFee||0,fc=pm/(1-fv),tax=a.env==='PEA'?0:cryptoTaxRate(),obj=DB.settings.objNet; // PEA : pas d'impôt à la vente tant que le plan reste ouvert
   const po=qty?(inv*(1+obj-tax)/(1-tax))/(qty*(1-fv)):0;
   let st='—';if(a.price){if(a.price<pm)st='À perte';else if(a.price<fc)st='Frais non couverts';else if(a.price<po)st='Rentable';else st='Objectif atteint';}
   return {inv,qty,pru,value,pv,pvp,ops,first,pm,fc,po,st,tax,realized};
 }
+// ---- Paramètres réglementaires (app/js/finance.js) + valeurs datées ajoutées par l'utilisateur (DB.params)
+const param=(key,date)=>Fin.getParam(key,date||ymd(today()),DB.params);
+// Fiscalité : taux réglementaires datés + situation personnelle (TMI) des réglages
+const taxPS=(d)=>param('tax.ps',d)||0, taxPSr=(d)=>param('tax.ps.reduit',d)||0;
+const taxPFU=(d)=>(param('tax.ir.pfu',d)||0)+taxPS(d);                // 31,4 % en 2026
+const taxAV=(d)=>(param('tax.ir.pfu',d)||0)+taxPSr(d);                 // 30 % (PS réduits)
+const tmi=()=>+DB.settings.tmi||0;
+const taxBareme=(d,reduit)=>tmi()+(reduit?taxPSr(d):taxPS(d));
+const PS_REDUIT=new Set(['PEL','CEL','Assurance-vie']);
+const cryptoTaxRate=()=>DB.settings.cryptoRegime==='bareme'?taxBareme():taxPFU();
+// Plafond d'un produit : valeur saisie sur le produit, sinon plafond réglementaire de son type
+const ceilFor=(s)=>(s.ceil!=null&&s.ceil!=='')?+s.ceil:param('ceil.'+s.type);
 function rateFor(s){if(s.rate!=null&&s.rate!=='')return +s.rate;
-  if(s.type==='PEL'){const y=s.open?new Date(s.open).getFullYear():null;return DB.pel[y]??0;}
-  const t=ymd(today());const c=DB.rates.filter(r=>r[0]===s.type&&r[1]<=t).sort((a,b)=>a[1]<b[1]?1:-1);return c.length?c[0][2]:0;}
-// Taux réglementé en vigueur à une date donnée (table DB.rates, avec date de validité)
-function rateAt(type,dstr){const c=DB.rates.filter(r=>r[0]===type&&r[1]<=dstr).sort((a,b)=>a[1]<b[1]?1:-1);return c.length?c[0][2]:0;}
+  if(s.type==='PEL')return param('rate.PEL',s.open||ymd(today()))||0; // taux fixé à l'ouverture
+  return param('rate.'+s.type)||0;}
+// Taux réglementé en vigueur à une date donnée (paramètres datés)
+function rateAt(type,dstr){return param('rate.'+type,dstr)||0;}
 // Intérêts de l'année pour un livret réglementé, quinzaine par quinzaine, au taux en vigueur à chaque quinzaine.
 // Les quinzaines futures sont projetées avec le solde actuel.
 function quinzInterest(s){
@@ -360,9 +367,10 @@ function savingCalc(s){
   const rate=rateFor(s);const auto=QUINZ.has(s.type)&&(s.rate==null||s.rate==='');
   const brut=auto?quinzInterest(s):yearAvgBalance(s)*rate;let net=brut;
   const av8=(s.tax==='PFU assurance-vie'&&s.open&&monthsBetween(s.open,today())>=96);
-  if(s.tax==='PFU standard')net=brut*(1-DB.settings.flatTax);
-  else if(s.tax==='PFU assurance-vie')net=brut*(1-(av8?0.172:DB.settings.avTax));
-  else if(s.tax==='Barème TMI 0%')net=brut*(1-DB.settings.baremeTax);
+  const red=PS_REDUIT.has(s.type);
+  if(s.tax==='PFU standard')net=brut*(1-(red?taxAV():taxPFU()));
+  else if(s.tax==='PFU assurance-vie')net=brut*(1-(av8?taxPSr():taxAV())); // > 8 ans : abattement, en pratique PS seuls
+  else if(s.tax==='Barème'||s.tax==='Barème TMI 0%')net=brut*(1-taxBareme(undefined,red));
   const gains=(s.cap||0)-versed;
   const cat=s.type==='Assurance-vie'?'Assurance-vie':(s.type==='Compte courant'?'Liquidités':'Épargne réglementée');
   return {versed,rate,brut,net,gains,cat,av8};
@@ -373,7 +381,7 @@ function savingCalc(s){
 const APP_V=self.APP_VERSION||'?';
 // Schéma des données : à incrémenter quand une version change la structure stockée,
 // en ajoutant la migration correspondante dans MIGRATIONS (ne jamais modifier une migration existante).
-const SCHEMA=3;
+const SCHEMA=4;
 const MIGRATIONS={
   // v16 → v16.1 : en v16, la case du versement n°k portait le libellé du mois k-1
   // (mois de souscription compté à tort). On décale chaque case pointée vers le bon mois.
@@ -387,6 +395,19 @@ const MIGRATIONS={
       let t=target;if(s.type!=='Compte courant'&&t<0)t=Math.max(0,derived); // un livret ne peut pas être négatif
       const diff=r2(t-derived);
       if(Math.abs(diff)>=0.005)DB.movements.push({d:s.open||ymd(today()),p:s.name,t:'Ajustement',q:null,pu:null,m:diff,f:0,n:'Reprise du solde v16'});});},
+  // v16.2 → v17 : taux et plafonds réglementaires sortis des données (paramètres datés de l'appli),
+  // fiscalité personnelle (TMI, régimes), nouveaux modules (biens, crédits, objectifs).
+  4(){const st=DB.settings||{};const ps=0.186;
+    // (les valeurs par défaut des réglages sont déjà fusionnées : on se fie aux anciens champs s'ils existent)
+    if(st.baremeTax!=null){const b=+st.baremeTax;st.tmi=isFinite(b)?[0,0.11,0.30,0.41,0.45].reduce((a,t)=>Math.abs(t-(b-ps))<Math.abs(a-(b-ps))?t:a,0):0;}
+    if(st.cryptoTax!=null&&st.baremeTax!=null)st.cryptoRegime=Math.abs(st.cryptoTax-st.baremeTax)<1e-6?'bareme':'pfu';
+    if(!st.resaleRegime)st.resaleRegime='occasionnel';
+    ['flatTax','avTax','baremeTax','cryptoTax','peaTax'].forEach(k=>delete st[k]);
+    delete DB.rates;delete DB.pel;
+    (DB.savings||[]).forEach(s=>{if(s.tax==='Barème TMI 0%')s.tax='Barème';
+      const reg=Fin.getParam('ceil.'+s.type,'9999-12-31');if(reg!=null&&+s.ceil===reg)s.ceil=null;}); // plafond réglementaire → suit les paramètres
+    DB.params=DB.params||[];DB.loans=DB.loans||[];DB.properties=DB.properties||[];DB.goals=DB.goals||[];st.catRules=st.catRules||[];
+    if(st.goal){DB.goals.push({id:'g'+Date.now(),name:'Patrimoine',target:+st.goal,deadline:null,accounts:['*']});st.goal=null;}},
 };
 function migrate(){DB.meta=DB.meta||{updatedAt:0};let v=DB.meta.schema||1;if(v>=SCHEMA)return;
   if(!isFresh)backupLocal('Avant migration des données (schéma '+v+' → '+SCHEMA+')');
@@ -395,13 +416,13 @@ function migrate(){DB.meta=DB.meta||{updatedAt:0};let v=DB.meta.schema||1;if(v>=
 const BAK_KEY='investco_backups';
 function listBackups(){try{return JSON.parse(localStorage.getItem(BAK_KEY)||'[]');}catch(e){return [];}}
 function backupLocal(reason){try{const list=listBackups();
-    list.unshift({at:new Date().toISOString(),version:APP_V,reason,data:JSON.stringify(DB)});
+    list.unshift({at:new Date().toISOString(),version:APP_V,reason,data:JSON.stringify(Fin.serialize(DB))});
     localStorage.setItem(BAK_KEY,JSON.stringify(list.slice(0,3)));return true;}catch(e){return false;}}
 function restoreBackup(i){const b=listBackups()[i];if(!b)return;
   if(!confirm('Restaurer tes données du '+new Date(b.at).toLocaleString('fr-FR')+' ?\nTes données actuelles seront d\'abord sauvegardées.'))return;
   backupLocal('Avant restauration');try{localStorage.setItem('investco_v1',b.data);}catch(e){toast('Restauration impossible',true);return;}
   location.reload();}
-function crowdTaxRate(){return DB.settings.crowdTax==='bareme'?DB.settings.baremeTax:DB.settings.flatTax;}
+function crowdTaxRate(){return DB.settings.crowdTax==='bareme'?taxBareme():taxPFU();}
 // Un projet non remboursé (En cours, Retard, Défaut) reste dans le patrimoine
 const crowdActive=c=>c.st!=='Remboursé';
 // Échéancier : versement n°k au « jour de versement » du k-ième mois après la souscription (fin de mois gérée)
@@ -421,8 +442,6 @@ function crowdCalc(c,now=today()){
 // Intérêts imposables d'une année : versements pointés + versements échus non pointés d'un projet « En cours »
 function crowdYearInterest(c,y){const cc=crowdCalc(c),paid=new Set(c.paid||[]);
   return r2(cc.due.filter(p=>p.d.getFullYear()===y&&(paid.has(p.mk)||c.st==='En cours')).length*cc.monthly);}
-function resaleCalc(r){const cost=(r.buy||0)+(r.fees||0);const sold=r.st==='Vendu'&&r.sell!=null;
-  const margin=sold?(r.sell-cost):0;const roi=cost?margin/cost:0;return {cost,sold,margin,roi};}
 
 function compteCourant(){return DB.savings.find(s=>s.type==='Compte courant');}
 function monthExpenses(ymk){return DB.expenses.filter(e=>ymKey(e.d)===ymk);}
@@ -441,18 +460,32 @@ function runRecurring(){
   DB.settings.lastProc=ymd(now);if(changed)save();
 }
 
+// ---- Immobilier locatif et crédits
+const loansOf=(pid)=>(DB.loans||[]).filter(l=>l.propertyId===pid);
+function loanCalc(l){return Fin.loanStatus(l,ymd(today()));}
+function propertyCalc(p){const t=ymd(today());
+  const lm=loansOf(p.id).map(loanCalc).filter(s=>s.remainingCount>0).reduce((a,s)=>a+s.monthlyTotal,0);
+  const crd=loansOf(p.id).reduce((a,l)=>a+loanCalc(l).crd,0);
+  const value=Fin.propertyValue(p,t);
+  return Object.assign({value,crd,equity:r2(value-crd),loanMonthly:r2(lm)},Fin.propertyStats(p,lm));}
+function realEstate(){const P=(DB.properties||[]).map(propertyCalc);
+  return {value:r2(P.reduce((a,x)=>a+x.value,0)),cost:r2((DB.properties||[]).reduce((a,p)=>a+(+p.price||0),0)),
+    debt:r2((DB.loans||[]).reduce((a,l)=>a+loanCalc(l).crd,0)),cashflow:r2(P.reduce((a,x)=>a+x.cashflow,0)),
+    principalYear:r2((DB.loans||[]).reduce((a,l)=>a+loanCalc(l).principalYear,0))};}
 function consolidate(){
   let bI=0,bV=0;DB.assets.forEach(a=>{const c=assetCalc(a);bI+=c.inv;bV+=c.value;});
   let iI=0,iV=0;DB.crowd.filter(crowdActive).forEach(c=>{iI+=c.amt||0;iV+=c.amt||0;});
   let sI=0,sV=0,sN=0,dispo=0;DB.savings.forEach(s=>{const c=savingCalc(s);sI+=c.versed;sV+=(s.cap||0);sN+=c.net;if(c.cat!=='Assurance-vie')dispo+=(s.cap||0);});
-  const invested=bI+iI+sI,value=bV+iV+sV;
+  const RE=realEstate();
+  const invested=bI+iI+sI+RE.cost,value=bV+iV+sV+RE.value,net=r2(value-RE.debt); // patrimoine net = actifs − capital restant dû
   const immoMonthly=DB.crowd.filter(c=>c.st==='En cours').reduce((a,c)=>a+crowdCalc(c).monthly*(1-crowdTaxRate()),0);
   const y=today().getFullYear(),jan=new Date(y,0,1);let apports=0;
   DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
   DB.crowd.forEach(c=>{if(new Date(c.sub)>=jan)apports+=c.amt;});
-  const snap=DB.settings.snapshots[y];const yearGain=snap!=null?value-snap-apports:null;
+  apports+=RE.principalYear; // le capital de crédit remboursé est un effort d'épargne, pas un gain
+  const snap=DB.settings.snapshots[y];const yearGain=snap!=null?net-snap-apports:null;
   const yearPerf=(snap!=null&&(snap+apports)>0)?yearGain/(snap+apports):null;
-  return {invested,value,pv:value-invested,pvp:invested?(value-invested)/invested:0,bI,bV,iI,iV,sI,sV,sN,dispo,immoMonthly,apports,snap,yearGain,yearPerf};
+  return {invested,value,net,debt:RE.debt,reValue:RE.value,reCashflow:RE.cashflow,pv:value-invested,pvp:invested?(value-invested)/invested:0,bI,bV,iI,iV,sI,sV,sN,dispo,immoMonthly,apports,snap,yearGain,yearPerf};
 }
 function repartition(){const g=k=>DB.assets.filter(a=>a.type===k);const sum=(a,f)=>a.reduce((x,y)=>x+f(y),0);
   const A=g('Action'),E=g('ETF'),C=g('Crypto'),cf=DB.crowd.filter(crowdActive);
@@ -461,6 +494,7 @@ function repartition(){const g=k=>DB.assets.filter(a=>a.type===k);const sum=(a,f
     ['ETF',sum(E,a=>assetCalc(a).inv),sum(E,a=>assetCalc(a).value)],
     ['Crypto',sum(C,a=>assetCalc(a).inv),sum(C,a=>assetCalc(a).value)],
     ['Crowdfunding immobilier',sum(cf,c=>c.amt||0),sum(cf,c=>c.amt||0)],
+    ['Immobilier',sum(DB.properties||[],p=>+p.price||0),sum(DB.properties||[],p=>Fin.propertyValue(p,ymd(today())))],
     ['Épargne réglementée',sum(sav('Épargne réglementée'),s=>savingCalc(s).versed),sum(sav('Épargne réglementée'),s=>s.cap||0)],
     ['Assurance-vie',sum(sav('Assurance-vie'),s=>savingCalc(s).versed),sum(sav('Assurance-vie'),s=>s.cap||0)],
     ['Liquidités',sum(sav('Liquidités'),s=>savingCalc(s).versed),sum(sav('Liquidités'),s=>s.cap||0)]];
@@ -479,16 +513,45 @@ function backupHtml(){const d=daysSince(DB.settings.lastBackup);if(d<14)return '
     <div class="spread"><div><div style="font-weight:600;color:var(--warn)">🛡️ Sauvegarde tes données</div>
     <div style="font-size:12.5px;color:var(--ink2);margin-top:3px">${DB.settings.lastBackup?'Dernière sauvegarde il y a '+d+' jours.':'Aucune sauvegarde encore.'} Tes données ne vivent que sur cet appareil.</div></div>
     <button class="btn primary sm" onclick="backupNow()" style="flex:none">Sauvegarder</button></div></div>`;}
-function goalHtml(){const g=DB.settings.goal,v=consolidate().value;
-  if(!g)return `<div class="card pad" style="margin-top:12px"><div class="spread"><span class="muted" style="font-size:13.5px">🎯 Fixe un objectif patrimoine</span><button class="btn sm" onclick="editGoal()">Définir</button></div></div>`;
-  const p=Math.min(1,v/g);const remain=g-v;
-  return `<div class="card pad" style="margin-top:12px"><div class="spread" style="margin-bottom:6px"><span style="font-weight:600">🎯 Objectif ${eur0(g)}</span><span class="muted" style="font-size:13px" onclick="editGoal()" style="cursor:pointer">${PCT1(p)}</span></div>
-    <div class="progress"><span style="width:${(p*100).toFixed(0)}%;background:var(--orange)"></span></div>
-    <div style="font-size:12.5px;color:var(--ink2);margin-top:6px">${remain>0?'Encore '+eur0(remain)+' à atteindre.':'Objectif atteint 🎉'} <span onclick="editGoal()" style="color:var(--orange);cursor:pointer">Modifier</span></div></div>`;}
-function editGoal(){openSheet(`<div class="spread"><h2>Objectif patrimoine</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
-   <div class="field"><label>Montant visé (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="g_val" value="${fin(DB.settings.goal||'')}" placeholder="60000"></div>
-   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveGoal()">Enregistrer</button>${DB.settings.goal?`<button class="btn" onclick="DB.settings.goal=null;save();closeSheet();renderAll()" style="color:var(--neg)">Retirer</button>`:''}</div>`);}
-function saveGoal(){DB.settings.goal=num('g_val');save();closeSheet();renderAll();toast('Objectif enregistré');}
+// ---- Objectifs d'épargne : cible, échéance, comptes suivis (* = patrimoine net), effort mensuel
+function goalCurrent(g){const acc=g.accounts||['*'];if(acc.includes('*'))return consolidate().net;
+  return acc.reduce((t,n)=>{const sv=DB.savings.find(x=>x.name===n);if(sv)return t+(+sv.cap||0);const as=DB.assets.find(x=>x.name===n);return t+(as?assetCalc(as).value:0);},0);}
+function goalHtml(){const G=DB.goals||[],t=ymd(today());
+  return `<div class="sec"><div class="sec-h"><h2>🎯 Objectifs</h2><button class="btn sm" onclick="editGoal(-1)">+ Objectif</button></div>
+   ${G.map((g,i)=>{const P=Fin.goalProgress(g,goalCurrent(g),t);
+     return `<div class="card pad" style="margin-bottom:10px"><div class="spread" style="margin-bottom:6px"><span style="font-weight:600">${esc(g.name)} · ${eur0(g.target)}</span><span class="del" onclick="editGoal(${i})">✎</span></div>
+       <div class="progress"><span style="width:${(P.ratio*100).toFixed(0)}%;background:${P.late?'var(--neg)':'var(--orange)'}"></span></div>
+       <div style="font-size:12.5px;color:var(--ink2);margin-top:6px">${eur0(P.current)} · ${PCT1(P.ratio)}${P.left>0?(g.deadline?(P.late?` · <span style="color:var(--neg)">échéance dépassée, il manque ${eur0(P.left)}</span>`:` · ${eur0(P.monthly)}/mois pendant ${P.months} mois (avant le ${pd(g.deadline).toLocaleDateString('fr-FR')})`):` · encore ${eur0(P.left)}`):' · atteint 🎉'}</div></div>`;}).join('')
+   ||`<div class="card pad"><div class="spread"><span class="muted" style="font-size:13.5px">Fixe un objectif : apport immobilier, épargne de précaution, patrimoine…</span><button class="btn sm" onclick="editGoal(-1)">Définir</button></div></div>`}</div>`;}
+function editGoal(i){const g=i>=0?DB.goals[i]:{name:'',target:'',deadline:'',accounts:['*']};
+  const opts=[['*','Patrimoine net total']].concat(DB.savings.map(x=>[x.name,x.name]),DB.assets.map(x=>[x.name,x.name]));
+  openSheet(`<div class="spread"><h2>${i>=0?'Modifier l\'':'Nouvel '}objectif</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   <div class="field"><label>Nom</label><input id="g_name" value="${esc(g.name)}" placeholder="Épargne de précaution, apport…"></div>
+   <div class="two"><div class="field"><label>Montant visé (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="g_val" value="${fin(g.target??'')}"></div><div class="field"><label>Échéance (facultatif)</label><input type="date" id="g_dl" value="${g.deadline||''}"></div></div>
+   <div class="field"><label>Comptes pris en compte</label><div style="display:flex;flex-wrap:wrap;gap:6px 14px">${opts.map(([v,l],k)=>`<label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink)"><input type="checkbox" class="g_acc" value="${esc(v)}" ${(g.accounts||[]).includes(v)?'checked':''} onchange="goalAccChange(this)" style="width:auto">${esc(l)}</label>`).join('')}</div></div>
+   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveGoal(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="DB.goals.splice(${i},1);save();closeSheet();renderAll()" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
+function goalAccChange(el){const all=[...document.querySelectorAll('.g_acc')];
+  if(el.value==='*'&&el.checked)all.forEach(x=>{if(x!==el)x.checked=false;});else if(el.checked)all.forEach(x=>{if(x.value==='*')x.checked=false;});}
+function saveGoal(i){const name=$('#g_name').value.trim()||'Objectif',target=num('g_val');if(!(target>0)){toast('Montant visé ?',true);return;}
+  // des comptes précis l'emportent sur « Patrimoine net total »
+  const sel=[...document.querySelectorAll('.g_acc:checked')].map(x=>x.value),acc=sel.filter(x=>x!=='*').length?sel.filter(x=>x!=='*'):['*'];
+  const o={id:i>=0?DB.goals[i].id:'g'+Date.now(),name,target,deadline:val('g_dl'),accounts:acc};
+  DB.goals=DB.goals||[];if(i>=0)DB.goals[i]=o;else DB.goals.push(o);save();closeSheet();renderAll();toast('Objectif enregistré');}
+
+// ---- Alertes : plafonds, budgets, Bricks, objectifs, seuils DAC7 (tableau de bord + notifications)
+function ceilingInfo(s){const c=ceilFor(s);if(!(c>0)||s.type==='Compte courant'||s.type==='Assurance-vie')return null;return Fin.ceilingStatus(savingCalc(s).versed,c);}
+function peaInfo(){const ops=DB.movements.filter(m=>DB.assets.some(a=>a.env==='PEA'&&a.name===m.p));if(!ops.length)return null;
+  const v=Fin.peaVersements(ops);return Object.assign({versed:v,ceil:param('ceil.PEA')},Fin.ceilingStatus(v,param('ceil.PEA')));}
+function alertsList(){const A=[],t=ymd(today()),ymk=ymKey(today()),cats=catBreakdown(ymk),cb=DB.settings.catBudgets||{};
+  DB.savings.forEach(s=>{const c=ceilingInfo(s);if(c&&c.level)A.push({lvl:c.level==='full'?'neg':'warn',txt:c.level==='full'?`${s.name} : plafond de versements atteint (${eur0(ceilFor(s))}). Les intérêts continuent de s'ajouter.`:`${s.name} : plafond bientôt atteint, encore ${eur0(c.room)} de versements possibles.`,go:"nav('placements');setPlace('epargne')"});});
+  const pea=peaInfo();if(pea&&pea.level)A.push({lvl:pea.level==='full'?'neg':'warn',txt:`PEA : environ ${eur0(pea.versed)} versés sur ${eur0(pea.ceil)} autorisés.`,go:"nav('placements');setPlace('bourse')"});
+  Object.keys(cb).forEach(k=>{if(cb[k]>0&&(cats[k]||0)>cb[k])A.push({lvl:'neg',txt:`Budget ${k} dépassé : ${eur0(cats[k])} sur ${eur0(cb[k])}.`,go:"nav('budget')"});});
+  DB.crowd.forEach(c=>{if(crowdActive(c)){const m=crowdCalc(c).missing;if(m>0)A.push({lvl:'warn',txt:`Bricks « ${c.name} » : ${m} versement${m>1?'s':''} à pointer.`,go:"nav('placements');setPlace('immo')"});}});
+  (DB.goals||[]).forEach(g=>{const P=Fin.goalProgress(g,goalCurrent(g),t);if(P.late)A.push({lvl:'neg',txt:`Objectif « ${g.name} » : échéance dépassée, il manque ${eur0(P.left)}.`,go:"nav('dash')"});});
+  Fin.resaleYear(DB.resale,today().getFullYear(),{dac7Count:param('revente.dac7.ventes'),dac7Amount:param('revente.dac7.montant')}).dac7.forEach(d=>{if(d.reported||d.near)A.push({lvl:'warn',txt:`${d.plat} : ${d.count} ventes / ${eur0(d.amount)} cette année (seuil de déclaration DAC7 : ${param('revente.dac7.ventes')} ventes ou ${eur0(param('revente.dac7.montant'))}).`,go:"nav('revente')"});});
+  return A;}
+function alertsHtml(){const A=alertsList();if(!A.length)return '';
+  return `<div class="card pad" style="margin-top:12px"><div style="font-weight:650;margin-bottom:6px">🔔 À surveiller (${A.length})</div>${A.map(a=>`<div onclick="${a.go}" style="cursor:pointer;font-size:13px;padding:6px 0;border-top:1px solid var(--line);color:${a.lvl==='neg'?'var(--neg)':'var(--warn)'}">${esc(a.txt)}</div>`).join('')}</div>`;}
 
 function fiscalData(){
   const y=today().getFullYear(),jan=new Date(y,0,1);
@@ -507,15 +570,15 @@ function fiscalData(){
   DB.assets.forEach(a=>{if(a.env==='PEA')return; // les ventes à l'intérieur du PEA ne sont pas imposées tant que le plan reste ouvert
     assetCalc(a).realized.filter(r=>pd(r.d).getFullYear()===y).forEach(r=>{if(a.type==='Crypto')pvCrypto+=r.pv;else pvStock+=r.pv;});});
   let revRevenue=0,revCount=0;DB.resale.forEach(r=>{if(r.st==='Vendu'&&r.sellD&&new Date(r.sellD)>=jan){revRevenue+=r.sell||0;revCount++;}});
-  const revBase=revRevenue*0.29;
+  const revBase=Fin.resaleYear(DB.resale,y,{regime:DB.settings.resaleRegime,abattement:param('revente.microbic.abattement')}).taxable;
   let avRachat=0,avTaxable=0,avAbat=0,avOver8=false;
   DB.savings.filter(s=>s.type==='Assurance-vie').forEach(s=>{
     const rachat=DB.movements.filter(m=>m.t==='Retrait'&&m.p===s.name&&new Date(m.d)>=jan).reduce((a,m)=>a+(m.m||0),0);
     if(rachat>0){avRachat+=rachat;const sc=savingCalc(s);const base=(s.cap||0)+rachat;const ratio=base>0?Math.max(0,sc.gains)/base:0;let g=rachat*ratio;
-      const o8=s.open&&monthsBetween(s.open,today())>=96;if(o8){avOver8=true;const ab=4600;avAbat+=Math.min(g,ab);g=Math.max(0,g-ab);}avTaxable+=g;}
+      const o8=s.open&&monthsBetween(s.open,today())>=96;if(o8){avOver8=true;const ab=param('tax.av.abattement')||0;avAbat+=Math.min(g,ab);g=Math.max(0,g-ab);}avTaxable+=g;}
   });
   let avNext=null;DB.savings.filter(s=>s.type==='Assurance-vie'&&s.open).forEach(s=>{const yr=new Date(s.open).getFullYear()+8;if(avNext==null||yr<avNext)avNext=yr;});
-  const rate=DB.settings.baremeTax;
+  const rate=taxBareme();
   const totalTaxable=interestsTotal+Math.max(0,pvStock)+Math.max(0,pvCrypto)+revBase+avTaxable;
   return {y,pelInt,pelName,celInt,livretBancaireInt,bricks,interestsTotal,hasExo,pvStock,pvCrypto,revRevenue,revCount,revBase,avRachat,avTaxable,avAbat,avOver8,avNext,rate,totalTaxable,estTax:totalTaxable*rate};
 }
@@ -536,8 +599,10 @@ function fiscSections(f){
   S.push({t:"Tes gains en bourse et crypto",a:pv,pos:pv<=0,lines:bL,c:pv>0?"Bourse en case 3VG, crypto via le formulaire 2086.":"Le jour où tu vends : bourse case 3VG, crypto formulaire 2086."});
   // Revente
   let rL=[];if(f.revCount===0)rL.push("Tu n'as rien revendu cette année.");
-  else{rL.push(`Tu as revendu pour ${eur0(f.revRevenue)} (${f.revCount} article${f.revCount>1?'s':''}).`);rL.push(`Après l'abattement automatique de 71 %, il reste ${eur0(f.revBase)} à déclarer.`);}
-  S.push({t:"Ta revente d'objets",a:f.revBase,pos:f.revCount===0,lines:rL,c:f.revCount>0?"À reporter case 5KO. Régime simplifié sous 188 700 €/an.":""});
+  else{rL.push(`Tu as revendu pour ${eur0(f.revRevenue)} (${f.revCount} article${f.revCount>1?'s':''}).`);
+    if(DB.settings.resaleRegime==='microbic')rL.push(`Activité d'achat-revente (micro-BIC) : après l'abattement de ${fin(r2(param('revente.microbic.abattement')*100))} %, il reste ${eur0(f.revBase)} imposables.`);
+    else rL.push("Ventes occasionnelles de tes objets personnels : non imposables (sauf objet vendu plus de 5 000 €, bijoux et objets d'art). Si tu achètes pour revendre, choisis « Activité d'achat-revente » dans Réglages.");}
+  S.push({t:"Ta revente d'objets",a:f.revBase,pos:f.revCount===0||f.revBase===0,lines:rL,c:f.revBase>0?"À déclarer dans les revenus industriels et commerciaux (micro-BIC, ventes de marchandises) de ta déclaration de revenus.":""});
   // AV
   let aL=[];if(f.avRachat<=0){aL.push("Tu n'as pas retiré d'argent cette année, donc rien à déclarer.");
     if(f.avOver8)aL.push("Bon à savoir : tu peux retirer jusqu'à 4 600 € de gains par an sans impôt.");
@@ -626,16 +691,17 @@ function renderDash(){
     :`<div class="kpi"><div class="k-l">Gain de l'année</div><div class="k-v mut3" style="font-size:14px;font-weight:500;margin-top:10px">Fige la valeur de départ (Réglages)</div></div>`;
   $('#v-dash').innerHTML=`${banner}
    <div class="kpis" style="margin-top:16px">
-     <div class="kpi hero"><div class="k-l">Patrimoine total</div><div class="k-v"><span id="heroval">${eur0(c.value)}</span></div><div class="k-s ${c.pv>=0?'pos':'neg'}">${c.pv>=0?'+':''}${eur0(c.pv)} · ${PCT(c.pvp)}</div></div>
+     <div class="kpi hero"><div class="k-l">Patrimoine net</div><div class="k-v"><span id="heroval">${eur0(c.net)}</span></div><div class="k-s ${c.pv>=0?'pos':'neg'}">${c.pv>=0?'+':''}${eur0(c.pv)} · ${PCT(c.pvp)}</div>${c.debt>0?`<div class="k-s muted">actifs ${eur0(c.value)} − crédits ${eur0(c.debt)}</div>`:''}</div>
      <div class="kpi"><div class="k-l">Total versé</div><div class="k-v">${eur0(c.invested)}</div></div>
      ${yb}
      <div class="kpi"><div class="k-l">Épargne disponible</div><div class="k-v" style="font-size:20px">${eur0(c.dispo)}</div><div class="k-s muted">livrets + courant</div></div>
    </div>
    <div class="kpis" style="margin-top:12px">
-     <div class="kpi"><div class="k-l">Revenus immo / mois</div><div class="k-v" style="font-size:19px">${eur(c.immoMonthly)}</div><div class="k-s muted">net d'impôt</div></div>
+     <div class="kpi"><div class="k-l">Revenus Bricks / mois</div><div class="k-v" style="font-size:19px">${eur(c.immoMonthly)}</div><div class="k-s muted">net d'impôt</div></div>
+     ${(DB.properties||[]).length?`<div class="kpi"><div class="k-l">Cash-flow locatif / mois</div><div class="k-v ${c.reCashflow>=0?'pos':'neg'}" style="font-size:19px">${c.reCashflow>=0?'+':''}${eur(c.reCashflow)}</div><div class="k-s muted">loyers − charges − crédits</div></div>`:''}
      <div class="kpi"><div class="k-l">Intérêts épargne / an</div><div class="k-v" style="font-size:19px">${eur0(c.sN)}</div><div class="k-s muted">net · à la quinzaine</div></div>
    </div>
-   ${backupHtml()}${goalHtml()}
+   ${alertsHtml()}${backupHtml()}${goalHtml()}
    <div class="card pad" style="margin-top:12px"><div class="spread"><span style="font-weight:600;font-size:13.5px">📄 Récap fiscal ${today().getFullYear()}</span><button class="btn sm" onclick="taxRecap()">Voir</button></div></div>
    <div class="sec"><div class="sec-h"><h2>Évolution du patrimoine</h2></div>
      <div class="card pad"><div style="position:relative;height:180px"><canvas id="evo"></canvas></div>
@@ -651,10 +717,10 @@ function renderDash(){
   if(donutChart)donutChart.destroy();
   donutChart=new Chart($('#donut'),{type:'doughnut',data:{labels:rep.map(r=>r.name),datasets:[{data:rep.map(r=>+(r.part*100).toFixed(1)),backgroundColor:PAL,borderColor:surf,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.label+' : '+x.parsed.toFixed(1)+' %'}}}}});
   const snaps=DB.settings.snapshots;const keys=Object.keys(snaps).sort();
-  const labs=keys.map(k=>k),data=keys.map(k=>snaps[k]);labs.push('Auj.');data.push(Math.round(consolidate().value));
+  const labs=keys.map(k=>k),data=keys.map(k=>snaps[k]);labs.push('Auj.');data.push(Math.round(consolidate().net));
   if(evoChart)evoChart.destroy();
   evoChart=new Chart($('#evo'),{type:'line',data:{labels:labs,datasets:[{data,borderColor:'#F7931A',backgroundColor:'rgba(247,147,26,.12)',fill:true,tension:.35,pointBackgroundColor:'#F7931A',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tick,font:{size:11}}},y:{ticks:{color:tick,callback:v=>v>=1000?(v/1000)+'k':v}}}}});
-  if(!dashAnimated){countUp($('#heroval'),c.value);dashAnimated=true;}
+  if(!dashAnimated){countUp($('#heroval'),c.net);dashAnimated=true;}
   renderPerfChart();
 }
 
@@ -707,8 +773,8 @@ function perfStats(){
 }
 function perfHtml(){
   const p=perfStats(),ch=DB.settings.indexChoice;
-  const tri=p.irr!=null?(p.irr>=0?'+':'')+PCT(p.irr):'—';
-  const twr=p.twr!=null?(p.twr>=0?'+':'')+PCT(p.twr):'—';
+  const tri=p.irr!=null?PCT(p.irr):'—';   // PCT ajoute déjà le signe +
+  const twr=p.twr!=null?PCT(p.twr):'—';
   const twrA=p.twrAnnual!=null?PCT(p.twrAnnual):'—';
   return `<div class="sec"><div class="sec-h"><h2>Performance</h2><button class="btn sm" onclick="openGuide()">Aide</button></div>
    <div class="kpis">
@@ -778,9 +844,9 @@ function getToken(interactive){return new Promise((res,rej)=>{
 async function driveFind(tok){
   const r=await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q="+encodeURIComponent("name='investco-backup.json'")+"&fields=files(id,modifiedTime)",{headers:{Authorization:'Bearer '+tok}});
   if(!r.ok)throw new Error('Drive '+r.status); const d=await r.json(); return d.files&&d.files.length?d.files[0]:null;}
-async function driveGet(tok,id){const r=await fetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media',{headers:{Authorization:'Bearer '+tok}});if(!r.ok)throw new Error('Drive '+r.status);return await r.json();}
+async function driveGet(tok,id){const r=await fetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media',{headers:{Authorization:'Bearer '+tok}});if(!r.ok)throw new Error('Drive '+r.status);return Fin.deserialize(await r.json());}
 async function driveSave(tok,id,obj){
-  const body=JSON.stringify(obj),meta={name:'investco-backup.json'}; if(!id)meta.parents=['appDataFolder'];
+  const body=JSON.stringify(Fin.serialize(obj)),meta={name:'investco-backup.json'}; if(!id)meta.parents=['appDataFolder'];
   const b='-------investco'+Date.now();
   const mp='--'+b+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(meta)+'\r\n--'+b+'\r\nContent-Type: application/json\r\n\r\n'+body+'\r\n--'+b+'--';
   const url=id?('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=multipart&fields=id'):'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id';
@@ -795,7 +861,7 @@ async function syncNow(interactive){
     if(f){
       DB.settings.gdriveFileId=f.id; const remote=await driveGet(tok,f.id);
       const rT=(remote&&remote.meta&&remote.meta.updatedAt)||0, lT=(DB.meta&&DB.meta.updatedAt)||0;
-      if(rT>lT){applyingRemote=true;DB=remote;load2();DB.settings.lastSync=new Date().toISOString();save();applyingRemote=false;renderAll();toast('Récupéré depuis Drive ✓');}
+      if(rT>lT){applyingRemote=true;backupLocal('Avant récupération depuis Drive');DB=remote;load2();DB.settings.lastSync=new Date().toISOString();save();applyingRemote=false;renderAll();toast('Récupéré depuis Drive ✓');}
       else if(lT>rT){await driveSave(tok,f.id,DB);DB.settings.lastSync=new Date().toISOString();applyingRemote=true;save();applyingRemote=false;toast('Sauvegardé sur Drive ✓');}
       else{DB.settings.lastSync=new Date().toISOString();applyingRemote=true;save();applyingRemote=false;toast('Déjà à jour ✓');}
     }else{
@@ -926,17 +992,40 @@ function placeEpargne(){
   $('#place-body').innerHTML=`
    <div class="sec-h" style="margin-top:14px"><h2>Épargne & liquidités</h2><button class="btn sm primary" onclick="editSaving(-1)">+ Produit</button></div>
    <div class="card"><div class="twrap"><table><thead><tr><th>Produit</th><th>Versé net</th><th>Capital</th><th>Taux</th><th>Intérêts nets/an</th><th>Gains</th><th></th></tr></thead>
-   <tbody>${rows.map(({s,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.savings[${i}].name)"><div class="t-name">${esc(s.name)} ›</div><div class="t-sub">${esc(s.bank||'')}${c.av8?' · AV +8 ans':''}</div></td>
+   <tbody>${rows.map(({s,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.savings[${i}].name)"><div class="t-name">${esc(s.name)} ›</div><div class="t-sub">${esc(s.bank||'')}${c.av8?' · AV +8 ans':''}${(()=>{const ci=ceilingInfo(s);return ci?` · <span style="color:${ci.level==='full'?'var(--neg)':ci.level==='near'?'var(--warn)':'var(--ink3)'}">plafond ${Math.round(ci.ratio*100)} %</span>`:'';})()}</div></td>
      <td>${eur0(c.versed)}</td><td>${eur0(s.cap||0)}</td><td>${(c.rate*100).toFixed(2).replace('.',',')}%</td><td>${eur(c.net)}</td>
      <td class="${c.gains>=0?'pos':'neg'}">${c.gains>=0?'+':''}${eur0(c.gains)}</td><td><span class="del" onclick="editSaving(${i})">✎</span></td></tr>`).join('')}</tbody>
    <tfoot><tr><td>TOTAL</td><td>${eur0(tVer)}</td><td>${eur0(tCap)}</td><td></td><td>${eur(tNet)}</td><td></td><td></td></tr></tfoot></table></div></div>
-   <div class="card pad" style="margin-top:14px;background:var(--hero)"><div style="font-weight:650;margin-bottom:6px;color:#fff">Mémo — étudiant, non imposable</div>
-     <div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">• Case 2OP (barème) : 18,6 % au lieu de 31,4 %.<br>• Dispense d'acompte avant le 30 nov. si revenu &lt; 25 000 €.<br>• LEP 2,50 % net (plafond 10 000 €).<br>• Ordre : Livret Jeune → LEP → Livret A → LDDS → placements.</div></div>
+   ${tmi()===0?`<div class="card pad" style="margin-top:14px;background:var(--hero)"><div style="font-weight:650;margin-bottom:6px;color:#fff">Mémo — non imposable (TMI 0 %)</div>
+     <div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">• Option pour le barème (case 2OP) : ${fin(r2(taxBareme()*100))} % au lieu de ${fin(r2(taxPFU()*100))} % (PFU) sur les intérêts et plus-values.<br>• LEP ${fin(r2((param('rate.LEP')||0)*100))} % net, plafond ${eur0(param('ceil.LEP'))} ; Livret A ${fin(r2((param('rate.Livret A')||0)*100))} %, plafond ${eur0(param('ceil.Livret A'))}.<br>• Taux et plafonds à jour dans Réglages ▸ Paramètres réglementaires.</div></div>`:''}
    <div class="note">Intérêts calculés à la quinzaine (règle Livret A) : un versement porte intérêt au 1er/16 suivant, un retrait cesse au 1er/16 précédent. AV : abattement pris en compte après 8 ans.</div>`;
 }
 function nextPayDate(c){const n=crowdCalc(c).next;return n?n.d:null;}
 function markRepaid(i){DB.crowd[i].st='Remboursé';save();renderPlacements();toast('Projet remboursé — pense à enregistrer le dépôt du capital');}
 function placeImmo(){
+  const RE=realEstate(),t=ymd(today());
+  const props=(DB.properties||[]).map((p,i)=>({p,c:propertyCalc(p),i})),loans=(DB.loans||[]).map((l,i)=>({l,c:loanCalc(l),i}));
+  const reHtml=`
+   <div class="sec-h" style="margin-top:14px"><h2>Biens immobiliers</h2><button class="btn sm primary" onclick="editProperty(-1)">+ Bien</button></div>
+   ${props.length?`<div class="kpis" style="margin-bottom:10px"><div class="kpi hero"><div class="k-l">Valeur des biens</div><div class="k-v" style="font-size:21px">${eur0(RE.value)}</div><div class="k-s muted">crédits restants ${eur0(RE.debt)}</div></div>
+     <div class="kpi"><div class="k-l">Cash-flow / mois</div><div class="k-v ${RE.cashflow>=0?'pos':'neg'}" style="font-size:19px">${RE.cashflow>=0?'+':''}${eur(RE.cashflow)}</div><div class="k-s muted">avant impôt</div></div></div>`:''}
+   ${props.map(({p,c,i})=>`<div class="card pad" style="margin-bottom:10px"><div class="spread"><div><div class="t-name" style="font-size:15px">${esc(p.name)}</div><div class="t-sub">acheté ${eur0(p.price)}${p.buyD?' le '+pd(p.buyD).toLocaleDateString('fr-FR'):''}</div></div><span class="del" onclick="editProperty(${i})">✎ modifier</span></div>
+       <div class="kpis" style="margin-top:10px;grid-template-columns:repeat(3,1fr);gap:8px">
+         <div><div class="k-l">Valeur estimée</div><div style="font-weight:650">${eur0(c.value)}</div></div>
+         <div><div class="k-l">Rendement brut / net</div><div style="font-weight:650">${PCT1(c.grossYield)} / ${PCT1(c.netYield)}</div></div>
+         <div><div class="k-l">Cash-flow</div><div style="font-weight:650" class="${c.cashflow>=0?'pos':'neg'}">${c.cashflow>=0?'+':''}${eur(c.cashflow)}</div></div></div>
+       <div class="t-sub" style="margin-top:8px">Loyer ${eur(p.rent||0)} − charges ${eur(p.charges||0)}${c.loanMonthly?' − crédit '+eur(c.loanMonthly):''} · capital restant dû ${eur0(c.crd)} · part nette ${eur0(c.equity)}</div></div>`).join('')
+     ||`<div class="card"><div class="emptybox"><div class="ic">🏡</div>Aucun bien. Ajoute un logement (résidence ou locatif) pour suivre sa valeur, ses loyers et son crédit.</div></div>`}
+   <div class="sec-h" style="margin-top:18px"><h2>Crédits</h2><button class="btn sm primary" onclick="editLoan(-1)">+ Crédit</button></div>
+   ${loans.map(({l,c,i})=>`<div class="card pad" style="margin-bottom:10px"><div class="spread"><div><div class="t-name" style="font-size:15px">${esc(l.name)}</div><div class="t-sub">${eur0(l.capital)} à ${fin(r2(l.rate*10000)/100)} % sur ${Math.round(l.months/12*10)/10} ans${l.propertyId&&(DB.properties||[]).find(p=>p.id===l.propertyId)?' · '+esc(DB.properties.find(p=>p.id===l.propertyId).name):''}</div></div><span class="del" onclick="editLoan(${i})">✎ modifier</span></div>
+       <div class="kpis" style="margin-top:10px;grid-template-columns:repeat(3,1fr);gap:8px">
+         <div><div class="k-l">Mensualité</div><div style="font-weight:650">${eur(c.monthlyTotal)}</div><div class="t-sub">dont assurance ${eur(l.insurance||0)}</div></div>
+         <div><div class="k-l">Restant dû</div><div style="font-weight:650">${eur(c.crd)}</div><div class="t-sub">${c.remainingCount} échéances</div></div>
+         <div><div class="k-l">Intérêts ${t.slice(0,4)}</div><div style="font-weight:650">${eur(c.interestYear)}</div><div class="t-sub">fin ${pd(c.end).toLocaleDateString('fr-FR',{month:'short',year:'numeric'})}</div></div></div>
+       <div class="progress" style="margin-top:10px"><span style="width:${(100*(1-c.crd/(l.capital||1))).toFixed(0)}%;background:var(--orange)"></span></div>
+       <button class="btn sm" style="width:100%;margin-top:10px" onclick="loanTable(${i})">Tableau d'amortissement</button></div>`).join('')
+     ||`<div class="card"><div class="emptybox"><div class="ic">🏦</div>Aucun crédit en cours.</div></div>`}
+   <div class="sec-h" style="margin-top:18px"><h2>Crowdfunding (Bricks)</h2></div>`;
   const rows=DB.crowd.map((c,i)=>({c,cc:crowdCalc(c),i}));
   const act=rows.filter(r=>crowdActive(r.c));
   const capPlace=act.reduce((a,r)=>a+(r.c.amt||0),0);
@@ -945,8 +1034,8 @@ function placeImmo(){
   const totReceived=r2(rows.reduce((a,r)=>a+r.cc.receivedAmt,0));
   const tx=crowdTaxRate();
   const monthlyNet=r2(rows.filter(r=>r.c.st==='En cours'&&!r.cc.mature).reduce((a,r)=>a+r.cc.monthly,0)*(1-tx));
-  $('#place-body').innerHTML=`
-   <div class="kpis" style="margin-top:14px">
+  $('#place-body').innerHTML=reHtml+`
+   <div class="kpis" style="margin-top:4px">
      <div class="kpi hero"><div class="k-l">Capital placé</div><div class="k-v" style="font-size:21px">${eur(capPlace)}</div>${capRisk>0?`<div class="k-s" style="color:var(--warn)">dont ${eur(capRisk)} en retard/défaut</div>`:''}</div>
      <div class="kpi"><div class="k-l">Revenus perçus</div><div class="k-v" style="font-size:19px">${eur(totReceived)}</div><div class="k-s muted">versements pointés</div></div>
      <div class="kpi"><div class="k-l">Revenus / mois</div><div class="k-v" style="font-size:19px">${eur(monthlyNet)}</div><div class="k-s muted">net (${DB.settings.crowdTax==='bareme'?'barème':'PFU'} ${fin(r2(tx*100))} %)</div></div>
@@ -969,14 +1058,21 @@ function placeImmo(){
          <span class="muted">${cc.next&&crowdActive(c)?'Prochain versement : <b style="color:var(--ink)">'+cc.next.d.toLocaleDateString('fr-FR')+'</b>':'Échéance : <b style="color:var(--ink)">'+cc.ech.toLocaleDateString('fr-FR')+'</b>'}</span>
          ${cc.mature&&crowdActive(c)?`<button class="btn sm" style="color:var(--warn);border-color:var(--warn)" onclick="markRepaid(${i})">Capital reçu ✓</button>`:''}</div>
        ${crowdActive(c)&&cc.sch.length?`<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><div class="sub" style="margin-bottom:6px">Échéancier : coche chaque versement reçu (${eur(cc.monthly)} chacun)</div>
-         <div style="display:flex;flex-wrap:wrap;gap:7px">${cc.sch.map(p=>{const on=paid.has(p.mk),fut=p.d>today();
-           return `<div style="text-align:center"><div class="chk ${on?'on':(fut?'':'miss')}" style="width:30px;height:30px;${fut&&!on?'opacity:.45;border-style:dashed':''}" title="Versement du ${p.d.toLocaleDateString('fr-FR')}${fut?' (à venir)':''}" onclick="togglePaid(${i},'${p.mk}')">${on?'✓':''}</div><div class="sub" style="font-size:9px;margin-top:2px">${p.mk.slice(5)}/${p.mk.slice(2,4)}</div></div>`;}).join('')}</div>
+         ${(()=>{const box=p=>{const on=paid.has(p.mk),fut=p.d>today();
+             return `<div style="text-align:center"><div class="chk ${on?'on':(fut?'':'miss')}" style="width:30px;height:30px;${fut&&!on?'border:1.5px dashed var(--ink3)':''}" title="Versement du ${p.d.toLocaleDateString('fr-FR')}${fut?' (à venir)':''}" onclick="togglePaid(${i},'${p.mk}')">${on?'✓':''}</div><div class="sub" style="font-size:9px;margin-top:2px">${p.mk.slice(5)}/${p.mk.slice(2,4)}</div></div>`;};
+           const n=cc.due.length+6,head=cc.sch.slice(0,n),rest=cc.sch.slice(n);
+           return `<div style="display:flex;flex-wrap:wrap;gap:7px">${head.map(box).join('')}</div>${rest.length?`<details style="margin-top:6px"><summary class="sub" style="cursor:pointer">Voir les ${rest.length} versements suivants</summary><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px">${rest.map(box).join('')}</div></details>`:''}`;})()}
          <div class="sub" style="margin-top:6px">Case rouge : versement échu non coché · case en pointillés : à venir</div></div>`:''}
      </div>`;}).join('')||`<div class="card"><div class="emptybox"><div class="ic">🏠</div>Aucun projet. Ajoute ton premier investissement Bricks.</div></div>`}
    <div class="note">Le versement mensuel est calculé depuis le taux annuel (capital × taux ÷ 12). Une case rouge = versement échu non encore pointé. Un projet en retard ou en défaut reste compté dans ton patrimoine jusqu'à « Capital reçu ».</div>`;
 }
 
 
+function addDetectedRecurring(k){const r=Fin.detectRecurring(DB.expenses,ymKey(today()),DB.recurring.map(x=>x.label))[k];if(!r)return;
+  // démarre le mois prochain : les dépenses déjà saisies ne sont pas dupliquées
+  const nx=addMonths(new Date(today().getFullYear(),today().getMonth(),1),1);
+  DB.recurring.push({label:r.label,amt:r.amt,cat:r.cat,day:Math.min(28,r.day),start:ymd(new Date(nx.getFullYear(),nx.getMonth(),Math.min(28,r.day))),active:true});
+  save();renderBudget();toast('« '+r.label+' » ajoutée aux récurrentes');}
 function setBudMonth(d){budMonth+=d;if(budMonth>0)budMonth=0;renderBudget();}
 function renderBudget(){
   const cc=compteCourant();const mdate=addMonths(today(),budMonth);const ymk=ymKey(mdate);const cats=catBreakdown(ymk);
@@ -992,6 +1088,16 @@ function renderBudget(){
      <div class="k-s"><span class="pos">+${eur0(inThis)}</span> &nbsp; <span class="neg">−${eur0(totOut)}</span> <span class="muted">en ${mdate.toLocaleDateString('fr-FR',{month:'long'})}</span></div></div>
    <div class="bud-nav" style="margin-top:16px"><button onclick="setBudMonth(-1)">‹</button><span class="lbl">${monthLbl}</span><button onclick="setBudMonth(1)" ${budMonth>=0?'disabled style=opacity:.3':''}>›</button></div>
    ${over.length?`<div class="card pad" style="border:1px solid var(--neg);background:var(--negbg);margin-bottom:12px;font-size:13px;color:var(--neg)">⚠️ Budget dépassé : ${over.join(', ')}.</div>`:''}
+   ${(()=>{const B=Fin.budgetVsActual(DB.expenses,cb,ymk);if(!B.rows.length)return '';
+     return `<div class="sec"><div class="sec-h"><h2>Prévu vs réel</h2><button class="btn sm" onclick="editBudgets()">Budgets</button></div>
+     <div class="card"><div class="twrap"><table><thead><tr><th>Catégorie</th><th>Prévu</th><th>Réel</th><th>Écart</th><th>Mois préc.</th><th>Moy. 3 mois</th></tr></thead><tbody>
+     ${B.rows.map(r=>`<tr><td><span class="dot" style="display:inline-block;background:${CATCOL[r.cat]||'#63788A'};margin-right:6px"></span>${esc(r.cat)}</td><td>${r.plan?eur0(r.plan):'—'}</td><td style="font-weight:600${r.over?';color:var(--neg)':''}">${eur0(r.real)}</td>
+       <td class="${r.plan?(r.diff>=0?'pos':'neg'):''}">${r.plan?(r.diff>=0?'reste '+eur0(r.diff):'+'+eur0(-r.diff)):'—'}</td><td class="muted">${eur0(r.prev)}</td><td class="muted">${eur0(r.avg3)}</td></tr>`).join('')}
+     <tr style="font-weight:650"><td>Total</td><td>${B.plan?eur0(B.plan):'—'}</td><td>${eur0(B.real)}</td><td class="${B.plan?(B.plan-B.real>=0?'pos':'neg'):''}">${B.plan?eur0(B.plan-B.real):'—'}</td><td class="muted">${eur0(B.prev)}</td><td class="muted">${eur0(B.avg3)}</td></tr>
+     </tbody></table></div></div></div>`;})()}
+   ${(()=>{if(budMonth!==0)return '';const R=Fin.detectRecurring(DB.expenses,ymk,DB.recurring.map(r=>r.label));if(!R.length)return '';
+     return `<div class="card pad" style="margin-top:12px;border-color:var(--orange)"><b>🔁 Dépenses qui reviennent chaque mois</b><div class="sub" style="margin:4px 0 8px">Ajoute-les en récurrentes pour qu'elles soient prévues automatiquement.</div>
+       ${R.map((r,k)=>`<div class="spread" style="font-size:13px;padding:4px 0"><span>${esc(r.label)} · ${eur(r.amt)} le ${r.day} <span class="muted">(${r.months} mois)</span></span><button class="btn sm" onclick="addDetectedRecurring(${k})">Ajouter</button></div>`).join('')}</div>`;})()}
    <div class="sec"><div class="sec-h"><h2>Où va l'argent</h2><button class="btn sm" onclick="editBudgets()">Budgets</button></div>
      <div class="card pad">${catArr.length?`<div style="display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:16px;align-items:center">
        <div style="position:relative;height:170px"><canvas id="cat"></canvas></div>
@@ -1020,24 +1126,31 @@ function renderBudget(){
   histChart=new Chart($('#budhist'),{type:'bar',data:{labels:mlab,datasets:[{data:mtot.map(v=>Math.round(v)),backgroundColor:mlab.map((_,i)=>i===today().getMonth()?'#F7931A':'#3D82AF'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>eur0(x.parsed.y)}}},scales:{x:{ticks:{color:tick,font:{size:10}}},y:{ticks:{color:tick,callback:v=>v>=1000?(v/1000)+'k':v}}}}});
 }
 
+const PLATS=['Vinted','Leboncoin','eBay','Back Market','Vestiaire Collective','Facebook','Autre'];
+let revYear=null;
 function renderRevente(){
-  const rows=DB.resale.map((r,i)=>({r,c:resaleCalc(r),i}));
-  const profit=rows.filter(x=>x.c.sold).reduce((a,x)=>a+x.c.margin,0);
-  const immo=rows.filter(x=>!x.c.sold).reduce((a,x)=>a+x.c.cost,0);
-  const nbSold=rows.filter(x=>x.c.sold).length;
+  const y=revYear||today().getFullYear(),st=DB.settings;
+  const Y=Fin.resaleYear(DB.resale,y,{regime:st.resaleRegime,abattement:param('revente.microbic.abattement'),dac7Count:param('revente.dac7.ventes'),dac7Amount:param('revente.dac7.montant')});
+  const rows=DB.resale.map((r,i)=>({r,c:Fin.resaleItem(r),i})).sort((a,b)=>(a.r.st==='Vendu')-(b.r.st==='Vendu')||String(b.r.sellD||b.r.buyD).localeCompare(String(a.r.sellD||a.r.buyD)));
+  const years=[...new Set(DB.resale.filter(r=>r.sellD).map(r=>+String(r.sellD).slice(0,4)).concat([today().getFullYear()]))].sort((a,b)=>b-a);
+  const alerts=Y.dac7.filter(d=>d.reported||d.near);
   $('#v-revente').innerHTML=`
-   <div class="kpis" style="margin-top:16px">
-     <div class="kpi hero"><div class="k-l">Profit total</div><div class="k-v ${profit>=0?'pos':'neg'}">${profit>=0?'+':''}${eur0(profit)}</div><div class="k-s muted">${nbSold} article${nbSold>1?'s':''} vendu${nbSold>1?'s':''}</div></div>
-     <div class="kpi"><div class="k-l">Capital immobilisé</div><div class="k-v" style="font-size:20px">${eur0(immo)}</div><div class="k-s muted">stock en vente</div></div>
+   <div class="spread" style="margin-top:14px"><h2>Achat-revente</h2><select onchange="revYear=+this.value;renderRevente()" style="width:auto">${years.map(x=>`<option ${x===y?'selected':''}>${x}</option>`).join('')}</select></div>
+   <div class="kpis" style="margin-top:10px">
+     <div class="kpi hero"><div class="k-l">Marge nette ${y}</div><div class="k-v ${Y.net>=0?'pos':'neg'}">${Y.net>=0?'+':''}${eur(Y.net)}</div><div class="k-s muted">${Y.count} vente${Y.count>1?'s':''} · brute ${eur(Y.gross)}</div></div>
+     <div class="kpi"><div class="k-l">Chiffre d'affaires</div><div class="k-v" style="font-size:20px">${eur(Y.revenue)}</div><div class="k-s muted">${Y.avgDays!=null?'vendu en '+Y.avgDays+' j en moyenne':'—'}</div></div>
+     <div class="kpi"><div class="k-l">Stock immobilisé</div><div class="k-v" style="font-size:20px">${eur(Y.stockValue)}</div><div class="k-s muted">${Y.stockCount} article${Y.stockCount>1?'s':''} en vente</div></div>
+     <div class="kpi"><div class="k-l">Imposable ${y}</div><div class="k-v" style="font-size:20px">${eur(Y.taxable)}</div><div class="k-s muted">${st.resaleRegime==='microbic'?'micro-BIC : CA − '+fin(r2(param('revente.microbic.abattement')*100))+' %':'ventes occasionnelles'}</div></div>
    </div>
+   ${alerts.map(d=>`<div class="card pad" style="margin-top:10px;border-color:var(--warn);background:var(--warnbg)"><b style="color:var(--warn)">${d.reported?'📨 Déclaré au fisc par '+esc(d.plat):'⚠️ '+esc(d.plat)+' : seuil de déclaration proche'}</b>
+     <div style="font-size:12.5px;color:var(--ink2);margin-top:4px">${d.count} vente${d.count>1?'s':''} et ${eur(d.amount)} en ${y}. Les plateformes transmettent au fisc les vendeurs qui atteignent ${param('revente.dac7.ventes')} ventes ou ${eur0(param('revente.dac7.montant'))} par an (DAC7). Ce n'est pas un impôt : seules les ventes relevant d'une activité d'achat-revente sont imposables.</div></div>`).join('')}
+   ${Object.keys(Y.byPlat).length?`<div class="card pad" style="margin-top:10px"><div class="sub" style="margin-bottom:6px">Par plateforme en ${y}</div>${Object.entries(Y.byPlat).map(([k,v])=>`<div class="spread" style="font-size:13px;padding:3px 0"><span>${esc(k)}</span><span>${v.count} vente${v.count>1?'s':''} · ${eur(v.amount)}</span></div>`).join('')}</div>`:''}
    <div class="sec-h" style="margin-top:20px"><h2>Articles</h2><button class="btn sm primary" onclick="editResale(-1)">+ Article</button></div>
-   <div class="card"><div class="twrap"><table><thead><tr><th>Article</th><th>Coût</th><th>Vente</th><th>Marge</th><th>ROI</th><th>Statut</th><th></th></tr></thead>
-   <tbody>${rows.map(({r,c,i})=>`<tr><td><div class="t-name">${esc(r.name)}</div><div class="t-sub">acheté ${r.buyD?new Date(r.buyD).toLocaleDateString('fr-FR'):'—'}</div></td>
-     <td>${eur0(c.cost)}</td><td>${c.sold?eur0(r.sell):'—'}</td><td class="${c.margin>=0?'pos':'neg'}">${c.sold?((c.margin>=0?'+':'')+eur0(c.margin)):'—'}</td>
-     <td class="${c.roi>=0?'pos':'neg'}">${c.sold?PCT(c.roi):'—'}</td>
-     <td>${statusPill(r.st==='Vendu'?'Objectif atteint':(r.st==='Gardé'?'Rentable':'Frais non couverts'))}</td>
-     <td><span class="del" onclick="editResale(${i})">✎</span></td></tr>`).join('')||`<tr><td class="empty" colspan="7">Aucun article. Ajoute ton premier achat-revente.</td></tr>`}</tbody></table></div></div>
-   <div class="note">Coût = prix d'achat + frais. Marge = prix de vente − coût, comptée seulement quand l'article est vendu. Le statut « En vente » regroupe ton stock immobilisé.</div>`;
+   <div class="card"><div class="twrap"><table><thead><tr><th>Article</th><th>Coût</th><th>Vente</th><th>Marge nette</th><th>Statut</th><th></th></tr></thead>
+   <tbody>${rows.map(({r,c,i})=>`<tr><td><div class="t-name">${esc(r.name)}</div><div class="t-sub">${r.plat?esc(r.plat)+' · ':''}acheté ${r.buyD?pd(r.buyD).toLocaleDateString('fr-FR'):'—'}${c.days!=null?' · '+c.days+' j':''}</div></td>
+     <td>${eur(c.cost)}</td><td>${c.sold?eur(r.sell):'—'}</td><td class="${c.net>=0?'pos':'neg'}">${c.sold?((c.net>=0?'+':'')+eur(c.net)):'—'}${c.sold&&c.sellCosts?`<div class="t-sub">frais ${eur(c.sellCosts)}</div>`:''}</td>
+     <td>${esc(r.st)}</td><td><span class="del" onclick="editResale(${i})">✎</span></td></tr>`).join('')||`<tr><td class="empty" colspan="6">Aucun article. Ajoute ton premier achat-revente.</td></tr>`}</tbody></table></div></div>
+   <div class="note">Coût = prix d'achat + frais d'achat. Marge brute = vente − coût ; marge nette = marge brute − frais de plateforme et d'envoi. Le régime fiscal se choisit dans Réglages ▸ Ma situation fiscale.</div>`;
 }
 
 function openSheet(h){$('#sheet').innerHTML=h;$('#ov').className='ov on';}
@@ -1056,6 +1169,8 @@ const assetNames=()=>DB.assets.map(a=>a.name),savingNames=()=>DB.savings.map(s=>
 function quickAdd(){openSheet(`<div class="spread"><h2>Ajouter</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editMov(-1)">💹 Opération (achat, vente, dépôt, retrait, transfert)</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editCrowd(-1)">🏠 Projet Bricks / crowdfunding</button></div>
+  <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editProperty(-1)">🏡 Bien immobilier</button></div>
+  <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editLoan(-1)">🏦 Crédit</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editExpense(-1)">🧾 Dépense du compte courant</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editResale(-1)">🛍️ Article d'achat-revente</button></div>
   <div class="field"><button class="btn" style="width:100%;justify-content:flex-start" onclick="editRecurring(-1)">🔁 Dépense récurrente</button></div>
@@ -1071,8 +1186,21 @@ const CATKW={Courses:['carrefour','leclerc','e.leclerc','auchan','lidl','interma
  Restau:['restaurant','resto','mcdo','mcdonald','burger','bk ','quick','kfc','uber eats','ubereats','deliveroo','just eat','boulangerie','paul ','café','cafe ','starbucks','sushi','pizza','pizz','brasserie','tacos','subway','o tacos','bar ','snack','traiteur'],
  Logement:['loyer','edf','engie','enedis','eau','veolia','suez','saur','free ','freebox','orange','sfr','bouygues','red by sfr','sosh','assurance habitation','maaf','macif','matmut','gmf','syndic','charges','foncia','nexity'],
  Shopping:['amazon','amzn','fnac','darty','boulanger','zalando','zara','h&m','h & m','uniqlo','decathlon','ikea','leroy merlin','castorama','brico','conforama','but ','maisons du monde','vinted','asos','nike','adidas','action ','primark','shein','aliexpress','cdiscount','sephora','normal ','gifi','kiabi','jules','celio']};
-function autoCat(label){const l=(label||'').toLowerCase();for(const c in CATKW){if(CATKW[c].some(w=>l.includes(w)))return c;}return 'Autres';}
+function autoCat(label){const l=(label||'').toLowerCase();
+  for(const r of (DB.settings.catRules||[]))if(r.kw&&l.includes(r.kw.toLowerCase()))return r.cat; // tes règles d'abord
+  for(const c in CATKW){if(CATKW[c].some(w=>l.includes(w)))return c;}return 'Autres';}
 function matchAccount(label){const l=(label||'').toLowerCase();return DB.savings.find(s=>s.type!=='Compte courant'&&(l.includes(s.name.toLowerCase())||l.includes((s.type||'').toLowerCase())));}
+function openRules(){const R=DB.settings.catRules||[];
+  openSheet(`<div class="spread"><h2>Règles de catégories</h2><button class="btn sm" onclick="closeSheet();openSettings()">Retour</button></div>
+   <div class="hint" style="margin-top:4px">Si le libellé d'une dépense contient le mot-clé, elle reçoit la catégorie choisie (import de relevé et saisie). Tes règles passent avant les règles intégrées.</div>
+   <div class="card" style="margin-top:10px"><div class="twrap"><table><tbody>${R.map((r,i)=>`<tr><td>« ${esc(r.kw)} »</td><td>→ ${esc(r.cat)}</td><td><span class="del" onclick="delRule(${i})">✕</span></td></tr>`).join('')||'<tr><td class="emptybox">Aucune règle personnelle.</td></tr>'}</tbody></table></div></div>
+   <div class="two" style="margin-top:12px"><div class="field"><label>Mot-clé</label><input id="ru_kw" placeholder="ex. boulangerie"></div><div class="field"><label>Catégorie</label><select id="ru_cat">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></div></div>
+   <div class="row" style="gap:8px"><button class="btn primary" style="flex:1" onclick="addRule()">Ajouter la règle</button><button class="btn" onclick="applyRules()">Recatégoriser mes dépenses</button></div>`);}
+function addRule(){const kw=$('#ru_kw').value.trim();if(kw.length<2){toast('Mot-clé ?',true);return;}
+  DB.settings.catRules=(DB.settings.catRules||[]).filter(r=>r.kw.toLowerCase()!==kw.toLowerCase());DB.settings.catRules.push({kw,cat:$('#ru_cat').value});save();openRules();toast('Règle ajoutée');}
+function delRule(i){DB.settings.catRules.splice(i,1);save();openRules();}
+function applyRules(){let n=0;DB.expenses.forEach(e=>{if(e.auto)return;const l=(e.label||'').toLowerCase();const r=(DB.settings.catRules||[]).find(r=>l.includes(r.kw.toLowerCase()));if(r&&e.cat!==r.cat){e.cat=r.cat;n++;}});
+  save();renderAll();toast(n+' dépense'+(n>1?'s':'')+' recatégorisée'+(n>1?'s':''));}
 function openImport(){openSheet(`<div class="spread"><h2>Importer un relevé</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
   <div class="field"><label>Colle ton relevé (CSV ou texte), ou charge un fichier</label><textarea id="imp_txt" rows="5" style="width:100%;font-family:monospace;font-size:12px;background:var(--card2);color:var(--ink);border:1px solid var(--line2);border-radius:10px;padding:10px" placeholder="14/09/2026  VIR LIVRET A  +200,00&#10;03/09/2026  CARREFOUR  -82,00"></textarea></div>
   <div class="two"><div class="field"><button class="btn" style="width:100%" onclick="$('#imp_csv').click()">📄 Fichier CSV</button><input type="file" id="imp_csv" accept=".csv,.txt,text/csv" style="display:none" onchange="impFile(event,'csv')"></div>
@@ -1174,15 +1302,18 @@ function renderReview(){
       ${(r.kind==='Transfert'||r.kind==='Dépôt'||r.kind==='Retrait')?`<select onchange="impReview[${i}].acc=this.value" style="width:auto;padding:5px;font-size:11px">${accs.map(a=>`<option ${r.acc===a?'selected':''}>${a}</option>`).join('')}</select>`:''}
     </div>`).join('')+`</div>`;}
 function setAllKind(k){impReview.forEach(r=>{r.kind=k;if(k==='Dépense'&&!r.cat)r.cat=autoCat(r.label);});renderReview();}
-function impDoBank(){const cc=compteCourant();let n=0,firstExp=null;
+function impDoBank(){const cc=compteCourant();let n=0,dup=0,firstExp=null;
+  const isDupMov=(o)=>DB.movements.some(m=>m.d===o.d&&m.t===o.t&&m.p===o.p&&(m.p2||'')===(o.p2||'')&&Math.round(m.m*100)===Math.round(o.m*100));
   impReview.forEach(r=>{if(r.kind==='Ignorer')return;const amt=Math.abs(r.amount);
+    if(r.kind==='Dépense'&&DB.expenses.some(e=>Fin.sameExpense(e,{d:r.date,amt,label:r.label}))){dup++;return;} // déjà importée
+    if(r.kind!=='Dépense'&&isDupMov({d:r.date,t:r.kind==='Revenu'?'Dépôt':r.kind,p:r.kind==='Transfert'?(r.amount>=0?(r.acc||''):cc&&cc.name):(r.acc||(cc&&cc.name)),p2:r.kind==='Transfert'?(r.amount>=0?cc&&cc.name:r.acc):'',m:amt})){dup++;return;}
     if(r.kind==='Dépense'){DB.expenses.push({d:r.date,label:r.label,amt,cat:r.cat||autoCat(r.label),imported:true});if(!firstExp||r.date<firstExp)firstExp=r.date;n++;}
     else if(r.kind==='Revenu'){if(cc)DB.movements.push({d:r.date,p:cc.name,t:'Dépôt',m:amt,n:'import'});n++;}
     else if(r.kind==='Transfert'){const other=r.acc||DB.savings.find(s=>s.type!=='Compte courant')?.name;if(!cc||!other||other===cc.name)return;
       DB.movements.push(r.amount>=0?{d:r.date,p:other,p2:cc.name,t:'Transfert',m:amt,n:'import'}:{d:r.date,p:cc.name,p2:other,t:'Transfert',m:amt,n:'import'});n++;}
     else if(r.kind==='Dépôt'||r.kind==='Retrait'){DB.movements.push({d:r.date,p:r.acc||(cc&&cc.name),t:r.kind,m:amt,n:'import'});n++;}});
   if(firstExp){const d=new Date(firstExp);budMonth=Math.min(0,(d.getFullYear()-today().getFullYear())*12+(d.getMonth()-today().getMonth()));}
-  save();closeSheet();renderAll();if(firstExp)nav('budget');toast(n+' opérations importées',n===0);}
+  save();closeSheet();renderAll();if(firstExp)nav('budget');toast(n+' opération'+(n>1?'s':'')+' importée'+(n>1?'s':'')+(dup?' · '+dup+' doublon'+(dup>1?'s':'')+' ignoré'+(dup>1?'s':''):''),n===0&&!dup);}
 function impBuildOps(){
   const opts=idx=>impHeaders.map((h,i)=>`<option value="${i}" ${i===idx?'selected':''}>${h}</option>`).join('');
   const g={date:guessCol(impHeaders,['date','jour']),prod:guessCol(impHeaders,['produit','actif','crypto','nom','asset']),qte:guessCol(impHeaders,['quantit','qty','btc','nombre']),prix:guessCol(impHeaders,['prix','price','cours','unitaire']),mont:guessCol(impHeaders,['montant','total','somme','eur']),frais:guessCol(impHeaders,['frais','fee','commission'])};
@@ -1253,12 +1384,12 @@ function saveAsset(i){const name=$('#a_name').value.trim();if(!name){toast('Nom 
 function delAsset(i){DB.assets.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
 function editSaving(i){const s=i>=0?DB.savings[i]:{name:'',type:'Livret A',bank:'',cap:'',open:ymd(today()),rate:'',tax:'Exonéré',ceil:''};
-  const types=['Livret A','LDDS','LEP','Livret Jeune','PEL','CEL','Livret bancaire','Assurance-vie','Compte courant','Autre'],taxes=['Exonéré','PFU standard','PFU assurance-vie','Barème TMI 0%'];
+  const types=['Livret A','LDDS','LEP','Livret Jeune','PEL','CEL','Livret bancaire','Assurance-vie','Compte courant','Autre'],taxes=['Exonéré','PFU standard','PFU assurance-vie','Barème'];
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouveau'} produit</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="two"><div class="field"><label>Nom</label><input id="s_name" value="${esc(s.name)}"></div><div class="field"><label>Type</label><select id="s_type">${types.map(t=>`<option ${s.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
    <div class="two"><div class="field"><label>Établissement</label><input id="s_bank" value="${esc(s.bank||'')}"></div><div class="field"><label>Solde actuel (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_cap" value="${fin(s.cap??'')}"></div></div>
    <div class="two"><div class="field"><label>Date d'ouverture</label><input type="date" id="s_open" value="${s.open||''}"></div><div class="field"><label>Taux manuel (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_rate" value="${fin(s.rate!=null&&s.rate!==''?(s.rate*100):'')}" placeholder="auto"></div></div>
-   <div class="two"><div class="field"><label>Fiscalité</label><select id="s_tax">${taxes.map(t=>`<option ${s.tax===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="field"><label>Plafond (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_ceil" value="${fin(s.ceil??'')}"></div></div>
+   <div class="two"><div class="field"><label>Fiscalité</label><select id="s_tax">${taxes.map(t=>`<option ${s.tax===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="field"><label>Plafond de versements (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_ceil" value="${fin(s.ceil??'')}" placeholder="${param('ceil.'+(s.type||'Livret A'))!=null?'réglementaire : '+fin(param('ceil.'+(s.type||'Livret A'))):'aucun'}"></div></div>
    <div class="hint">Taux vide = automatique (livrets réglementés). Le solde est calculé depuis les opérations ; si tu le modifies ici, l'écart est enregistré comme une opération (dépôt d'ouverture pour un produit sans opération, sinon « Ajustement » daté d'aujourd'hui). Le compte courant sert de base au Budget.</div>
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveSaving(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delSaving(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
 function saveSaving(i){const name=$('#s_name').value.trim();if(!name){toast('Nom ?',true);return;}const r=num('s_rate');
@@ -1279,6 +1410,48 @@ function delSaving(i){const n=DB.savings[i].name;const k=DB.movements.filter(m=>
   if(k&&!confirm('Supprimer « '+n+' » et ses '+k+' opération(s) ?'))return;
   DB.movements=DB.movements.filter(m=>m.p!==n&&m.p2!==n);DB.savings.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
+function editProperty(i){const p=i>=0?DB.properties[i]:{id:'',name:'',price:'',buyD:ymd(today()),rent:'',charges:'',values:[]},t=ymd(today());
+  const vals=(p.values||[]).slice().sort((a,b)=>a.d<b.d?1:-1);
+  openSheet(`<div class="spread"><h2>${i>=0?'Modifier le':'Nouveau'} bien</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   <div class="field"><label>Nom</label><input id="pr_name" value="${esc(p.name)}" placeholder="Appartement Montpellier"></div>
+   <div class="two"><div class="field"><label>Prix d'achat, frais inclus (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="pr_price" value="${fin(p.price??'')}"></div><div class="field"><label>Date d'achat</label><input type="date" id="pr_buyd" value="${p.buyD||''}"></div></div>
+   <div class="two"><div class="field"><label>Loyer mensuel (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="pr_rent" value="${fin(p.rent??'')}" placeholder="0 si résidence principale"></div><div class="field"><label>Charges mensuelles (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="pr_charges" value="${fin(p.charges??'')}" placeholder="copro, taxe foncière/12…"></div></div>
+   <div class="field"><label>Nouvelle estimation de valeur (facultatif)</label><div class="two"><input type="text" inputmode="decimal" autocomplete="off" id="pr_val" placeholder="valeur en €"><input type="date" id="pr_vald" value="${t}"></div>
+     <div class="hint">Chaque estimation est ajoutée avec sa date : l'historique est conservé.</div></div>
+   ${vals.length?`<div class="field"><label>Estimations</label>${vals.map(v=>`<div class="spread" style="font-size:12.5px;padding:3px 0;border-bottom:1px solid var(--line)"><span>${pd(v.d).toLocaleDateString('fr-FR')}</span><span>${eur0(v.v)} <span class="del" onclick="delPropertyValue(${i},'${v.d}')">✕</span></span></div>`).join('')}</div>`:''}
+   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveProperty(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delProperty(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
+function saveProperty(i){const name=$('#pr_name').value.trim();if(!name){toast('Nom ?',true);return;}
+  const price=num('pr_price'),rent=num('pr_rent'),charges=num('pr_charges'),v=num('pr_val'),vd=val('pr_vald');
+  if(!(price>0)){toast('Prix d\'achat ?',true);return;}
+  const old=i>=0?DB.properties[i]:null;
+  const o={id:old?old.id:'p'+Date.now(),name,price,buyD:val('pr_buyd'),rent:rent||0,charges:charges||0,values:old?(old.values||[]).slice():[]};
+  if(v!=null&&vd){o.values=o.values.filter(x=>x.d!==vd);o.values.push({d:vd,v});}
+  DB.properties=DB.properties||[];if(i>=0)DB.properties[i]=o;else DB.properties.push(o);save();closeSheet();renderAll();nav('placements');setPlace('immo');toast('Bien enregistré');}
+function delPropertyValue(i,d){DB.properties[i].values=(DB.properties[i].values||[]).filter(x=>x.d!==d);save();editProperty(i);}
+function delProperty(i){const p=DB.properties[i];if(!confirm('Supprimer « '+p.name+' » ?'))return;(DB.loans||[]).forEach(l=>{if(l.propertyId===p.id)l.propertyId=null;});DB.properties.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
+function editLoan(i){const l=i>=0?DB.loans[i]:{name:'Crédit immobilier',capital:'',rate:null,months:240,start:ymd(today()),insurance:'',propertyId:null};
+  openSheet(`<div class="spread"><h2>${i>=0?'Modifier le':'Nouveau'} crédit</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   <div class="field"><label>Nom</label><input id="ln_name" value="${esc(l.name)}"></div>
+   <div class="two"><div class="field"><label>Capital emprunté (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="ln_cap" value="${fin(l.capital??'')}"></div><div class="field"><label>Taux nominal annuel (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="ln_rate" value="${fin(l.rate==null?'':l.rate*100)}" placeholder="ex. 3,45"></div></div>
+   <div class="two"><div class="field"><label>Durée (mois)</label><input type="text" inputmode="numeric" autocomplete="off" id="ln_months" value="${fin(l.months)}"></div><div class="field"><label>Date de déblocage</label><input type="date" id="ln_start" value="${l.start||''}"></div></div>
+   <div class="two"><div class="field"><label>Assurance mensuelle (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="ln_ins" value="${fin(l.insurance??'')}"></div><div class="field"><label>Bien financé</label><select id="ln_prop"><option value="">—</option>${(DB.properties||[]).map(p=>`<option value="${p.id}" ${l.propertyId===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div></div>
+   <div class="hint">Prêt amortissable à mensualités constantes. Première échéance un mois après le déblocage.</div>
+   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveLoan(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delLoan(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
+function saveLoan(i){const name=$('#ln_name').value.trim()||'Crédit',cap=num('ln_cap'),rate=num('ln_rate'),months=num('ln_months'),start=val('ln_start'),ins=num('ln_ins');
+  if(!(cap>0)){toast('Capital emprunté ?',true);return;}
+  if(rate==null||rate<0||rate>20){toast('Taux entre 0 et 20 % (ex. 3,45)',true);return;}
+  if(!(Number.isInteger(months)&&months>0&&months<=480)){toast('Durée en mois (ex. 240)',true);return;}
+  if(!start){toast('Date de déblocage ?',true);return;}
+  const old=i>=0?DB.loans[i]:null;
+  const o={id:old?old.id:'l'+Date.now(),name,capital:cap,rate:Math.round(rate*1e4)/1e6,months,start,insurance:ins||0,propertyId:$('#ln_prop').value||null};
+  DB.loans=DB.loans||[];if(i>=0)DB.loans[i]=o;else DB.loans.push(o);save();closeSheet();renderAll();nav('placements');setPlace('immo');toast('Crédit enregistré');}
+function delLoan(i){if(!confirm('Supprimer « '+DB.loans[i].name+' » ?'))return;DB.loans.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
+function loanTable(i){const l=DB.loans[i],rows=Fin.amortization(l),t=ymd(today());
+  const years={};rows.forEach(r=>{const y=r.date.slice(0,4);years[y]=years[y]||{i:0,p:0,crd:0};years[y].i+=r.interest;years[y].p+=r.principal;years[y].crd=r.crd;});
+  openSheet(`<div class="spread"><h2>${esc(l.name)}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   <div class="hint" style="margin-top:4px">Mensualité ${eur(Fin.loanPayment(l.capital,l.rate,l.months))} hors assurance · coût total des intérêts ${eur(Fin.loanStatus(l,t).totalInterest)}</div>
+   <div class="card" style="margin-top:10px"><div class="twrap"><table><thead><tr><th>Année</th><th>Intérêts</th><th>Capital remboursé</th><th>Restant dû fin d'année</th></tr></thead><tbody>
+   ${Object.entries(years).map(([y,v])=>`<tr style="${y===t.slice(0,4)?'font-weight:650':''}"><td>${y}</td><td>${eur(v.i)}</td><td>${eur(v.p)}</td><td>${eur(v.crd)}</td></tr>`).join('')}</tbody></table></div></div>`);}
 function editCrowd(i){const c=i>=0?DB.crowd[i]:{name:'',plat:'Bricks',amt:'',rate:null,sub:ymd(today()),dur:24,day:8,st:'En cours',paid:[]};
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouveau'} projet</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="two"><div class="field"><label>Nom</label><input id="c_name" value="${esc(c.name)}"></div><div class="field"><label>Plateforme</label><input id="c_plat" value="${esc(c.plat)}"></div></div>
@@ -1323,18 +1496,20 @@ function saveRecurring(i){const label=$('#r_label').value.trim();const amt=num('
   if(i>=0)DB.recurring[i]=o;else DB.recurring.push(o);save();closeSheet();renderAll();toast('Récurrente enregistrée');}
 function delRecurring(i){DB.recurring.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
-function editResale(i){const r=i>=0?DB.resale[i]:{name:'',buyD:ymd(today()),buy:'',fees:'',sellD:'',sell:'',st:'En vente'};
+function editResale(i){const r=i>=0?DB.resale[i]:{name:'',buyD:ymd(today()),buy:'',fees:'',sellD:'',sell:'',sellFees:'',shipFees:'',plat:'Vinted',st:'En vente'};
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouvel'} article</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="field"><label>Nom de l'article</label><input id="x_name" value="${esc(r.name)}" placeholder="iPhone, sneakers…"></div>
-   <div class="two"><div class="field"><label>Prix d'achat (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="x_buy" value="${fin(r.buy??'')}"></div><div class="field"><label>Frais (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="x_fees" value="${fin(r.fees??'')}"></div></div>
-   <div class="field"><label>Date d'achat</label><input type="date" id="x_buyd" value="${r.buyD||''}"></div>
+   <div class="two"><div class="field"><label>Prix d'achat (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="x_buy" value="${fin(r.buy??'')}"></div><div class="field"><label>Frais d'achat (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="x_fees" value="${fin(r.fees??'')}"></div></div>
+   <div class="two"><div class="field"><label>Date d'achat</label><input type="date" id="x_buyd" value="${r.buyD||''}"></div><div class="field"><label>Plateforme de vente</label><select id="x_plat">${PLATS.map(t=>`<option ${(r.plat||'Autre')===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
    <div class="field"><label>Statut</label><select id="x_st" onchange="resaleFields()">${['En vente','Vendu','Gardé'].map(t=>`<option ${r.st===t?'selected':''}>${t}</option>`).join('')}</select></div>
-   <div id="x_soldwrap" style="display:none"><div class="two"><div class="field"><label>Prix de vente (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="x_sell" value="${fin(r.sell??'')}"></div><div class="field"><label>Date de vente</label><input type="date" id="x_selld" value="${r.sellD||''}"></div></div></div>
+   <div id="x_soldwrap" style="display:none"><div class="two"><div class="field"><label>Prix de vente (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="x_sell" value="${fin(r.sell??'')}"></div><div class="field"><label>Date de vente</label><input type="date" id="x_selld" value="${r.sellD||''}"></div></div><div class="two"><div class="field"><label>Frais de plateforme (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="x_sfee" value="${fin(r.sellFees??'')}"></div><div class="field"><label>Frais d'envoi (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="x_ship" value="${fin(r.shipFees??'')}"></div></div></div>
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveResale(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delResale(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);
   resaleFields();}
 function resaleFields(){$('#x_soldwrap').style.display=$('#x_st').value==='Vendu'?'block':'none';}
 function saveResale(i){const name=$('#x_name').value.trim();if(!name){toast('Nom ?',true);return;}
-  const st=$('#x_st').value;const o={name,buyD:val('x_buyd'),buy:num('x_buy')||0,fees:num('x_fees')||0,st,sell:st==='Vendu'?num('x_sell'):null,sellD:st==='Vendu'?val('x_selld'):null};
+  const st=$('#x_st').value,buy=num('x_buy'),fees=num('x_fees'),sell=num('x_sell'),sf=num('x_sfee'),sh=num('x_ship');
+  if(st==='Vendu'&&(sell==null||!val('x_selld'))){toast('Prix et date de vente ?',true);return;}
+  const o={name,plat:$('#x_plat').value,buyD:val('x_buyd'),buy:buy||0,fees:fees||0,st,sell:st==='Vendu'?sell:null,sellD:st==='Vendu'?val('x_selld'):null,sellFees:st==='Vendu'?(sf||0):0,shipFees:st==='Vendu'?(sh||0):0};
   if(i>=0)DB.resale[i]=o;else DB.resale.push(o);save();closeSheet();renderAll();toast('Article enregistré');}
 function delResale(i){DB.resale.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
@@ -1342,9 +1517,8 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
   openSheet(`<div class="spread"><h2>Réglages</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="field"><label>Valeur du patrimoine au 1ᵉʳ janvier ${y} (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_snap" value="${fin(s.snapshots[y]??'')}"><button class="btn sm" style="width:100%;margin-top:8px" onclick="useCurrentAsRef()">Utiliser la valeur actuelle</button></div>
    <div class="field"><label>Thème</label><select id="set_theme"><option value="dark" ${s.theme==='dark'?'selected':''}>Sombre</option><option value="light" ${s.theme==='light'?'selected':''}>Clair</option></select></div>
-   <div class="field"><button class="btn" style="width:100%" onclick="enableNotif()">${s.notif?'🔔 Rappels activés':'🔕 Activer les rappels'}</button><div class="hint">Alerte à l'ouverture si un budget est dépassé ou un versement Bricks manque. (Un rappel appli fermée nécessiterait un serveur.)</div></div>
-   <div class="field"><button class="btn" style="width:100%" onclick="closeSheet();openGuide()">📖 Guide d'installation (clé API + Google Drive)</button></div>
-   <div class="field"><label>Clé API cours boursiers (Twelve Data, gratuite)</label><input id="set_key" value="${s.stockKey||''}" placeholder="colle ta clé ici"><div class="hint">Crée une clé gratuite sur twelvedata.com, colle-la ici pour actualiser actions/ETF via ↻. <a onclick="closeSheet();openGuide()" style="color:var(--orange);cursor:pointer">Voir le guide</a></div></div>
+   <div class="field"><button class="btn" style="width:100%" onclick="enableNotif()">${s.notif?'🔔 Rappels activés':'🔕 Activer les rappels'}</button><div class="hint">Alerte à l'ouverture : budget dépassé, versement Bricks à pointer, plafond d'épargne proche, objectif en retard, seuil DAC7.</div></div>
+   <div class="field"><button class="btn" style="width:100%" onclick="closeSheet();openGuide()">📖 Guide : synchronisation Google Drive</button></div>
 
    <div class="field" style="border-top:1px solid var(--line);padding-top:14px"><label>☁️ Synchronisation Google Drive</label>
      <input id="set_gid" value="${s.gdriveClientId||''}" placeholder="ID client …apps.googleusercontent.com">
@@ -1354,12 +1528,20 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
      <div class="hint">Dossier privé de ton Drive. <a onclick="closeSheet();openGuide()" style="color:var(--orange);cursor:pointer">Comment obtenir l'ID client ?</a></div>
    </div>
 
-   <div class="two"><div class="field"><label>Symbole MSCI World</label><input id="set_bmsci" value="${(s.benchSym||{}).MSCI||'URTH'}"></div><div class="field"><label>Symbole CAC 40</label><input id="set_bcac" value="${(s.benchSym||{}).CAC||'CAC'}"></div></div>
-   <div class="hint" style="margin-top:-4px">Symboles Twelve Data pour la comparaison d'indice (modifie si « indisponible »).</div>
-   <div class="two"><div class="field"><label>Objectif net (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_obj" value="${fin(s.objNet*100)}"></div><div class="field"><label>Impôt CTO/crypto (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_ct" value="${fin(s.cryptoTax*100)}"></div></div>
-   <div class="two"><div class="field"><label>PFU standard (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_pfu" value="${fin(s.flatTax*100)}"></div><div class="field"><label>PFU assur.-vie (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_av" value="${fin(s.avTax*100)}"></div></div>
-   <div class="two"><div class="field"><label>Barème PS (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_bar" value="${fin(s.baremeTax*100)}"></div><div class="field"><label>Impôt PEA (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_pea" value="${fin(s.peaTax*100)}"></div></div>
-   <div class="field"><label>Imposition des intérêts Bricks / crowdfunding</label><select id="set_crowdtax"><option value="pfu" ${(s.crowdTax||'pfu')==='pfu'?'selected':''}>PFU (taux « PFU standard »)</option><option value="bareme" ${s.crowdTax==='bareme'?'selected':''}>Barème TMI 0 % (taux « Barème PS »)</option></select></div>
+   <div class="field" style="border-top:1px solid var(--line);padding-top:14px"><label>🧾 Ma situation fiscale</label>
+     <div class="two"><div class="field"><label>Tranche marginale d'imposition (TMI)</label><select id="set_tmi">${[0,0.11,0.30,0.41,0.45].map(t=>`<option value="${t}" ${Math.abs((+s.tmi||0)-t)<1e-9?'selected':''}>${Math.round(t*100)} %</option>`).join('')}</select></div>
+       <div class="field"><label>Objectif net de revente (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_obj" value="${fin(s.objNet*100)}"></div></div>
+     <div class="field"><label>Plus-values crypto / CTO</label><select id="set_crypto"><option value="pfu" ${s.cryptoRegime!=='bareme'?'selected':''}>PFU (flat tax)</option><option value="bareme" ${s.cryptoRegime==='bareme'?'selected':''}>Barème (TMI + prélèvements sociaux)</option></select></div>
+     <div class="field"><label>Intérêts Bricks / crowdfunding</label><select id="set_crowdtax"><option value="pfu" ${(s.crowdTax||'pfu')==='pfu'?'selected':''}>PFU (flat tax)</option><option value="bareme" ${s.crowdTax==='bareme'?'selected':''}>Barème (TMI + prélèvements sociaux)</option></select></div>
+     <div class="field"><label>Achat-revente</label><select id="set_resale"><option value="occasionnel" ${s.resaleRegime!=='microbic'?'selected':''}>Ventes occasionnelles d'objets personnels (non imposables)</option><option value="microbic" ${s.resaleRegime==='microbic'?'selected':''}>Activité d'achat-revente (micro-BIC)</option></select>
+       <div class="hint">Acheter pour revendre avec profit est une activité commerciale (micro-BIC : imposition sur le chiffre d'affaires après abattement). Revendre ses propres affaires d'occasion n'est pas imposable, sauf objet vendu plus de 5 000 € et bijoux / objets d'art.</div></div>
+     <div class="hint">Avec ces choix : PFU ${fin(r2(taxPFU()*100))} % · barème ${fin(r2(taxBareme()*100))} % · prélèvements sociaux ${fin(r2(taxPS()*100))} % (${fin(r2(taxPSr()*100))} % pour l'assurance-vie et l'épargne logement).</div>
+     <div class="row" style="gap:8px;margin-top:8px"><button class="btn sm" style="flex:1" onclick="closeSheet();openParams()">📐 Paramètres réglementaires</button><button class="btn sm" style="flex:1" onclick="closeSheet();openRules()">🏷️ Règles de catégories</button></div>
+   </div>
+   <details class="field" style="border-top:1px solid var(--line);padding-top:12px"><summary style="cursor:pointer;color:var(--ink2);font-size:13px">Avancé : sources des cours et indices</summary>
+     <div class="field"><label>Clé API Twelve Data (secours pour les actions US)</label><input id="set_key" value="${esc(s.stockKey||'')}" placeholder="facultatif"></div>
+     <div class="two"><div class="field"><label>Symbole MSCI World</label><input id="set_bmsci" value="${esc((s.benchSym||{}).MSCI||'URTH')}"></div><div class="field"><label>Symbole CAC 40</label><input id="set_bcac" value="${esc((s.benchSym||{}).CAC||'CAC')}"></div></div>
+   </details>
    <button class="btn primary" style="width:100%;margin-top:16px" onclick="saveSettings()">Enregistrer</button>
    <div class="field" style="margin-top:18px"><button class="btn" style="width:100%" onclick="exportData()">Exporter mes données</button></div>
    <div class="field"><button class="btn" style="width:100%" onclick="$('#imp').click()">Importer</button><input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)"></div>
@@ -1369,24 +1551,38 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
      <div class="row" style="gap:8px"><button class="btn sm" style="flex:1" onclick="checkUpdate(true)">Vérifier les mises à jour</button><button class="btn sm" onclick="closeSheet();whatsNew(true)">Nouveautés</button></div></div>
    <div class="field"><label>Sauvegardes de sécurité (automatiques)</label>
      ${listBackups().map((b,i)=>`<div class="spread" style="font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--line)"><span>${new Date(b.at).toLocaleString('fr-FR')} · v${esc(b.version)}<br><span class="muted">${esc(b.reason)}</span></span><button class="btn sm" onclick="restoreBackup(${i})">Restaurer</button></div>`).join('')||'<div class="hint">Aucune pour l\'instant : une copie est faite avant chaque mise à jour.</div>'}</div>`);refreshSyncUI();}
-function useCurrentAsRef(){$('#set_snap').value=Math.round(consolidate().value);toast('Renseigné — Enregistre pour valider');}
-function archiveYear(){const y=today().getFullYear();DB.settings.snapshots[y]=Math.round(consolidate().value);save();renderAll();toast('Référence '+y+' figée');}
+// ---- Paramètres réglementaires : consultation de l'historique, ajout d'une valeur datée (jamais d'écrasement)
+const pFmt=(p)=>p.unit==='%'?fin(r2(p.value*10000)/100)+' %':p.unit==='€'?eur(p.value):fin(p.value);
+function openParams(){const keys=Fin.paramKeys(),t=ymd(today());
+  openSheet(`<div class="spread"><h2>Paramètres réglementaires</h2><button class="btn sm" onclick="closeSheet();openSettings()">Retour</button></div>
+   <div class="hint" style="margin-top:4px">Taux, plafonds et seuils utilisés par les calculs, avec leur date d'entrée en vigueur. Quand une règle change, ajoute la nouvelle valeur à sa date : l'ancienne reste utilisée pour les périodes passées.</div>
+   ${keys.map(k=>{const h=Fin.paramHistory(k,DB.params),cur=h.find(p=>p.from<=t)||h[h.length-1];
+     return `<div class="card pad" style="margin-top:10px"><div class="spread"><div><div class="t-name">${esc(cur.label)}</div><div class="t-sub">${esc(cur.src||'')}</div></div><div style="text-align:right"><b>${pFmt(cur)}</b><div class="t-sub">depuis le ${pd(cur.from).toLocaleDateString('fr-FR')}</div></div></div>
+       <details style="margin-top:6px"><summary class="sub" style="cursor:pointer">Historique (${h.length}) · ajouter une valeur</summary>
+         ${h.map(p=>`<div class="spread" style="font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--line)"><span>${pd(p.from).toLocaleDateString('fr-FR')}${p.user?' · <span style="color:var(--orange)">ajoutée par toi</span>':''}</span><span>${pFmt(p)}${p.user?` <span class="del" onclick="delParam('${esc(k)}','${p.from}')">✕</span>`:''}</span></div>`).join('')}
+         <div class="two" style="margin-top:8px"><input type="date" id="pf_${keys.indexOf(k)}" value="${t}"><input type="text" inputmode="decimal" autocomplete="off" id="pv_${keys.indexOf(k)}" placeholder="${cur.unit==='%'?'ex. 1,7 (en %)':cur.unit==='€'?'montant en €':'valeur'}"></div>
+         <button class="btn sm" style="width:100%;margin-top:6px" onclick="addParam(${keys.indexOf(k)})">Ajouter cette valeur</button></details></div>`;}).join('')}`);}
+function addParam(i){const k=Fin.paramKeys()[i],from=val('pf_'+i),v=num('pv_'+i);if(!from||v==null){toast('Date et valeur ?',true);return;}
+  const ref=Fin.paramHistory(k,[])[0];DB.params=(DB.params||[]).filter(p=>!(p.key===k&&p.from===from));
+  DB.params.push({key:k,from,value:ref.unit==='%'?v/100:v,unit:ref.unit,label:ref.label,src:'Ajouté par toi'});save();renderAll();openParams();toast('Valeur ajoutée');}
+function delParam(k,from){DB.params=(DB.params||[]).filter(p=>!(p.key===k&&p.from===from));save();renderAll();openParams();toast('Valeur retirée');}
+function useCurrentAsRef(){$('#set_snap').value=Math.round(consolidate().net);toast('Renseigné — Enregistre pour valider');}
+function archiveYear(){const y=today().getFullYear();DB.settings.snapshots[y]=Math.round(consolidate().net);save();renderAll();toast('Référence '+y+' figée');}
 function dismissYear(y){DB.settings.dismissY=DB.settings.dismissY||{};DB.settings.dismissY[y]=true;save();renderAll();}
 function saveSettings(doSync){const y=today().getFullYear(),s=DB.settings;
   // On lit et valide tous les nombres AVANT de modifier quoi que ce soit
-  const snap=num('set_snap'),vObj=num('set_obj'),vCt=num('set_ct'),vPfu=num('set_pfu'),vAv=num('set_av'),vBar=num('set_bar'),vPea=num('set_pea');
+  const snap=num('set_snap'),vObj=num('set_obj');
   s.snapshots[y]=snap==null?undefined:snap;
-  s.theme=$('#set_theme').value;s.stockKey=$('#set_key').value.trim();s.objNet=(vObj||0)/100;s.cryptoTax=(vCt||0)/100;
-  s.flatTax=(vPfu||0)/100;s.avTax=(vAv||0)/100;s.baremeTax=(vBar||0)/100;s.peaTax=(vPea||0)/100;
-  if($('#set_crowdtax'))s.crowdTax=$('#set_crowdtax').value;
+  s.theme=$('#set_theme').value;s.stockKey=$('#set_key').value.trim();s.objNet=(vObj||0)/100;
+  s.tmi=+$('#set_tmi').value;s.cryptoRegime=$('#set_crypto').value;s.crowdTax=$('#set_crowdtax').value;s.resaleRegime=$('#set_resale').value;
   s.gdriveClientId=($('#set_gid')?$('#set_gid').value.trim():s.gdriveClientId)||'';
   if($('#set_auto'))s.autoSync=$('#set_auto').checked;
   if($('#set_bmsci'))s.benchSym={MSCI:$('#set_bmsci').value.trim()||'URTH',CAC:($('#set_bcac').value.trim()||'CAC')};
   applyTheme();save();
   if(doSync===true){closeSheet();renderAll();syncNow(true);return;}
   closeSheet();renderAll();toast('Réglages enregistrés');}
-function exportData(){const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='investco.json';a.click();URL.revokeObjectURL(u);DB.settings.lastBackup=ymd(today());save();}
-function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{DB=JSON.parse(r.result);load2();save();closeSheet();renderAll();toast('Importé');}catch(x){toast('Fichier invalide',true);}};r.readAsText(f);}
+function exportData(){const b=new Blob([JSON.stringify(Fin.serialize(DB),null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='investco.json';a.click();URL.revokeObjectURL(u);DB.settings.lastBackup=ymd(today());save();}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x||!Array.isArray(x.movements))throw 0;backupLocal('Avant import d\'un fichier');DB=Fin.deserialize(x);load2();save();closeSheet();renderAll();toast('Importé');}catch(x){toast('Fichier invalide',true);}};r.readAsText(f);}
 function load2(){DB.expenses=DB.expenses||[];DB.recurring=DB.recurring||[];DB.resale=DB.resale||[];DB.settings=Object.assign({},DEF.settings,DB.settings);DB.crowd.forEach(c=>c.paid=c.paid||[]);DB.meta=DB.meta||{updatedAt:0};DB.settings.benchSym=Object.assign({},DEF.settings.benchSym,DB.settings.benchSym);DB.settings.indexCache=DB.settings.indexCache||{};migrate();recalcBalances();}
 function resetData(){if(confirm('Revenir aux données d\'exemple ?')){DB=structuredClone(DEF);isFresh=true;migrate();save();closeSheet();applyTheme();renderAll();toast('Réinitialisé');}}
 
@@ -1474,16 +1670,14 @@ function applyTheme(){document.documentElement.setAttribute('data-theme',DB.sett
 function enableNotif(){if(!('Notification' in window)){toast('Non supporté ici',true);return;}
   Notification.requestPermission().then(p=>{DB.settings.notif=(p==='granted');save();closeSheet();toast(DB.settings.notif?'Rappels activés':'Refusé');});}
 function checkAlerts(){if(!DB.settings.notif||!('Notification'in window)||Notification.permission!=='granted')return;
-  const msgs=[];const ymk=ymKey(today());const cats=catBreakdown(ymk);const cb=DB.settings.catBudgets||{};
-  Object.keys(cb).forEach(k=>{if(cb[k]>0&&(cats[k]||0)>cb[k])msgs.push('Budget '+k+' dépassé');});
-  DB.crowd.forEach(c=>{if(crowdActive(c)&&crowdCalc(c).missing>0)msgs.push('Versement Bricks à pointer : '+c.name);});
+  const msgs=alertsList().map(a=>a.txt);
   if(msgs.length){try{new Notification('Invest.co',{body:msgs.slice(0,3).join('\n'),icon:'icon-192.png'});}catch(e){}}}
 function toggleTheme(){DB.settings.theme=(DB.settings.theme==='dark')?'light':'dark';applyTheme();save();renderAll();}
 function nav(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));$('#v-'+v).classList.add('on');
   document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));window.scrollTo(0,0);
   if(v==='dash'){dashAnimated=false;renderDash();}}
 function autoSnapshot(){const now=today();const mk=ymKey(now);const last=DB.settings.lastSnapMonth;
-  if(last&&last!==mk){DB.settings.snapshots[last]=DB.settings.snapshots[last]??Math.round(consolidate().value);}
+  if(last&&last!==mk){DB.settings.snapshots[last]=DB.settings.snapshots[last]??Math.round(consolidate().net);}
   DB.settings.lastSnapMonth=mk;}
 function renderAll(){renderDash();renderPlacements();renderBudget();renderRevente();}
 function hideSplash(){setTimeout(()=>{const s=$('#splash');if(s){s.style.opacity='0';setTimeout(()=>s.remove(),400);}},550);}

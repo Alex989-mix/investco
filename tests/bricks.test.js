@@ -97,7 +97,7 @@ const typeIn = async (page, sel, txt) => { await page.fill(sel, ''); await page.
   // 8) Imposition PFU par défaut sur le revenu mensuel
   const tax = await page.evaluate(() => {
     DB.crowd = [{ name: 'A', plat: 'Bricks', amt: 1200, rate: 0.10, sub: '2026-04-08', dur: 24, day: 8, st: 'En cours', paid: [] }];
-    return { réglage: DB.settings.crowdTax, taux: crowdTaxRate(), pfu: DB.settings.flatTax, netMensuel: consolidate().immoMonthly };
+    return { réglage: DB.settings.crowdTax, taux: crowdTaxRate(), pfu: taxPFU(), netMensuel: consolidate().immoMonthly };
   });
   log('Intérêts Bricks au PFU par défaut (10 € brut → 10 × (1 − PFU))', tax.réglage === 'pfu' && tax.taux === tax.pfu && Math.abs(tax.netMensuel - 10 * (1 - tax.pfu)) < 1e-9, tax);
 

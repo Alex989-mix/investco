@@ -3,7 +3,7 @@
 importScripts('version.js');
 const CACHE = 'investco-' + self.APP_VERSION;
 const ASSETS = [
-  './', './index.html', './version.js', './manifest.webmanifest',
+  './', './index.html', './version.js', './js/finance.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-180.png',
   './Inter.woff2', './SpaceGrotesk.woff2'
 ];
@@ -59,7 +59,7 @@ self.addEventListener('fetch', e => {
   const sameOrigin = url.origin === self.location.origin;
   // Page et fichier de version : réseau d'abord (une nouvelle version est visible dès l'ouverture),
   // cache en secours hors-ligne.
-  const networkFirst = req.mode === 'navigate' || (sameOrigin && /\/(index\.html|version\.js)?$/.test(url.pathname));
+  const networkFirst = req.mode === 'navigate' || (sameOrigin && /\/(index\.html|version\.js|js\/[\w.-]+\.js)?$/.test(url.pathname));
   if (networkFirst) {
     e.respondWith(
       fetch(req, { cache: 'no-store' }).then(resp => {

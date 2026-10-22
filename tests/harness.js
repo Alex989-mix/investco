@@ -28,3 +28,5 @@ async function openApp(browser, { seed, fixedNow } = {}) {
   return { ctx, page, errors };
 }
 module.exports = { openApp, chromium, SRC };
+// Un test qui plante doit apparaître comme un échec, jamais passer inaperçu
+process.on('unhandledRejection', (e) => { console.log('BUG Test interrompu : ' + String(e && e.message || e).split('\n')[0]); process.exit(1); });

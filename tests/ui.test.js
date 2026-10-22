@@ -105,7 +105,7 @@ const sheetOpen = (page) => page.evaluate(() => document.querySelector('#ov').cl
     return { soldes: DB.savings.map(s => [s.name, s.cap]), ajustements: DB.movements.filter(m => m.t === 'Ajustement').map(m => [m.p, m.m]), schema: DB.meta.schema };
   });
   log('Migration : Livret A −480 € → 0 €, LDDS reste 5 180 €, compte courant reste 1 500 €',
-    JSON.stringify(mig.soldes) === '[["Livret A",0],["LDDS",5180],["Compte courant",1500]]' && mig.schema === 3, mig);
+    JSON.stringify(mig.soldes) === '[["Livret A",0],["LDDS",5180],["Compte courant",1500]]' && mig.schema >= 3, mig);
 
   // ===== 8. Tour complet de l'appli : chaque écran et chaque formulaire s'ouvre sans erreur =====
   await page.evaluate(() => { resetData(); });

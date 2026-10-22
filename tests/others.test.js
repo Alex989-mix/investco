@@ -83,12 +83,12 @@ const typeIn = async (page, sel, txt) => { await page.fill(sel, ''); await page.
   // 2 400 × (9 × 1,5 % + 10 × 1,7 %) / 24 = 30,50 € → total 190,50 €
   log('Livret A + versement du 10/03 : 190,50 €', Math.abs(la2 - 190.5) < 0.01, { calculé: Math.round(la2 * 100) / 100 });
 
-  // Réglages : PFU saisi « 31,4 »
+  // Réglages : TMI 30 % → barème = 30 % + PS 18,6 % ; PFU 2026 = 31,4 % (paramètres datés)
   await page.evaluate(() => openSettings());
-  await typeIn(page, '#set_pfu', '31,4');
+  await page.selectOption('#set_tmi', '0.3'); await page.selectOption('#set_crypto', 'bareme');
   await page.evaluate(() => saveSettings());
-  const pfu = await page.evaluate(() => DB.settings.flatTax);
-  log('Réglages : « 31,4 » % → 0,314', Math.abs(pfu - 0.314) < 1e-12, { stocké: pfu });
+  const tx = await page.evaluate(() => ({ tmi: DB.settings.tmi, pfu: taxPFU(), bareme: taxBareme(), crypto: cryptoTaxRate(), av: taxAV() }));
+  log('Réglages : TMI 30 % → barème 48,6 %, crypto au barème, PFU 31,4 %, assurance-vie 30 %', tx.tmi === 0.3 && Math.abs(tx.bareme - 0.486) < 1e-9 && tx.crypto === tx.bareme && Math.abs(tx.pfu - 0.314) < 1e-9 && Math.abs(tx.av - 0.30) < 1e-9, tx);
 
   // --- Date « aujourd'hui » juste après minuit ---
   await page.context().close();

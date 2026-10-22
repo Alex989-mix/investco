@@ -6,6 +6,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'investco-'));
 const env = { ...process.env, NO_PROXY: '127.0.0.1,localhost', no_proxy: '127.0.0.1,localhost' };
 let failed = 0;
 for (const [name, args] of [
+  ['Calculs (finance.js)', [path.join(__dirname, 'finance.test.js')]],
   ['Bricks', [path.join(__dirname, 'bricks.test.js'), APP]],
   ['Autres modules', [path.join(__dirname, 'others.test.js'), APP]],
   ['Parcours utilisateur', [path.join(__dirname, 'ui.test.js'), APP]],
