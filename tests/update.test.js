@@ -54,6 +54,8 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   log('L\'appli tourne dans la version actuelle', after.v === CUR, after);
   log('Données conservées et migrées (cases Bricks 10/25, 11/25)', after.paid.join() === '2025-10,2025-11' && after.schema >= 2, after);
   log('Sauvegarde de sécurité faite avant la migration', after.backups.some(r => r.startsWith('Avant migration')), after.backups);
+  // l'écran « Nouveautés » s'ouvre ~1 s après le démarrage : on l'attend (jusqu'à 10 s)
+  await page.waitForFunction((v) => !!document.querySelector('#sheet') && document.querySelector('#sheet').textContent.includes('Nouveautés de la version ' + v), CUR, { timeout: 10000 }).catch(() => {});
   const news = await page.evaluate((v) => !!document.querySelector('#sheet') && document.querySelector('#sheet').textContent.includes('Nouveautés de la version ' + v), CUR);
   log('« Nouveautés » de la version actuelle s\'affiche une fois', news);
   const caches1 = await page.evaluate(async () => await caches.keys());
@@ -67,7 +69,9 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   // --- 4. Version suivante : on ne modifie QUE version.js
   const vfile = path.join(SERVE, 'version.js');
   fs.writeFileSync(vfile, fs.readFileSync(vfile, 'utf8').replace(`APP_VERSION = '${CUR}'`, `APP_VERSION = '${NEXT}'`));
-  await page.evaluate(() => checkUpdate(true)); await sleep(2500);
+  await page.evaluate(() => checkUpdate(true));
+  // attendre l'installation de la nouvelle version (jusqu'à 30 s : la machine de test peut être lente)
+  for (let i = 0; i < 60; i++) { if (await page.evaluate(() => !!(swReg && swReg.waiting)).catch(() => false)) break; await sleep(500); }
   const st2 = await page.evaluate(() => ({ bar: document.querySelector('#updbar').className, waiting: !!(swReg && swReg.waiting) }));
   log('Version suivante : changer uniquement version.js suffit à déclencher la mise à jour', st2.waiting && st2.bar.includes('on'), st2);
   await page.click('#updbar'); await sleep(3000); await controlled();

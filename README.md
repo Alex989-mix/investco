@@ -32,7 +32,7 @@ netlify.toml            configuration Netlify
 2. Si la structure des données change : incrémenter `SCHEMA` dans `index.html` et ajouter
    la migration correspondante dans `MIGRATIONS` (ne jamais modifier une migration existante).
 3. Dans `app/version.js` : nouveau numéro `APP_VERSION`, date et notes.
-4. Lancer `node tests/run.js` : tout doit être « OK ».
+4. Lancer `node tests/run.js` : tout doit être « OK ». **Ne pousser que si tous les tests passent** (ne jamais enchaîner test et push dans une même commande sans condition).
 5. `git commit` puis `git push` sur `main` → Netlify déploie en environ une minute.
 6. Sur le téléphone : la barre orange « Nouvelle version » apparaît ; un appui suffit.
    Une copie des données est faite automatiquement juste avant.
