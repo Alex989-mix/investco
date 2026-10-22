@@ -23,7 +23,7 @@
     recurring: ['amt'],
     resale: ['buy', 'fees', 'sell', 'sellFees', 'shipFees'],
     loans: ['capital', 'insurance'],
-    properties: ['price', 'rent', 'charges'],
+    properties: ['price', 'rent', 'charges', 'notary', 'works', 'copro', 'taxFonciere', 'pno', 'maintenance'],
     goals: ['target'],
   };
   // Champs monétaires dans des sous-listes : properties[].values[].v
@@ -181,13 +181,23 @@
     const v = (p.values || []).filter((x) => x.d <= date).sort((a, b) => (a.d < b.d ? 1 : -1));
     return v.length ? +v[0].v : (+p.price || 0);
   }
-  // Rendements calculés sur le prix d'achat (frais inclus), cash-flow mensuel crédit compris
-  function propertyStats(p, loanMonthly) {
-    const price = +p.price || 0, rent = +p.rent || 0, charges = +p.charges || 0;
+  // Bien immobilier complet. Champs : price (prix d'achat), notary (frais de notaire / d'acquisition), works (travaux),
+  // regime ('RP' résidence principale, 'nu', 'LMNP', 'SCI'), rent (loyer mensuel hors charges), vacancy (mois vides par an),
+  // charges (autres charges mensuelles), taxFonciere / pno / maintenance (annuels), copro (mensuel), mgmt (gestion, % des loyers).
+  function propertyCost(p) { return round2((+p.price || 0) + (+p.notary || 0) + (+p.works || 0)); }
+  function propertyStats(p, loanMonthly, value) {
+    const cost = propertyCost(p), rp = p.regime === 'RP';
+    const vac = Math.min(12, Math.max(0, +p.vacancy || 0));
+    const rentGrossY = rp ? 0 : (+p.rent || 0) * 12;                       // loyers théoriques sur 12 mois
+    const rentY = rp ? 0 : round2((+p.rent || 0) * (12 - vac));            // loyers encaissés, vacance déduite
+    const chargesY = round2((+p.charges || 0) * 12 + (+p.copro || 0) * 12 + (+p.taxFonciere || 0) + (+p.pno || 0) + (+p.maintenance || 0) + rentY * (+p.mgmt || 0));
+    const v = value == null ? cost : value;
     return {
-      grossYield: price ? rent * 12 / price : 0,
-      netYield: price ? (rent - charges) * 12 / price : 0,
-      cashflow: round2(rent - charges - (loanMonthly || 0)),
+      cost, rentY, chargesY,
+      grossYield: !rp && cost ? rentGrossY / cost : 0,
+      netYield: !rp && cost ? (rentY - chargesY) / cost : 0,
+      cashflow: round2((rentY - chargesY) / 12 - (loanMonthly || 0)),
+      gain: round2(v - cost), gainPct: cost ? (v - cost) / cost : 0,
     };
   }
 
@@ -252,6 +262,63 @@
       monthly: months ? round2(left / months) : (months === 0 ? left : null), late: !!(goal.deadline && goal.deadline < date && left > 0) };
   }
 
+  // ---------- Cash-flow mensuel et taux d'épargne ----------
+  // Revenus : argent qui entre sur le compte courant (dépôts ; les transferts entre tes comptes sont exclus).
+  // Dépenses : dépenses du mois hors « Investissement » (l'argent investi n'est pas consommé).
+  function monthCashflow(movements, expenses, ccName, ym) {
+    const income = round2(movements.filter((m) => m.p === ccName && m.t === 'Dépôt' && String(m.d).slice(0, 7) === ym).reduce((a, m) => a + (+m.m || 0), 0));
+    const out = expenses.filter((e) => String(e.d).slice(0, 7) === ym);
+    const spent = round2(out.filter((e) => e.cat !== 'Investissement').reduce((a, e) => a + (+e.amt || 0), 0));
+    const invested = round2(out.filter((e) => e.cat === 'Investissement').reduce((a, e) => a + (+e.amt || 0), 0));
+    const saved = round2(income - spent);
+    return { ym, income, spent, invested, saved, rate: income > 0 ? saved / income : null };
+  }
+  function cashflowSeries(movements, expenses, ccName, ym, n) {
+    const out = []; for (let k = (n || 12) - 1; k >= 0; k--) out.push(monthCashflow(movements, expenses, ccName, addMonthsYmd(ym + '-01', -k).slice(0, 7)));
+    const withIncome = out.filter((x) => x.income > 0);
+    const inc = withIncome.reduce((a, x) => a + x.income, 0), sav = withIncome.reduce((a, x) => a + x.saved, 0);
+    return { months: out, avgRate: inc > 0 ? sav / inc : null };
+  }
+
+  // ---------- PEA ----------
+  // ISIN : 2 lettres pays + 9 caractères + chiffre de contrôle (algorithme de Luhn sur les chiffres convertis)
+  function isinValid(code) {
+    const s = String(code || '').toUpperCase().replace(/\s/g, '');
+    if (!/^[A-Z]{2}[A-Z0-9]{9}\d$/.test(s)) return false;
+    const digits = s.split('').map((c) => (/\d/.test(c) ? c : String(c.charCodeAt(0) - 55))).join('');
+    let sum = 0, dbl = true;
+    for (let i = digits.length - 2; i >= 0; i--) { let d = +digits[i]; if (dbl) { d *= 2; if (d > 9) d -= 9; } sum += d; dbl = !dbl; }
+    return (10 - (sum % 10)) % 10 === +digits[digits.length - 1];
+  }
+  // Statut du PEA : versements réels (ou estimation), plafond, liquidités, ancienneté et repère des 5 ans
+  function peaStatus(pea, ops, ceil, date) {
+    const vers = (pea && pea.versements) || [];
+    const versed = round2(vers.reduce((a, v) => a + (+v.m || 0), 0));
+    const real = vers.length > 0;
+    const estimate = peaVersements(ops);
+    let cash = null;
+    if (real) {
+      let c = versed;
+      ops.forEach((m) => { const g = (m.q != null && m.pu != null) ? m.q * m.pu : (+m.m || 0);
+        if (m.t === 'Achat') c -= g + (+m.f || 0); else if (m.t === 'Vente') c += g - (+m.f || 0); else if (m.t === 'Dividende') c += (+m.m || 0); });
+      cash = round2(c);
+    }
+    const base = real ? versed : estimate;
+    const open = pea && pea.open;
+    const years = open ? monthsDiff(open, date) / 12 : null;
+    return { versed: base, real, estimate, cash, ceil, room: round2(Math.max(0, ceil - base)), ratio: ceil ? base / ceil : 0,
+      open, years, fiveYears: open ? addMonthsYmd(open, 60) : null, mature: years != null && years >= 5 };
+  }
+
+  // ---------- Code de verrouillage (haché, jamais stocké en clair) ----------
+  async function hashPin(pin, saltHex, iterations) {
+    const subtle = (root.crypto || require('crypto').webcrypto).subtle;
+    const enc = new TextEncoder(), salt = Uint8Array.from(saltHex.match(/../g).map((h) => parseInt(h, 16)));
+    const key = await subtle.importKey('raw', enc.encode(String(pin)), 'PBKDF2', false, ['deriveBits']);
+    const bits = await subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iterations || 150000 }, key, 256);
+    return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
   // ---------- Budget ----------
   const ymShift = (ym, n) => addMonthsYmd(ym + '-01', n).slice(0, 7);
   // Prévu vs réel par catégorie pour le mois « ym » (AAAA-MM), avec le mois précédent et la moyenne des 3 mois précédents
@@ -292,7 +359,7 @@
 
   const api = { round2, budgetVsActual, detectRecurring, sameExpense, toCents, fromCents, MONEY_FIELDS, serialize, deserialize, PARAM_DEFAULTS, getParam, paramHistory, paramKeys,
     addMonthsYmd, monthsDiff, loanPayment, amortization, loanStatus, propertyValue, propertyStats, resaleItem, resaleYear,
-    ceilingStatus, peaVersements, goalProgress };
+    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin };
   root.Fin = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

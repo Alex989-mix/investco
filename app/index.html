@@ -135,6 +135,22 @@ canvas{max-width:100%}
 .emptybox{text-align:center;padding:30px 20px;color:var(--ink3)}
 .emptybox .ic{font-size:30px;opacity:.5;margin-bottom:8px}
 input.bad{border-color:var(--neg)!important;box-shadow:0 0 0 2px var(--negbg)}
+#lock{position:fixed;inset:0;z-index:300;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0))}
+#lock.on{display:flex}
+#lock .lk-logo{width:64px;height:64px;border-radius:50%;background:var(--hero);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center}
+#lock h2{margin-top:14px;font-family:'Space Grotesk';font-size:20px}
+#lock .dots{display:flex;gap:12px;margin:18px 0 6px;height:16px}
+#lock .dots i{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--line2)}
+#lock .dots i.f{background:var(--orange);border-color:var(--orange)}
+#lock .msg{min-height:20px;font-size:13px;color:var(--neg);text-align:center}
+#lock .pad{display:grid;grid-template-columns:repeat(3,72px);gap:14px;margin-top:12px}
+#lock .pad button{height:72px;border-radius:50%;border:1px solid var(--line2);background:var(--card);color:var(--ink);font:600 24px 'Space Grotesk';cursor:pointer}
+#lock .pad button:active{background:var(--orange-soft)}
+#lock .pad .ghost{background:transparent;border-color:transparent;font-size:15px;font-family:'Inter'}
+#lock .lk-links{margin-top:18px;display:flex;gap:18px;font-size:13px}
+#lock .lk-links a{color:var(--ink2);cursor:pointer}
+#lock.shake .dots{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 </style>
 </head>
 <body>
@@ -168,6 +184,9 @@ input.bad{border-color:var(--neg)!important;box-shadow:0 0 0 2px var(--negbg)}
 
 <div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast"></div>
+<div id="lock" aria-modal="true" role="dialog"><div class="lk-logo"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+  <h2>Invest.co</h2><div class="sub" id="lk-sub">Entre ton code</div><div class="dots" id="lk-dots"></div><div class="msg" id="lk-msg"></div>
+  <div class="pad" id="lk-pad"></div><div class="lk-links"><a id="lk-bio" onclick="lockBio()" style="display:none">👆 Empreinte / visage</a><a onclick="lockForgot()">Code oublié ?</a></div></div>
 
 <script src="version.js"></script>
 <script src="js/finance.js"></script>
@@ -222,7 +241,7 @@ const DEF={
     {d:'2024-06-20',p:'Bitcoin',t:'Achat',q:0.008,pu:50000,m:null,f:3,n:'DCA'},
     {d:'2026-01-10',p:'Bitcoin',t:'Achat',q:0.003,pu:52000,m:null,f:2,n:'DCA'},
     {d:'2024-05-02',p:'Ethereum',t:'Achat',q:0.2,pu:2500,m:null,f:2,n:''},
-    {d:'2024-01-10',p:'ETF MSCI World',t:'Achat',q:5,pu:400,m:null,f:0,n:''},
+    {d:'2024-01-10',p:'Amundi MSCI World (CW8)',t:'Achat',q:5,pu:400,m:null,f:0,n:''},
     {d:'2024-06-20',p:'Apple',t:'Achat',q:10,pu:150,m:null,f:1,n:''},
     {d:'2015-06-01',p:'Livret A',t:'Dépôt',q:null,pu:null,m:10000,f:0,n:'Ouverture'},
     {d:'2024-03-15',p:'Livret A',t:'Dépôt',q:null,pu:null,m:5000,f:0,n:''},
@@ -309,9 +328,10 @@ function assetCalc(a){
   // Méthode du PRU (prix de revient unitaire moyen pondéré, frais d'achat inclus) :
   // une vente retire PRU × quantité vendue du coût de revient ; le PRU des parts restantes ne change pas.
   const mv=DB.movements.filter(m=>m.p===a.name).slice().sort((x,y)=>x.d<y.d?-1:x.d>y.d?1:0);
-  let cost=0,qty=0,ops=mv.length,first=null;const realized=[];
+  let cost=0,qty=0,ops=mv.length,first=null,divs=0,divsY=0;const realized=[],yr=String(today().getFullYear());
   mv.forEach(m=>{const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m!=null?m.m:0);
     const q=m.q!=null?m.q:((m.m!=null&&m.pu)?m.m/m.pu:0);
+    if(m.t==='Dividende'){divs+=(+m.m||0);if(String(m.d).slice(0,4)===yr)divsY+=(+m.m||0);return;} // sans effet sur le PRU
     if(m.t==='Achat'){cost+=g+(m.f||0);qty+=q;if(!first||m.d<first)first=m.d;}
     else if(m.t==='Vente'){const unit=qty?cost/qty:0,qs=Math.min(q,qty),out=unit*qs;
       realized.push({d:m.d,pv:(g-(m.f||0))-out});cost-=out;qty-=qs;if(qty<=1e-9){qty=0;cost=0;}}});
@@ -319,8 +339,11 @@ function assetCalc(a){
   const pm=pru,fv=a.sellFee||0,fc=pm/(1-fv),tax=a.env==='PEA'?0:cryptoTaxRate(),obj=DB.settings.objNet; // PEA : pas d'impôt à la vente tant que le plan reste ouvert
   const po=qty?(inv*(1+obj-tax)/(1-tax))/(qty*(1-fv)):0;
   let st='—';if(a.price){if(a.price<pm)st='À perte';else if(a.price<fc)st='Frais non couverts';else if(a.price<po)st='Rentable';else st='Objectif atteint';}
-  return {inv,qty,pru,value,pv,pvp,ops,first,pm,fc,po,st,tax,realized};
+  return {inv,qty,pru,value,pv,pvp,ops,first,pm,fc,po,st,tax,realized,divs:r2(divs),divsY:r2(divsY)};
 }
+// ---- PEA : fiche unique (ouverture, établissement, versements datés)
+const peaOps=()=>DB.movements.filter(m=>DB.assets.some(a=>a.env==='PEA'&&a.name===m.p));
+function peaCalc(){return Fin.peaStatus(DB.pea||{},peaOps(),param('ceil.PEA')||0,ymd(today()));}
 // ---- Paramètres réglementaires (app/js/finance.js) + valeurs datées ajoutées par l'utilisateur (DB.params)
 const param=(key,date)=>Fin.getParam(key,date||ymd(today()),DB.params);
 // Fiscalité : taux réglementaires datés + situation personnelle (TMI) des réglages
@@ -382,7 +405,7 @@ function savingCalc(s){
 const APP_V=self.APP_VERSION||'?';
 // Schéma des données : à incrémenter quand une version change la structure stockée,
 // en ajoutant la migration correspondante dans MIGRATIONS (ne jamais modifier une migration existante).
-const SCHEMA=5;
+const SCHEMA=6;
 const MIGRATIONS={
   // v16 → v16.1 : en v16, la case du versement n°k portait le libellé du mois k-1
   // (mois de souscription compté à tort). On décale chaque case pointée vers le bon mois.
@@ -412,6 +435,11 @@ const MIGRATIONS={
   // v17.1 → v17.2 : versements vers les plateformes d'investissement déjà saisis → catégorie « Investissement »
   // (seulement ceux restés en « Autres » : un choix fait à la main est respecté)
   5(){(DB.expenses||[]).forEach(e=>{if((e.cat==='Autres'||!e.cat)&&isInvestLabel(e.label))e.cat='Investissement';});},
+  // v17.2 → v18 : fiche PEA, biens immobiliers détaillés (le prix existant était saisi « frais inclus » : il est conservé tel quel)
+  6(){DB.pea=DB.pea||{open:null,bank:'',versements:[]};
+    (DB.properties||[]).forEach(p=>{if(!p.regime)p.regime=(+p.rent>0)?'nu':'RP';if(!p.type)p.type='Appartement';
+      ['notary','works','copro','taxFonciere','pno','maintenance','vacancy','mgmt'].forEach(k=>{if(p[k]==null)p[k]=0;});});
+    DB.settings.lock=DB.settings.lock||{enabled:false};},
 };
 function migrate(){DB.meta=DB.meta||{updatedAt:0};let v=DB.meta.schema||1;if(v>=SCHEMA)return;
   if(!isFresh)backupLocal('Avant migration des données (schéma '+v+' → '+SCHEMA+')');
@@ -471,20 +499,21 @@ function propertyCalc(p){const t=ymd(today());
   const lm=loansOf(p.id).map(loanCalc).filter(s=>s.remainingCount>0).reduce((a,s)=>a+s.monthlyTotal,0);
   const crd=loansOf(p.id).reduce((a,l)=>a+loanCalc(l).crd,0);
   const value=Fin.propertyValue(p,t);
-  return Object.assign({value,crd,equity:r2(value-crd),loanMonthly:r2(lm)},Fin.propertyStats(p,lm));}
+  return Object.assign({value,crd,equity:r2(value-crd),loanMonthly:r2(lm)},Fin.propertyStats(p,lm,value));}
 function realEstate(){const P=(DB.properties||[]).map(propertyCalc);
-  return {value:r2(P.reduce((a,x)=>a+x.value,0)),cost:r2((DB.properties||[]).reduce((a,p)=>a+(+p.price||0),0)),
+  return {value:r2(P.reduce((a,x)=>a+x.value,0)),cost:r2((DB.properties||[]).reduce((a,p)=>a+Fin.propertyCost(p),0)),
     debt:r2((DB.loans||[]).reduce((a,l)=>a+loanCalc(l).crd,0)),cashflow:r2(P.reduce((a,x)=>a+x.cashflow,0)),
     principalYear:r2((DB.loans||[]).reduce((a,l)=>a+loanCalc(l).principalYear,0))};}
 function consolidate(){
   let bI=0,bV=0;DB.assets.forEach(a=>{const c=assetCalc(a);bI+=c.inv;bV+=c.value;});
   let iI=0,iV=0;DB.crowd.filter(crowdActive).forEach(c=>{iI+=c.amt||0;iV+=c.amt||0;});
   let sI=0,sV=0,sN=0,dispo=0;DB.savings.forEach(s=>{const c=savingCalc(s);sI+=c.versed;sV+=(s.cap||0);sN+=c.net;if(c.cat!=='Assurance-vie')dispo+=(s.cap||0);});
-  const RE=realEstate();
+  const RE=realEstate();const PEA=peaCalc(),peaCash=PEA.real&&PEA.cash>0?PEA.cash:0;
+  bI+=peaCash;bV+=peaCash;
   const invested=bI+iI+sI+RE.cost,value=bV+iV+sV+RE.value,net=r2(value-RE.debt); // patrimoine net = actifs − capital restant dû
   const immoMonthly=DB.crowd.filter(c=>c.st==='En cours').reduce((a,c)=>a+crowdCalc(c).monthly*(1-crowdTaxRate()),0);
   const y=today().getFullYear(),jan=new Date(y,0,1);let apports=0;
-  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
+  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
   DB.crowd.forEach(c=>{if(new Date(c.sub)>=jan)apports+=c.amt;});
   apports+=RE.principalYear; // le capital de crédit remboursé est un effort d'épargne, pas un gain
   // argent envoyé du compte courant vers une plateforme : il réapparaît dans l'actif acheté (déjà compté en apport)
@@ -500,15 +529,15 @@ function repartition(){const g=k=>DB.assets.filter(a=>a.type===k);const sum=(a,f
     ['ETF',sum(E,a=>assetCalc(a).inv),sum(E,a=>assetCalc(a).value)],
     ['Crypto',sum(C,a=>assetCalc(a).inv),sum(C,a=>assetCalc(a).value)],
     ['Crowdfunding immobilier',sum(cf,c=>c.amt||0),sum(cf,c=>c.amt||0)],
-    ['Immobilier',sum(DB.properties||[],p=>+p.price||0),sum(DB.properties||[],p=>Fin.propertyValue(p,ymd(today())))],
+    ['Immobilier',sum(DB.properties||[],p=>Fin.propertyCost(p)),sum(DB.properties||[],p=>Fin.propertyValue(p,ymd(today())))],
     ['Épargne réglementée',sum(sav('Épargne réglementée'),s=>savingCalc(s).versed),sum(sav('Épargne réglementée'),s=>s.cap||0)],
     ['Assurance-vie',sum(sav('Assurance-vie'),s=>savingCalc(s).versed),sum(sav('Assurance-vie'),s=>s.cap||0)],
-    ['Liquidités',sum(sav('Liquidités'),s=>savingCalc(s).versed),sum(sav('Liquidités'),s=>s.cap||0)]];
+    ['Liquidités',sum(sav('Liquidités'),s=>savingCalc(s).versed)+(peaCalc().real?Math.max(0,peaCalc().cash):0),sum(sav('Liquidités'),s=>s.cap||0)+(peaCalc().real?Math.max(0,peaCalc().cash):0)]];
   const tot=rows.reduce((a,r)=>a+r[2],0)||1;
   return rows.map(r=>({name:r[0],inv:r[1],val:r[2],pv:r[2]-r[1],part:r[2]/tot}));
 }
 
-let donutChart,barChart,evoChart,catChart,histChart,perfChart;
+let donutChart,barChart,evoChart,catChart,histChart,perfChart,cfChart;
 let dashAnimated=false,isFresh=false,budMonth=0;
 function daysSince(d){return d?Math.floor((today()-new Date(d))/86400000):9999;}
 function countUp(el,to){if(!el)return;const dur=600,t0=performance.now();
@@ -546,8 +575,7 @@ function saveGoal(i){const name=$('#g_name').value.trim()||'Objectif',target=num
 
 // ---- Alertes : plafonds, budgets, Bricks, objectifs, seuils DAC7 (tableau de bord + notifications)
 function ceilingInfo(s){const c=ceilFor(s);if(!(c>0)||s.type==='Compte courant'||s.type==='Assurance-vie')return null;return Fin.ceilingStatus(savingCalc(s).versed,c);}
-function peaInfo(){const ops=DB.movements.filter(m=>DB.assets.some(a=>a.env==='PEA'&&a.name===m.p));if(!ops.length)return null;
-  const v=Fin.peaVersements(ops);return Object.assign({versed:v,ceil:param('ceil.PEA')},Fin.ceilingStatus(v,param('ceil.PEA')));}
+function peaInfo(){const P=peaCalc();if(!P.versed)return null;return Object.assign({versed:P.versed,ceil:P.ceil},Fin.ceilingStatus(P.versed,P.ceil));}
 function alertsList(){const A=[],t=ymd(today()),ymk=ymKey(today()),cats=catBreakdown(ymk),cb=DB.settings.catBudgets||{};
   DB.savings.forEach(s=>{const c=ceilingInfo(s);if(c&&c.level)A.push({lvl:c.level==='full'?'neg':'warn',txt:c.level==='full'?`${s.name} : plafond de versements atteint (${eur0(ceilFor(s))}). Les intérêts continuent de s'ajouter.`:`${s.name} : plafond bientôt atteint, encore ${eur0(c.room)} de versements possibles.`,go:"nav('placements');setPlace('epargne')"});});
   const pea=peaInfo();if(pea&&pea.level)A.push({lvl:pea.level==='full'?'neg':'warn',txt:`PEA : environ ${eur0(pea.versed)} versés sur ${eur0(pea.ceil)} autorisés.`,go:"nav('placements');setPlace('bourse')"});
@@ -602,6 +630,9 @@ function fiscSections(f){
   const pv=Math.max(0,f.pvStock)+Math.max(0,f.pvCrypto);
   let bL=[];if(pv<=0){bL.push("Tu n'as rien vendu cette année, donc rien à déclarer.");bL.push("Tes gains sur actions et cryptos ne sont imposés que le jour où tu les vends.");}
   else{if(f.pvStock>0)bL.push(`Tu as réalisé ${eur0(f.pvStock)} de plus-value en bourse.`);if(f.pvCrypto>0)bL.push(`Tu as réalisé ${eur0(f.pvCrypto)} de plus-value en crypto.`);}
+  {const dv=DB.assets.filter(a=>a.env!=='PEA').reduce((t,a)=>t+assetCalc(a).divsY,0),dp=DB.assets.filter(a=>a.env==='PEA').reduce((t,a)=>t+assetCalc(a).divsY,0);
+   if(dv>0)bL.push(`Dividendes perçus hors PEA : ${eur0(dv)}. Ils sont en principe déjà imposés à la source et figurent sur ta déclaration préremplie : vérifie-les.`);
+   if(dp>0)bL.push(`Dividendes perçus dans ton PEA : ${eur0(dp)}, non imposables tant qu'ils restent dans le plan.`);}
   S.push({t:"Tes gains en bourse et crypto",a:pv,pos:pv<=0,lines:bL,c:pv>0?"Bourse en case 3VG, crypto via le formulaire 2086.":"Le jour où tu vends : bourse case 3VG, crypto formulaire 2086."});
   // Revente
   let rL=[];if(f.revCount===0)rL.push("Tu n'as rien revendu cette année.");
@@ -687,6 +718,28 @@ function saveBudgets(){const cb={};CATS.forEach(c=>{const v=num('cb_'+c);if(v!=n
 function statusPill(s){const m={'À perte':['var(--negbg)','var(--neg)'],'Frais non couverts':['var(--warnbg)','var(--warn)'],'Rentable':['var(--posbg)','var(--pos)'],'Objectif atteint':['var(--posbg)','var(--pos)']};
   const c=m[s]||['var(--line)','var(--ink2)'];return `<span class="pill-status" style="background:${c[0]};color:${c[1]}">${s}</span>`;}
 
+// ---- Cash-flow mensuel et taux d'épargne (compte courant)
+function cashflowData(){const cc=compteCourant();return Fin.cashflowSeries(DB.movements,DB.expenses,cc?cc.name:'',ymKey(today()),12);}
+function cashflowHtml(){const S=cashflowData(),m=S.months[S.months.length-1],prev=S.months[S.months.length-2];
+  if(!S.months.some(x=>x.income||x.spent))return '';
+  const rate=(r)=>r==null?'—':PCT1(r);
+  return `<div class="card pad" style="margin-top:12px"><div class="spread"><span style="font-weight:650">💶 Cash-flow de ${today().toLocaleDateString('fr-FR',{month:'long'})}</span><span class="t-sub">mois en cours</span></div>
+    <div class="kpis" style="margin-top:10px;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div><div class="k-l">Revenus</div><div style="font-weight:650" class="pos">${eur0(m.income)}</div></div>
+      <div><div class="k-l">Dépenses</div><div style="font-weight:650" class="neg">${eur0(m.spent)}</div></div>
+      <div><div class="k-l">Épargne</div><div style="font-weight:650" class="${m.saved>=0?'pos':'neg'}">${m.saved>=0?'+':''}${eur0(m.saved)}</div></div>
+      <div><div class="k-l">Taux d'épargne</div><div style="font-weight:650;color:var(--orange)">${rate(m.rate)}</div></div></div>
+    <div class="t-sub" style="margin-top:6px">${m.invested?'dont '+eur0(m.invested)+' investis · ':''}mois précédent ${rate(prev.rate)} · moyenne 12 mois ${rate(S.avgRate)}</div>
+    <div style="position:relative;height:170px;margin-top:10px"><canvas id="cfchart"></canvas></div></div>`;}
+function drawCashflow(){const el=$('#cfchart');if(!el)return;const S=cashflowData().months;
+  const tick=getComputedStyle(document.documentElement).getPropertyValue('--ink3')||'#63788A';
+  if(cfChart)cfChart.destroy();
+  cfChart=new Chart(el,{data:{labels:S.map(x=>pd(x.ym+'-01').toLocaleDateString('fr-FR',{month:'short'})),datasets:[
+    {type:'bar',label:'Revenus',data:S.map(x=>Math.round(x.income)),backgroundColor:'#3DD1A0',borderRadius:3,yAxisID:'y'},
+    {type:'bar',label:'Dépenses',data:S.map(x=>Math.round(x.spent)),backgroundColor:'#E86C64',borderRadius:3,yAxisID:'y'},
+    {type:'line',label:'Taux d\'épargne',data:S.map(x=>x.rate==null?null:Math.round(x.rate*1000)/10),borderColor:'#F7931A',backgroundColor:'#F7931A',tension:.3,pointRadius:2,spanGaps:true,yAxisID:'y2'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:tick,boxWidth:10,font:{size:10}}},tooltip:{callbacks:{label:x=>x.dataset.yAxisID==='y2'?x.dataset.label+' : '+fin(x.parsed.y)+' %':x.dataset.label+' : '+eur0(x.parsed.y)}}},
+      scales:{x:{ticks:{color:tick,font:{size:10}}},y:{ticks:{color:tick,font:{size:10},callback:v=>v>=1000?(v/1000)+' k':v}},y2:{position:'right',grid:{display:false},ticks:{color:'#F7931A',font:{size:10},callback:v=>v+' %'}}}}});}
 function renderDash(){
   const c=consolidate(),rep=repartition(),y=today().getFullYear();
   const newYear=(today().getMonth()===0&&DB.settings.snapshots[y]==null&&!DB.settings.dismissY?.[y]);
@@ -707,7 +760,7 @@ function renderDash(){
      ${(DB.properties||[]).length?`<div class="kpi"><div class="k-l">Cash-flow locatif / mois</div><div class="k-v ${c.reCashflow>=0?'pos':'neg'}" style="font-size:19px">${c.reCashflow>=0?'+':''}${eur(c.reCashflow)}</div><div class="k-s muted">loyers − charges − crédits</div></div>`:''}
      <div class="kpi"><div class="k-l">Intérêts épargne / an</div><div class="k-v" style="font-size:19px">${eur0(c.sN)}</div><div class="k-s muted">net · à la quinzaine</div></div>
    </div>
-   ${alertsHtml()}${backupHtml()}${goalHtml()}
+   ${cashflowHtml()}${alertsHtml()}${backupHtml()}${goalHtml()}
    <div class="card pad" style="margin-top:12px"><div class="spread"><span style="font-weight:600;font-size:13.5px">📄 Récap fiscal ${today().getFullYear()}</span><button class="btn sm" onclick="taxRecap()">Voir</button></div></div>
    <div class="sec"><div class="sec-h"><h2>Évolution du patrimoine</h2></div>
      <div class="card pad"><div style="position:relative;height:180px"><canvas id="evo"></canvas></div>
@@ -726,6 +779,7 @@ function renderDash(){
   const labs=keys.map(k=>k),data=keys.map(k=>snaps[k]);labs.push('Auj.');data.push(Math.round(consolidate().net));
   if(evoChart)evoChart.destroy();
   evoChart=new Chart($('#evo'),{type:'line',data:{labels:labs,datasets:[{data,borderColor:'#F7931A',backgroundColor:'rgba(247,147,26,.12)',fill:true,tension:.35,pointBackgroundColor:'#F7931A',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tick,font:{size:11}}},y:{ticks:{color:tick,callback:v=>v>=1000?(v/1000)+'k':v}}}}});
+  drawCashflow();
   if(!dashAnimated){countUp($('#heroval'),c.net);dashAnimated=true;}
   renderPerfChart();
 }
@@ -978,10 +1032,20 @@ function productDetail(name){
 function placeBourse(){
   const rows=DB.assets.map((a,i)=>({a,c:assetCalc(a),i}));
   const tI=rows.reduce((s,r)=>s+r.c.inv,0),tV=rows.reduce((s,r)=>s+r.c.value,0);
-  $('#place-body').innerHTML=`
+  const hasPea=DB.assets.some(x=>x.env==='PEA')||(DB.pea&&DB.pea.open);const P=peaCalc();
+  const peaHtml=hasPea?`<div class="card pad" style="margin-top:14px">
+     <div class="spread"><div><div class="t-name" style="font-size:15px">PEA${DB.pea&&DB.pea.bank?' · '+esc(DB.pea.bank):''}</div><div class="t-sub">${P.open?'ouvert le '+pd(P.open).toLocaleDateString('fr-FR')+' · '+fin(Math.floor(P.years*10)/10)+' ans':'date d\'ouverture à renseigner'}</div></div><span class="del" onclick="editPea()">✎ fiche PEA</span></div>
+     <div class="kpis" style="margin-top:10px;grid-template-columns:repeat(3,1fr);gap:8px">
+       <div><div class="k-l">Versements${P.real?'':' (estim.)'}</div><div style="font-weight:650">${eur0(P.versed)}</div><div class="t-sub">plafond ${eur0(P.ceil)}</div></div>
+       <div><div class="k-l">Encore possible</div><div style="font-weight:650">${eur0(P.room)}</div><div class="t-sub">${fin(r2(P.ratio*100))} % utilisé</div></div>
+       <div><div class="k-l">Liquidités</div><div style="font-weight:650">${P.cash==null?'—':eur(P.cash)}</div><div class="t-sub">${P.real?'non investies':'saisis tes versements'}</div></div></div>
+     <div class="progress" style="margin-top:10px"><span style="width:${Math.min(100,P.ratio*100).toFixed(0)}%;background:${P.ratio>=1?'var(--neg)':P.ratio>=0.9?'var(--warn)':'var(--orange)'}"></span></div>
+     ${P.open?`<div style="font-size:12.5px;margin-top:10px;color:${P.mature?'var(--pos)':'var(--ink2)'}">${P.mature?'✓ Plus de 5 ans : retraits possibles sans clôturer le plan ; seuls les prélèvements sociaux s\'appliquent sur les gains.':'⏳ 5 ans le <b style="color:var(--ink)">'+pd(P.fiveYears).toLocaleDateString('fr-FR')+'</b>. Avant cette date, un retrait entraîne en principe la clôture du plan et l\'imposition des gains.'}</div>`:''}
+   </div>`:'';
+  $('#place-body').innerHTML=peaHtml+`
    <div class="sec-h" style="margin-top:14px"><h2>Actions, ETF & crypto</h2><span class="row" style="gap:6px"><button class="btn sm" onclick="refreshPrices()">↻ Cours</button><button class="btn sm" onclick="priceDetail()" title="Détail de l'actualisation">ⓘ</button><button class="btn sm primary" onclick="editAsset(-1)">+ Actif</button></span></div>
    <div class="card"><div class="twrap"><table><thead><tr><th>Actif</th><th>Investi</th><th>PRU</th><th>Qté</th><th>Cours</th><th>Valeur</th><th>+/–</th><th>Statut</th><th></th></tr></thead>
-   <tbody>${rows.map(({a,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.assets[${i}].name)"><div class="t-name">${esc(a.name)} ›</div><div class="t-sub">${esc(a.ticker||'')} · ${a.env||a.type}</div></td>
+   <tbody>${rows.map(({a,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.assets[${i}].name)"><div class="t-name">${esc(a.name)} ›</div><div class="t-sub">${esc(a.ticker||'')} · ${esc(a.env||a.type)}${c.divs?' · div. '+eur0(c.divs):''}</div></td>
      <td>${eur0(c.inv)}</td><td>${c.pru?eur(c.pru):'—'}</td><td>${QTY(c.qty)}</td><td>${a.price?eur(a.price):'—'}</td><td>${eur0(c.value)}</td>
      <td class="${c.pv>=0?'pos':'neg'}">${c.pv>=0?'+':''}${eur0(c.pv)}</td><td>${statusPill(c.st)}</td><td><span class="del" onclick="editAsset(${i})">✎</span></td></tr>`).join('')}</tbody>
    <tfoot><tr><td>TOTAL</td><td>${eur0(tI)}</td><td></td><td></td><td></td><td>${eur0(tV)}</td><td class="${tV-tI>=0?'pos':'neg'}">${tV-tI>=0?'+':''}${eur0(tV-tI)}</td><td></td><td></td></tr></tfoot></table></div></div>
@@ -1015,12 +1079,14 @@ function placeImmo(){
    <div class="sec-h" style="margin-top:14px"><h2>Biens immobiliers</h2><button class="btn sm primary" onclick="editProperty(-1)">+ Bien</button></div>
    ${props.length?`<div class="kpis" style="margin-bottom:10px"><div class="kpi hero"><div class="k-l">Valeur des biens</div><div class="k-v" style="font-size:21px">${eur0(RE.value)}</div><div class="k-s muted">crédits restants ${eur0(RE.debt)}</div></div>
      <div class="kpi"><div class="k-l">Cash-flow / mois</div><div class="k-v ${RE.cashflow>=0?'pos':'neg'}" style="font-size:19px">${RE.cashflow>=0?'+':''}${eur(RE.cashflow)}</div><div class="k-s muted">avant impôt</div></div></div>`:''}
-   ${props.map(({p,c,i})=>`<div class="card pad" style="margin-bottom:10px"><div class="spread"><div><div class="t-name" style="font-size:15px">${esc(p.name)}</div><div class="t-sub">acheté ${eur0(p.price)}${p.buyD?' le '+pd(p.buyD).toLocaleDateString('fr-FR'):''}</div></div><span class="del" onclick="editProperty(${i})">✎ modifier</span></div>
+   ${props.map(({p,c,i})=>{const rp=p.regime==='RP';return `<div class="card pad" style="margin-bottom:10px"><div class="spread"><div><div class="t-name" style="font-size:15px">${esc(p.name)}</div><div class="t-sub">${esc(p.type||'Bien')}${p.surface?' · '+fin(p.surface)+' m²':''} · ${esc(REGIMES[p.regime]||REGIMES.nu)}</div></div><span class="del" onclick="editProperty(${i})">✎ modifier</span></div>
        <div class="kpis" style="margin-top:10px;grid-template-columns:repeat(3,1fr);gap:8px">
-         <div><div class="k-l">Valeur estimée</div><div style="font-weight:650">${eur0(c.value)}</div></div>
-         <div><div class="k-l">Rendement brut / net</div><div style="font-weight:650">${PCT1(c.grossYield)} / ${PCT1(c.netYield)}</div></div>
-         <div><div class="k-l">Cash-flow</div><div style="font-weight:650" class="${c.cashflow>=0?'pos':'neg'}">${c.cashflow>=0?'+':''}${eur(c.cashflow)}</div></div></div>
-       <div class="t-sub" style="margin-top:8px">Loyer ${eur(p.rent||0)} − charges ${eur(p.charges||0)}${c.loanMonthly?' − crédit '+eur(c.loanMonthly):''} · capital restant dû ${eur0(c.crd)} · part nette ${eur0(c.equity)}</div></div>`).join('')
+         <div><div class="k-l">Valeur estimée</div><div style="font-weight:650">${eur0(c.value)}</div><div class="t-sub">coût ${eur0(c.cost)}</div></div>
+         <div><div class="k-l">Plus-value latente</div><div style="font-weight:650" class="${c.gain>=0?'pos':'neg'}">${c.gain>=0?'+':''}${eur0(c.gain)}</div><div class="t-sub">${PCT1(c.gainPct)}</div></div>
+         ${rp?`<div><div class="k-l">Crédit / mois</div><div style="font-weight:650">${eur(c.loanMonthly)}</div><div class="t-sub">${p.surface?eur0(c.value/p.surface)+'/m²':''}</div></div>`
+           :`<div><div class="k-l">Cash-flow</div><div style="font-weight:650" class="${c.cashflow>=0?'pos':'neg'}">${c.cashflow>=0?'+':''}${eur(c.cashflow)}</div><div class="t-sub">par mois</div></div>`}</div>
+       ${rp?'':`<div class="t-sub" style="margin-top:8px">Rendement brut ${PCT1(c.grossYield)} · net ${PCT1(c.netYield)} · loyers encaissés ${eur0(c.rentY)}/an${p.vacancy?' (vacance '+fin(p.vacancy)+' mois)':''} · charges ${eur0(c.chargesY)}/an</div>`}
+       <div class="t-sub" style="margin-top:4px">Capital restant dû ${eur0(c.crd)} · part nette ${eur0(c.equity)}</div></div>`;}).join('')
      ||`<div class="card"><div class="emptybox"><div class="ic">🏡</div>Aucun bien. Ajoute un logement (résidence ou locatif) pour suivre sa valeur, ses loyers et son crédit.</div></div>`}
    <div class="sec-h" style="margin-top:18px"><h2>Crédits</h2><button class="btn sm primary" onclick="editLoan(-1)">+ Crédit</button></div>
    ${loans.map(({l,c,i})=>`<div class="card pad" style="margin-bottom:10px"><div class="spread"><div><div class="t-name" style="font-size:15px">${esc(l.name)}</div><div class="t-sub">${eur0(l.capital)} à ${fin(r2(l.rate*10000)/100)} % sur ${Math.round(l.months/12*10)/10} ans${l.propertyId&&(DB.properties||[]).find(p=>p.id===l.propertyId)?' · '+esc(DB.properties.find(p=>p.id===l.propertyId).name):''}</div></div><span class="del" onclick="editLoan(${i})">✎ modifier</span></div>
@@ -1355,7 +1421,7 @@ function editMov(i){
   const opts=[...assetNames(),...savingNames()],savo=savingNames();
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouvelle'} opération</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="field"><label>Date</label><input type="date" id="f_d" value="${m.d}"></div>
-   <div class="field"><label>Type</label><select id="f_t" onchange="movFields()">${['Achat','Vente','Dépôt','Retrait','Transfert','Intérêts','Ajustement'].map(t=>`<option ${m.t===t?'selected':''}>${t}</option>`).join('')}</select></div>
+   <div class="field"><label>Type</label><select id="f_t" onchange="movFields()">${['Achat','Vente','Dividende','Dépôt','Retrait','Transfert','Intérêts','Ajustement'].map(t=>`<option ${m.t===t?'selected':''}>${t}</option>`).join('')}</select></div>
    <div class="field"><label id="f_pl">Produit / actif</label><input list="pl" id="f_p" value="${esc(m.p||'')}" placeholder="Bitcoin, Livret A…"><datalist id="pl">${opts.map(o=>`<option value="${o}">`).join('')}</datalist><div class="hint" id="f_ph">Doit correspondre à un actif ou un produit existant.</div></div>
    <div class="field" id="w_dest" style="display:none"><label>Vers (compte destinataire)</label><input list="dl" id="f_p2" value="${esc(m.p2||'')}" placeholder="Compte courant"><datalist id="dl">${savo.map(o=>`<option value="${o}">`).join('')}</datalist></div>
    <div class="two" id="w_qp"><div class="field"><label>Quantité</label><input type="text" inputmode="decimal" autocomplete="off" id="f_q" value="${fin(m.q??'')}"></div><div class="field"><label>Prix unitaire (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="f_pu" value="${fin(m.pu??'')}"></div></div>
@@ -1372,19 +1438,33 @@ function movFields(){const t=$('#f_t').value,tr=(t==='Transfert');
   $('#f_h2').textContent=tr?'Transfert interne : soldes et intérêts se mettent à jour automatiquement.'
     :t==='Intérêts'?'Intérêts crédités sur le compte (ex. Livret A au 1er janvier) : augmentent le solde sans compter comme un versement.'
     :t==='Ajustement'?'Corrige le solde : montant positif ou négatif (ex. -12,50).'
+    :t==='Dividende'?'Dividende reçu sur cette ligne : montant net crédité. Sans effet sur le prix de revient ; imposable seulement hors PEA.'
     :'Achat crypto : 2 champs sur 3 (Qté, Prix, Montant). Dépôt/retrait : juste le Montant.';}
 function saveMov(i){const t=$('#f_t').value,p=val('f_p');if(!p){toast('Indique un produit',true);return;}
   const old=(i>=0)?DB.movements[i]:null;let o;
   if(t==='Transfert'){const p2=val('f_p2'),amt=num('f_m');if(!p2){toast('Compte destinataire ?',true);return;}if(p2===p){toast('Source = destination',true);return;}if(!amt){toast('Montant ?',true);return;}
     o={d:val('f_d')||ymd(today()),p,p2,t:'Transfert',q:null,pu:null,m:amt,f:0,n:val('f_n')||''};}
-  else o={d:val('f_d')||ymd(today()),p,t,q:num('f_q'),pu:num('f_pu'),m:num('f_m'),f:num('f_f')||0,n:val('f_n')||''};
+  else{if(t==='Dividende'&&(!DB.assets.some(a=>a.name===p)||!(num('f_m')>0))){toast('Dividende : choisis une ligne de bourse et un montant',true);return;}
+    o={d:val('f_d')||ymd(today()),p,t,q:t==='Dividende'?null:num('f_q'),pu:t==='Dividende'?null:num('f_pu'),m:num('f_m'),f:t==='Dividende'?0:(num('f_f')||0),n:val('f_n')||''};}
   if(i>=0)DB.movements[i]=o;else DB.movements.push(o);
   save();closeSheet();renderAll();toast(t==='Transfert'?'Transfert enregistré':'Opération enregistrée');}
 function delMov(i){DB.movements.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
+function editPea(){const p=DB.pea||{open:'',bank:'',versements:[]},V=(p.versements||[]).slice().sort((a,b)=>a.d<b.d?1:-1);
+  openSheet(`<div class="spread"><h2>Fiche PEA</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   <div class="two"><div class="field"><label>Date d'ouverture</label><input type="date" id="pe_open" value="${p.open||''}"></div><div class="field"><label>Établissement</label><input id="pe_bank" value="${esc(p.bank||'')}" placeholder="Boursorama, Fortuneo…"></div></div>
+   <div class="field"><label>Ajouter un versement</label><div class="two"><input type="date" id="pe_vd" value="${ymd(today())}"><input type="text" inputmode="decimal" autocomplete="off" id="pe_vm" placeholder="montant en €"></div>
+     <div class="hint">Les versements (argent déposé sur le PEA) comptent pour le plafond de ${eur0(param('ceil.PEA')||0)}. Une vente ne libère pas de plafond.</div></div>
+   ${V.length?`<div class="field"><label>Versements (${eur0(V.reduce((a,v)=>a+v.m,0))})</label>${V.map(v=>`<div class="spread" style="font-size:12.5px;padding:3px 0;border-bottom:1px solid var(--line)"><span>${pd(v.d).toLocaleDateString('fr-FR')}</span><span>${eur(v.m)} <span class="del" onclick="delPeaVers('${v.d}',${v.m})">✕</span></span></div>`).join('')}</div>`:''}
+   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="savePea()">Enregistrer</button></div>`);}
+function savePea(){const vm=num('pe_vm'),vd=val('pe_vd');DB.pea=DB.pea||{versements:[]};DB.pea.versements=DB.pea.versements||[];
+  DB.pea.open=val('pe_open')||null;DB.pea.bank=$('#pe_bank').value.trim();
+  if(vm!=null){if(!(vm>0)||!vd){toast('Montant et date du versement ?',true);return;}DB.pea.versements.push({d:vd,m:r2(vm)});}
+  save();renderAll();editPea();toast(vm!=null?'Versement ajouté':'Fiche PEA enregistrée');}
+function delPeaVers(d,m){const i=DB.pea.versements.findIndex(v=>v.d===d&&Math.abs(v.m-m)<0.005);if(i>=0)DB.pea.versements.splice(i,1);save();renderAll();editPea();}
 function editAsset(i){const a=i>=0?DB.assets[i]:{name:'',ticker:'',type:'Crypto',env:'Bitstack',price:'',sellFee:0.01,cur:'EUR'};
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouvel'} actif</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
-   <div class="field"><label>Nom</label><input id="a_name" value="${esc(a.name)}"></div>
+   <div class="two"><div class="field"><label>Nom</label><input id="a_name" value="${esc(a.name)}"></div><div class="field"><label>ISIN (facultatif)</label><input id="a_isin" value="${esc(a.isin||'')}" placeholder="FR0010315770" autocapitalize="characters"></div></div>
    <div class="two"><div class="field"><label>Ticker</label><input id="a_ticker" value="${esc(a.ticker||'')}" placeholder="BTC-EUR / AAPL"></div><div class="field"><label>Type</label><select id="a_type">${['Action','ETF','Crypto'].map(t=>`<option ${a.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
    <div class="two"><div class="field"><label>Enveloppe</label><select id="a_env">${['PEA','CTO','Bitstack','Autre'].map(t=>`<option ${a.env===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="field"><label>Devise</label><select id="a_cur">${['EUR','USD'].map(t=>`<option ${a.cur===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
    <div class="two"><div class="field"><label>Cours actuel (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="a_price" value="${fin(a.price??'')}"></div><div class="field"><label>Frais vente (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="a_fee" value="${fin((a.sellFee*100)||'')}"></div></div>
@@ -1392,7 +1472,8 @@ function editAsset(i){const a=i>=0?DB.assets[i]:{name:'',ticker:'',type:'Crypto'
    <div class="hint">ETF Amundi / PEA : laisse <b>Auto</b> — l'appli interroge Yahoo (ex. ticker <code>CW8</code> → <code>CW8.PA</code>), gratuit et sans clé. Crypto → CoinGecko (<code>BTC-EUR</code>). Twelve Data (clé) sert de secours pour les actions US. Si un ETF ne remonte pas, force <b>Yahoo</b> et saisis le symbole exact (ex. <code>PE500.PA</code>).</div>
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveAsset(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delAsset(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
 function saveAsset(i){const name=$('#a_name').value.trim();if(!name){toast('Nom ?',true);return;}
-  const o={name,ticker:$('#a_ticker').value.trim(),type:$('#a_type').value,env:$('#a_env').value,cur:$('#a_cur').value,price:num('a_price'),sellFee:(num('a_fee')||0)/100,src:$('#a_src').value,ysym:$('#a_ysym').value.trim()};
+  const isin=$('#a_isin').value.trim().toUpperCase().replace(/\s/g,'');if(isin&&!Fin.isinValid(isin)){toast('ISIN invalide (12 caractères, ex. FR0010315770)',true);$('#a_isin').classList.add('bad');return;}
+  const o={name,ticker:$('#a_ticker').value.trim(),type:$('#a_type').value,env:$('#a_env').value,cur:$('#a_cur').value,price:num('a_price'),sellFee:(num('a_fee')||0)/100,src:$('#a_src').value,ysym:$('#a_ysym').value.trim(),isin:isin||undefined};
   if(i>=0){const old=DB.assets[i].name;if(old!==name)DB.movements.forEach(m=>{if(m.p===old)m.p=name;});DB.assets[i]=o;}else DB.assets.push(o);
   save();closeSheet();renderAll();toast('Actif enregistré');}
 function delAsset(i){DB.assets.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
@@ -1424,21 +1505,42 @@ function delSaving(i){const n=DB.savings[i].name;const k=DB.movements.filter(m=>
   if(k&&!confirm('Supprimer « '+n+' » et ses '+k+' opération(s) ?'))return;
   DB.movements=DB.movements.filter(m=>m.p!==n&&m.p2!==n);DB.savings.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
-function editProperty(i){const p=i>=0?DB.properties[i]:{id:'',name:'',price:'',buyD:ymd(today()),rent:'',charges:'',values:[]},t=ymd(today());
+const REGIMES={RP:'Résidence principale',nu:'Location nue',LMNP:'Location meublée (LMNP)',SCI:'SCI',autre:'Autre'};
+const PTYPES=['Appartement','Maison','Studio','Parking','Local','Terrain','Autre'];
+function editProperty(i){const p=i>=0?DB.properties[i]:{id:'',name:'',type:'Appartement',regime:'nu',price:'',notary:'',works:'',buyD:ymd(today()),rent:'',vacancy:'',charges:'',copro:'',taxFonciere:'',pno:'',maintenance:'',mgmt:'',values:[]},t=ymd(today());
   const vals=(p.values||[]).slice().sort((a,b)=>a.d<b.d?1:-1);
+  const f=(id,lab,v,ph,mode)=>`<div class="field"><label>${lab}</label><input type="text" inputmode="${mode||'decimal'}" autocomplete="off" id="${id}" value="${fin(v??'')}" placeholder="${ph||''}"></div>`;
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier le':'Nouveau'} bien</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="field"><label>Nom</label><input id="pr_name" value="${esc(p.name)}" placeholder="Appartement Montpellier"></div>
-   <div class="two"><div class="field"><label>Prix d'achat, frais inclus (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="pr_price" value="${fin(p.price??'')}"></div><div class="field"><label>Date d'achat</label><input type="date" id="pr_buyd" value="${p.buyD||''}"></div></div>
-   <div class="two"><div class="field"><label>Loyer mensuel (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="pr_rent" value="${fin(p.rent??'')}" placeholder="0 si résidence principale"></div><div class="field"><label>Charges mensuelles (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="pr_charges" value="${fin(p.charges??'')}" placeholder="copro, taxe foncière/12…"></div></div>
+   <div class="two"><div class="field"><label>Type</label><select id="pr_type">${PTYPES.map(x=>`<option ${p.type===x?'selected':''}>${x}</option>`).join('')}</select></div>
+     <div class="field"><label>Usage / régime</label><select id="pr_regime" onchange="propFields()">${Object.entries(REGIMES).map(([k,l])=>`<option value="${k}" ${(p.regime||'nu')===k?'selected':''}>${l}</option>`).join('')}</select></div></div>
+   <div class="two">${f('pr_surface','Surface (m²)',p.surface,'','decimal')}<div class="field"><label>Date d'achat</label><input type="date" id="pr_buyd" value="${p.buyD||''}"></div></div>
+   <div class="sub" style="margin:10px 0 4px">Coût d'acquisition</div>
+   <div class="two">${f('pr_price',"Prix d'achat (€)",p.price)}${f('pr_notary','Frais de notaire (€)',p.notary,'environ 7–8 % dans l\'ancien')}</div>
+   ${f('pr_works','Travaux (€)',p.works)}
+   <div id="pr_rentwrap"><div class="sub" style="margin:10px 0 4px">Revenus</div>
+     <div class="two">${f('pr_rent','Loyer mensuel hors charges (€)',p.rent)}${f('pr_vac','Vacance (mois par an)',p.vacancy,'ex. 0,5')}</div>
+     ${f('pr_mgmt','Gestion locative (% des loyers)',p.mgmt!=null&&p.mgmt!==''?p.mgmt*100:'','ex. 7')}</div>
+   <div class="sub" style="margin:10px 0 4px">Charges</div>
+   <div class="two">${f('pr_tf','Taxe foncière (€/an)',p.taxFonciere)}${f('pr_copro','Copropriété (€/mois)',p.copro)}</div>
+   <div class="two">${f('pr_pno','Assurance PNO / habitation (€/an)',p.pno)}${f('pr_maint','Entretien (€/an)',p.maintenance)}</div>
+   ${f('pr_charges','Autres charges (€/mois)',p.charges)}
    <div class="field"><label>Nouvelle estimation de valeur (facultatif)</label><div class="two"><input type="text" inputmode="decimal" autocomplete="off" id="pr_val" placeholder="valeur en €"><input type="date" id="pr_vald" value="${t}"></div>
      <div class="hint">Chaque estimation est ajoutée avec sa date : l'historique est conservé.</div></div>
    ${vals.length?`<div class="field"><label>Estimations</label>${vals.map(v=>`<div class="spread" style="font-size:12.5px;padding:3px 0;border-bottom:1px solid var(--line)"><span>${pd(v.d).toLocaleDateString('fr-FR')}</span><span>${eur0(v.v)} <span class="del" onclick="delPropertyValue(${i},'${v.d}')">✕</span></span></div>`).join('')}</div>`:''}
-   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveProperty(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delProperty(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
+   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveProperty(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delProperty(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);
+  propFields();}
+function propFields(){$('#pr_rentwrap').style.display=$('#pr_regime').value==='RP'?'none':'block';}
 function saveProperty(i){const name=$('#pr_name').value.trim();if(!name){toast('Nom ?',true);return;}
-  const price=num('pr_price'),rent=num('pr_rent'),charges=num('pr_charges'),v=num('pr_val'),vd=val('pr_vald');
+  const g=id=>num(id),price=g('pr_price'),regime=$('#pr_regime').value,vac=g('pr_vac'),mg=g('pr_mgmt'),v=g('pr_val'),vd=val('pr_vald');
+  const n={notary:g('pr_notary'),works:g('pr_works'),rent:g('pr_rent'),copro:g('pr_copro'),taxFonciere:g('pr_tf'),pno:g('pr_pno'),maintenance:g('pr_maint'),charges:g('pr_charges'),surface:g('pr_surface')};
   if(!(price>0)){toast('Prix d\'achat ?',true);return;}
+  if(vac!=null&&(vac<0||vac>12)){toast('Vacance : entre 0 et 12 mois',true);return;}
+  if(mg!=null&&(mg<0||mg>30)){toast('Gestion : entre 0 et 30 %',true);return;}
   const old=i>=0?DB.properties[i]:null;
-  const o={id:old?old.id:'p'+Date.now(),name,price,buyD:val('pr_buyd'),rent:rent||0,charges:charges||0,values:old?(old.values||[]).slice():[]};
+  const o={id:old?old.id:'p'+Date.now(),name,type:$('#pr_type').value,regime,surface:n.surface||null,price,notary:n.notary||0,works:n.works||0,buyD:val('pr_buyd'),
+    rent:regime==='RP'?0:(n.rent||0),vacancy:regime==='RP'?0:(vac||0),mgmt:regime==='RP'?0:(mg||0)/100,
+    charges:n.charges||0,copro:n.copro||0,taxFonciere:n.taxFonciere||0,pno:n.pno||0,maintenance:n.maintenance||0,values:old?(old.values||[]).slice():[]};
   if(v!=null&&vd){o.values=o.values.filter(x=>x.d!==vd);o.values.push({d:vd,v});}
   DB.properties=DB.properties||[];if(i>=0)DB.properties[i]=o;else DB.properties.push(o);save();closeSheet();renderAll();nav('placements');setPlace('immo');toast('Bien enregistré');}
 function delPropertyValue(i,d){DB.properties[i].values=(DB.properties[i].values||[]).filter(x=>x.d!==d);save();editProperty(i);}
@@ -1557,6 +1659,7 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
      <div class="two"><div class="field"><label>Symbole MSCI World</label><input id="set_bmsci" value="${esc((s.benchSym||{}).MSCI||'URTH')}"></div><div class="field"><label>Symbole CAC 40</label><input id="set_bcac" value="${esc((s.benchSym||{}).CAC||'CAC')}"></div></div>
    </details>
    <button class="btn primary" style="width:100%;margin-top:16px" onclick="saveSettings()">Enregistrer</button>
+   ${lockSettingsHtml()}
    <div class="field" style="margin-top:18px"><button class="btn" style="width:100%" onclick="exportData()">Exporter mes données</button></div>
    <div class="field"><button class="btn" style="width:100%" onclick="$('#imp').click()">Importer</button><input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)"></div>
    <div class="field"><button class="btn" style="width:100%;color:var(--neg)" onclick="resetData()">Réinitialiser (exemples)</button></div>
@@ -1699,6 +1802,66 @@ function boot(){try{load();applyTheme();runRecurring();autoSnapshot();save();
   $('#asof').textContent='mis à jour le '+today().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
   renderAll();maybeOnboard();checkAlerts();}finally{hideSplash();}
 }
+// ---- Verrouillage : code haché (PBKDF2) + empreinte / visage (WebAuthn), écran de protection (pas de chiffrement)
+const LOCK_ITER=150000;let lockBuf='',lockHiddenAt=0;
+const lk=()=>DB.settings.lock||{enabled:false};
+const b64=(buf)=>btoa(String.fromCharCode(...new Uint8Array(buf))),unb64=(s)=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const randHex=(n)=>[...crypto.getRandomValues(new Uint8Array(n))].map(b=>b.toString(16).padStart(2,'0')).join('');
+function lockIsOn(){return $('#lock').classList.contains('on');}
+function lockNow(){if(!lk().enabled)return;lockBuf='';$('#lock').classList.add('on');lockDraw();
+  const L=lk();$('#lk-bio').style.display=L.bio?'inline':'none';if(L.bio)setTimeout(()=>{if(lockIsOn())lockBio();},350);}
+function lockDraw(msg){const n=lk().len||4;$('#lk-dots').innerHTML=Array.from({length:n},(_,k)=>`<i class="${k<lockBuf.length?'f':''}"></i>`).join('');
+  if(msg!=null)$('#lk-msg').textContent=msg;
+  if(!$('#lk-pad').children.length)$('#lk-pad').innerHTML=[1,2,3,4,5,6,7,8,9].map(d=>`<button onclick="lockKey('${d}')">${d}</button>`).join('')+`<button class="ghost" onclick="lockKey('C')">Effacer</button><button onclick="lockKey('0')">0</button><button class="ghost" onclick="lockKey('<')">⌫</button>`;}
+function lockWait(){const u=+localStorage.getItem('investco_lock_until')||0;return Math.max(0,Math.ceil((u-Date.now())/1000));}
+async function lockKey(k){const w=lockWait();if(w){lockDraw('Trop d\'essais : réessaie dans '+w+' s');return;}
+  if(k==='C')lockBuf='';else if(k==='<')lockBuf=lockBuf.slice(0,-1);else if(lockBuf.length<(lk().len||4))lockBuf+=k;
+  lockDraw('');if(lockBuf.length===(lk().len||4)){const L=lk(),h=await Fin.hashPin(lockBuf,L.salt,L.iter||LOCK_ITER);
+    if(h===L.hash){localStorage.removeItem('investco_lock_fails');unlock();}
+    else{const f=(+localStorage.getItem('investco_lock_fails')||0)+1;localStorage.setItem('investco_lock_fails',f);lockBuf='';
+      $('#lock').classList.remove('shake');void $('#lock').offsetWidth;$('#lock').classList.add('shake');
+      if(f>=5){localStorage.setItem('investco_lock_until',Date.now()+30000);localStorage.setItem('investco_lock_fails',0);lockDraw('Trop d\'essais : réessaie dans 30 s');}
+      else lockDraw('Code incorrect');}}}
+function unlock(){$('#lock').classList.remove('on');lockBuf='';}
+async function lockBio(){const L=lk();if(!L.bio||!window.PublicKeyCredential)return;
+  try{await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:'public-key',id:unb64(L.bio)}],userVerification:'required',timeout:60000}});unlock();}
+  catch(e){lockDraw('Empreinte non reconnue : utilise ton code');}}
+function lockForgot(){if(!confirm('Sans le code, la seule solution est d\'effacer toutes les données de l\'application sur cet appareil.\n\nTu pourras ensuite les restaurer depuis un export ou Google Drive.\n\nContinuer ?'))return;
+  if(!confirm('Dernière confirmation : effacer toutes les données Invest.co de cet appareil ?'))return;
+  ['investco_v1','patrimoine_v1',BAK_KEY,'investco_lock_fails','investco_lock_until'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});location.reload();}
+document.addEventListener('keydown',e=>{if(!lockIsOn())return;if(/^\d$/.test(e.key))lockKey(e.key);else if(e.key==='Backspace')lockKey('<');});
+document.addEventListener('visibilitychange',()=>{if(!lk().enabled)return;
+  if(document.visibilityState==='hidden')lockHiddenAt=Date.now();
+  else if(lockHiddenAt&&!lockIsOn()&&Date.now()-lockHiddenAt>=(lk().delay||0)*1000)lockNow();});
+// Réglages du verrouillage
+function lockSettingsHtml(){const L=lk();
+  return `<div class="field" style="border-top:1px solid var(--line);padding-top:14px"><label>🔒 Verrouillage</label>
+    ${L.enabled?`<div class="row" style="gap:8px;flex-wrap:wrap"><select id="lk_delay" onchange="DB.settings.lock.delay=+this.value;save();toast('Délai enregistré')" style="flex:1;min-width:140px">${[[0,'Immédiat'],[60,'Après 1 min'],[300,'Après 5 min'],[900,'Après 15 min']].map(([v,l])=>`<option value="${v}" ${(L.delay||0)===v?'selected':''}>${l}</option>`).join('')}</select>
+      <button class="btn sm" onclick="lockBioToggle()">${L.bio?'Désactiver l\'empreinte':'👆 Activer l\'empreinte'}</button><button class="btn sm" onclick="lockSetup(true)">Changer le code</button><button class="btn sm" style="color:var(--neg)" onclick="lockDisable()">Désactiver</button></div>
+      <div class="hint">Code demandé à l'ouverture et au retour dans l'appli. C'est un écran de protection : tes données ne sont pas chiffrées.</div>`
+    :`<button class="btn" style="width:100%" onclick="lockSetup(false)">Activer le verrouillage par code</button><div class="hint">Code à 4 à 6 chiffres, et empreinte ou visage si ton téléphone le permet.</div>`}</div>`;}
+function lockSetup(change){openSheet(`<div class="spread"><h2>${change?'Changer le':'Choisir un'} code</h2><button class="btn sm" onclick="closeSheet();openSettings()">Retour</button></div>
+   ${change?`<div class="field"><label>Code actuel</label><input type="password" inputmode="numeric" autocomplete="off" id="lk_old" maxlength="6"></div>`:''}
+   <div class="field"><label>Nouveau code (4 à 6 chiffres)</label><input type="password" inputmode="numeric" autocomplete="off" id="lk_new" maxlength="6"></div>
+   <div class="field"><label>Confirme le code</label><input type="password" inputmode="numeric" autocomplete="off" id="lk_new2" maxlength="6"></div>
+   <div class="note" style="margin-top:6px">Retiens bien ce code : s'il est perdu, il faudra effacer les données et les restaurer depuis un export ou Google Drive.</div>
+   <button class="btn primary" style="width:100%;margin-top:14px" onclick="lockSave(${change})">Enregistrer</button>`);}
+async function lockCheck(pin){const L=lk();return L.enabled&&(await Fin.hashPin(pin,L.salt,L.iter||LOCK_ITER))===L.hash;}
+async function lockSave(change){const a=$('#lk_new').value,b=$('#lk_new2').value;
+  if(change&&!(await lockCheck($('#lk_old').value))){toast('Code actuel incorrect',true);return;}
+  if(!/^\d{4,6}$/.test(a)){toast('Le code doit comporter 4 à 6 chiffres',true);return;}
+  if(a!==b){toast('Les deux codes ne correspondent pas',true);return;}
+  const salt=randHex(16),hash=await Fin.hashPin(a,salt,LOCK_ITER),old=lk();
+  DB.settings.lock={enabled:true,salt,hash,iter:LOCK_ITER,len:a.length,delay:old.delay||0,bio:old.bio||null};save();closeSheet();openSettings();toast('Verrouillage activé');}
+async function lockDisable(){const pin=prompt('Code actuel pour désactiver le verrouillage :');if(pin==null)return;
+  if(!(await lockCheck(pin))){toast('Code incorrect',true);return;}DB.settings.lock={enabled:false};save();closeSheet();openSettings();toast('Verrouillage désactivé');}
+async function lockBioToggle(){const L=lk();
+  if(L.bio){DB.settings.lock.bio=null;save();closeSheet();openSettings();toast('Empreinte désactivée');return;}
+  try{if(!window.PublicKeyCredential||!(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())){toast('Empreinte ou visage non disponible sur cet appareil',true);return;}
+    const c=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'Invest.co'},user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'invest.co',displayName:'Invest.co'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},timeout:60000}});
+    DB.settings.lock.bio=b64(c.rawId);save();closeSheet();openSettings();toast('Empreinte activée');}
+  catch(e){toast('Activation annulée',true);}}
 // ---- Mises à jour de l'appli
 let swReg=null;
 function showUpdate(){const b=$('#updbar');if(!b)return;b.className='updbar on';b.onclick=applyUpdate;}
@@ -1735,6 +1898,7 @@ if('serviceWorker' in navigator){
   });
 }
 try{boot();}catch(e){console.error(e);toast('Erreur au démarrage : '+e.message,true);}
+try{lockNow();}catch(e){}
 setTimeout(()=>{try{whatsNew(false);}catch(e){}},900);
 </script>
 </body>

@@ -26,7 +26,7 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   const re = await page.evaluate(() => ({ e: DB.expenses.find(x => x.label === 'Test 0,1+0,2').amt, cap: compteCourant().cap }));
   log('Après rechargement : 0,1 + 0,2 relu exactement 0,30 €', re.e === 0.3, re);
   await page.evaluate(() => { DB.expenses = DB.expenses.filter(x => x.label !== 'Test 0,1+0,2'); save(); });
-  log('Migration des données d\'exemple : plus de table de taux dans les données', await page.evaluate(() => DB.rates === undefined && DB.pel === undefined && DB.meta.schema === 5));
+  log('Migration des données d\'exemple : plus de table de taux dans les données', await page.evaluate(() => DB.rates === undefined && DB.pel === undefined && DB.meta.schema >= 5));
 
   // ===== 2. Fiscalité personnelle et paramètres réglementaires =====
   await page.evaluate(() => openSettings()); await page.waitForTimeout(150);
@@ -64,7 +64,7 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   log('Patrimoine net = avant + 215 000 € de bien − 180 057,34 € de crédit', Math.abs(im.net - (net0 + 215000 - 180057.34)) < 0.01, { avant: net0, après: im.net });
   log('Cash-flow : 900 − 150 − 1 189,92 = −439,92 €/mois', im.cf === -439.92, im.cf);
   const body = N(im.body);
-  log('Écran Immo : rendement brut 5,4 % / net 4,5 %, mensualité 1 189,92 €', /5,4 % \/ 4,5 %/.test(body) && body.includes('1 189,92 €'), body.match(/Rendement[^C]*/)?.[0]);
+  log('Écran Immo : rendement brut 5,4 % / net 4,5 %, mensualité 1 189,92 €', /Rendement brut 5,4 % · net 4,5 %/.test(body) && body.includes('1 189,92 €'), body.match(/Rendement[^C]*/)?.[0]);
   await page.locator('#place-body button', { hasText: 'Tableau d\'amortissement' }).click(); await page.waitForTimeout(150);
   const am = N(await page.locator('#sheet').textContent());
   log('Tableau d\'amortissement : 21 années (2024 → 2044), coût des intérêts affiché', (am.match(/20[2-4]\d/g) || []).filter((v, i, a) => a.indexOf(v) === i).length >= 21 && /intérêts [\d ]+,\d\d €/.test(am));
@@ -138,7 +138,7 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
     return { tmi: DB.settings.tmi, crypto: DB.settings.cryptoRegime, tax: DB.savings[1].tax, ceil: DB.savings[0].ceil, ceilFor: ceilFor(DB.savings[0]), rates: DB.rates, cap: DB.savings[0].cap,
       goal: DB.goals.map(g => [g.name, g.target, g.accounts.join()]), cats: DB.expenses.map(e => e.cat), stockedCap: st.movements[0].m, stockedGoal: st.goals[0].target, flat: DB.settings.flatTax, schema: DB.meta.schema, pel: rateFor(DB.savings[1]) };
   }, v162);
-  log('Migration v16.2 → v17 : TMI 0 %, crypto au barème (ancien choix conservé), « Barème »', mig.tmi === 0 && mig.crypto === 'bareme' && mig.tax === 'Barème' && mig.flat === undefined && mig.schema === 5, mig);
+  log('Migration v16.2 → v17 : TMI 0 %, crypto au barème (ancien choix conservé), « Barème »', mig.tmi === 0 && mig.crypto === 'bareme' && mig.tax === 'Barème' && mig.flat === undefined && mig.schema >= 5, mig);
   log('… versement Bitstack resté en « Autres » → « Investissement » ; catégorie choisie à la main conservée', JSON.stringify(mig.cats) === '["Investissement","Loisirs"]', mig.cats);
   log('… plafond réglementaire repris des paramètres, taux PEL 2021 = 1 %, solde 1 000,50 €', mig.ceil === null && mig.ceilFor === 22950 && mig.pel === 0.01 && mig.cap === 1000.5 && mig.rates === undefined);
   log('… ancien objectif 60 000 € devenu un objectif « Patrimoine » ; stockage en centimes', JSON.stringify(mig.goal) === '[["Patrimoine",60000,"*"]]' && mig.stockedCap === 100050 && mig.stockedGoal === 6000000);

@@ -2,52 +2,144 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "18.0",
+      "date": "2026-10-22",
+      "title": "Cash-flow, PEA complet, immobilier détaillé et verrouillage",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Cash-flow mensuel sur le tableau de bord : revenus, dépenses courantes, épargne et taux d'épargne du mois, comparés au mois précédent et à la moyenne sur 12 mois, avec un graphique d'évolution."
+        },
+        {
+          "type": "new",
+          "text": "Fiche PEA : date d'ouverture, historique des versements, plafond restant, liquidités disponibles et compteur des 5 ans de détention."
+        },
+        {
+          "type": "new",
+          "text": "Dividendes : nouveau type d'opération, distinct des achats et ventes, avec le total perçu par ligne et par année, au sein et en dehors du PEA."
+        },
+        {
+          "type": "new",
+          "text": "Immobilier détaillé : résidence principale, location nue ou LMNP ; frais de notaire et travaux ; vacance locative ; taxe foncière, copropriété, assurance PNO, entretien et frais de gestion ; plus-value latente."
+        },
+        {
+          "type": "new",
+          "text": "Verrouillage de l'application par code de 4 à 6 chiffres, et par empreinte digitale ou reconnaissance faciale lorsque votre appareil le permet."
+        },
+        {
+          "type": "improved",
+          "text": "Code ISIN facultatif sur chaque titre, contrôlé à la saisie."
+        },
+        {
+          "type": "improved",
+          "text": "Les liquidités du PEA sont intégrées à votre patrimoine et à la répartition par classe d'actifs."
+        }
+      ],
+      "migration": "Vos biens existants sont classés automatiquement : « Location nue » s'ils ont un loyer, « Résidence principale » sinon. Vérifiez ce classement et complétez les nouvelles charges dans Placements › Immo. Vos rendements actuels sont inchangés tant que vous n'ajoutez pas de frais.",
+      "guide": true,
+      "guideChanges": [
+        "03 · Bourse, PEA et dividendes (nouvelle page)",
+        "06 · Immobilier : régimes, frais, charges, plus-value (nouvelle page)",
+        "07 · Pilotage et sécurité : cash-flow, verrouillage (chapitre restructuré)",
+        "08 · Questions fréquentes : code oublié"
+      ]
+    },
+    {
       "version": "17.2",
       "date": "2026-10-22",
       "title": "Investissements mieux suivis dans le budget",
       "highlights": [
-        { "type": "new", "text": "Nouvelle catégorie « Investissement » : les virements vers vos plateformes (Bitstack, Coinbase, Trade Republic, Linxea, crowdfunding…) y sont classés automatiquement, à l'import comme à la saisie." },
-        { "type": "improved", "text": "Le budget distingue la part investie de vos dépenses courantes : « dont X € investis · Y € de dépenses courantes »." },
-        { "type": "improved", "text": "Ces versements ne sont plus comptés comme une perte dans le gain de l'année : l'argent se retrouve dans l'actif acheté." },
-        { "type": "fixed", "text": "Un relevé bancaire mentionnant une plateforme crypto n'est plus confondu avec un export de cette plateforme." }
+        {
+          "type": "new",
+          "text": "Nouvelle catégorie « Investissement » : les virements vers vos plateformes (Bitstack, Coinbase, Trade Republic, Linxea, crowdfunding…) y sont classés automatiquement, à l'import comme à la saisie."
+        },
+        {
+          "type": "improved",
+          "text": "Le budget distingue la part investie de vos dépenses courantes : « dont X € investis · Y € de dépenses courantes »."
+        },
+        {
+          "type": "improved",
+          "text": "Ces versements ne sont plus comptés comme une perte dans le gain de l'année : l'argent se retrouve dans l'actif acheté."
+        },
+        {
+          "type": "fixed",
+          "text": "Un relevé bancaire mentionnant une plateforme crypto n'est plus confondu avec un export de cette plateforme."
+        }
       ],
       "migration": "Vos anciens versements vers ces plateformes restés en catégorie « Autres » sont reclassés automatiquement ; une catégorie choisie manuellement est conservée.",
       "guide": true,
-      "guideChanges": ["04 · Importer vos relevés : catégorie Investissement", "05 · Budget : part investie"]
+      "guideChanges": [
+        "04 · Importer vos relevés : catégorie Investissement",
+        "05 · Budget : part investie"
+      ]
     },
     {
       "version": "17.1",
       "date": "2026-10-22",
       "title": "Import universel des relevés",
       "highlights": [
-        { "type": "new", "text": "Les relevés CSV de toutes les banques sont reconnus automatiquement : encodage, lignes d'en-tête, séparateur, colonnes Débit / Crédit, sens ou montant signé, formats de dates et de montants." },
-        { "type": "new", "text": "Import des exports de plateformes crypto (Bitstack…) : achats, arrondis, parrainages à coût nul, ventes ; retraits ignorés ; actif créé si nécessaire." },
-        { "type": "improved", "text": "Chaque colonne détectée peut être corrigée, avec un aperçu immédiat avant import ; les doublons sont ignorés." }
+        {
+          "type": "new",
+          "text": "Les relevés CSV de toutes les banques sont reconnus automatiquement : encodage, lignes d'en-tête, séparateur, colonnes Débit / Crédit, sens ou montant signé, formats de dates et de montants."
+        },
+        {
+          "type": "new",
+          "text": "Import des exports de plateformes crypto (Bitstack…) : achats, arrondis, parrainages à coût nul, ventes ; retraits ignorés ; actif créé si nécessaire."
+        },
+        {
+          "type": "improved",
+          "text": "Chaque colonne détectée peut être corrigée, avec un aperçu immédiat avant import ; les doublons sont ignorés."
+        }
       ],
       "guide": true,
-      "guideChanges": ["04 · Importer vos relevés"]
+      "guideChanges": [
+        "04 · Importer vos relevés"
+      ]
     },
     {
       "version": "17.0",
       "date": "2026-10-22",
       "title": "Immobilier, budget prévisionnel et objectifs",
       "highlights": [
-        { "type": "new", "text": "Biens immobiliers (valeur estimée datée, loyers, charges, rendement, cash-flow) et crédits (mensualité, tableau d'amortissement, capital restant dû). Le tableau de bord affiche votre patrimoine net." },
-        { "type": "new", "text": "Budget : tableau prévu / réel par catégorie, détection des dépenses récurrentes, règles de catégorisation personnelles." },
-        { "type": "new", "text": "Objectifs d'épargne multiples et alertes : plafonds des livrets et du PEA, budgets, versements, objectifs, seuils de déclaration des plateformes de vente." },
-        { "type": "improved", "text": "Fiscalité : situation personnelle (TMI, régimes) et paramètres réglementaires datés, consultables dans les Réglages. Achat-revente : régime occasionnel ou micro-BIC." },
-        { "type": "improved", "text": "Fiabilité : montants enregistrés en centimes, sans erreur d'arrondi." }
+        {
+          "type": "new",
+          "text": "Biens immobiliers (valeur estimée datée, loyers, charges, rendement, cash-flow) et crédits (mensualité, tableau d'amortissement, capital restant dû). Le tableau de bord affiche votre patrimoine net."
+        },
+        {
+          "type": "new",
+          "text": "Budget : tableau prévu / réel par catégorie, détection des dépenses récurrentes, règles de catégorisation personnelles."
+        },
+        {
+          "type": "new",
+          "text": "Objectifs d'épargne multiples et alertes : plafonds des livrets et du PEA, budgets, versements, objectifs, seuils de déclaration des plateformes de vente."
+        },
+        {
+          "type": "improved",
+          "text": "Fiscalité : situation personnelle (TMI, régimes) et paramètres réglementaires datés, consultables dans les Réglages. Achat-revente : régime occasionnel ou micro-BIC."
+        },
+        {
+          "type": "improved",
+          "text": "Fiabilité : montants enregistrés en centimes, sans erreur d'arrondi."
+        }
       ],
       "guide": true,
-      "guideChanges": ["Première édition du guide"]
+      "guideChanges": [
+        "Première édition du guide"
+      ]
     },
     {
       "version": "16.2",
       "date": "2026-10-21",
       "title": "Soldes d'épargne fiabilisés",
       "highlights": [
-        { "type": "fixed", "text": "Le solde des comptes d'épargne est calculé à partir de leurs opérations." },
-        { "type": "improved", "text": "Échéancier complet des projets de crowdfunding dès leur création." }
+        {
+          "type": "fixed",
+          "text": "Le solde des comptes d'épargne est calculé à partir de leurs opérations."
+        },
+        {
+          "type": "improved",
+          "text": "Échéancier complet des projets de crowdfunding dès leur création."
+        }
       ],
       "guide": false
     },
@@ -56,9 +148,18 @@
       "date": "2026-10-20",
       "title": "Saisie à la française et mises à jour automatiques",
       "highlights": [
-        { "type": "fixed", "text": "Saisie des nombres à la française (« 37,50 », « 10,5 % »)." },
-        { "type": "fixed", "text": "Calendrier des versements, prix de revient du PEA, intérêts des livrets par quinzaine." },
-        { "type": "new", "text": "Mises à jour automatiques avec sauvegarde préalable de vos données." }
+        {
+          "type": "fixed",
+          "text": "Saisie des nombres à la française (« 37,50 », « 10,5 % »)."
+        },
+        {
+          "type": "fixed",
+          "text": "Calendrier des versements, prix de revient du PEA, intérêts des livrets par quinzaine."
+        },
+        {
+          "type": "new",
+          "text": "Mises à jour automatiques avec sauvegarde préalable de vos données."
+        }
       ],
       "guide": false
     }

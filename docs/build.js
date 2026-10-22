@@ -44,6 +44,15 @@ async function shots(browser) {
     const m = ymKey(today());
     [['03', 'Carrefour', 82.4, 'Courses'], ['09', 'Lidl', 46.1, 'Courses'], ['15', 'Monoprix', 61.3, 'Courses'], ['11', 'Restaurant', 38, 'Restau'], ['18', 'Sushi', 74.5, 'Restau'],
       ['12', 'Cinéma', 24, 'Loisirs'], ['08', 'PRLV BITSTACK', 25, 'Investissement'], ['14', 'Pharmacie', 12.4, 'Santé']].forEach(([d, label, amt, cat]) => DB.expenses.push({ d: m + '-' + d, label, amt, cat }));
+    // v18 : 12 mois de salaires et de dépenses (cash-flow), un studio LMNP financé à crédit
+    const cc = compteCourant().name;
+    for (let k = 0; k < 12; k++) {
+      const ym = ymKey(addMonths(today(), -k)), j = [0, 140, -90, 60, 210, -40, 110, 30, -120, 180, 70, -60][k];
+      DB.movements.push({ d: ym + '-01', p: cc, t: 'Dépôt', q: null, pu: null, m: 2650, f: 0, n: 'Salaire' });
+      if (k > 0) { DB.expenses.push({ d: ym + '-05', label: 'Loyer', amt: 780, cat: 'Logement' }, { d: ym + '-12', label: 'Courses du mois', amt: 420 + j, cat: 'Courses' }, { d: ym + '-20', label: 'Sorties', amt: 160 + Math.round(j / 2), cat: 'Loisirs' }, { d: ym + '-08', label: 'PRLV BITSTACK', amt: 25, cat: 'Investissement' }); }
+    }
+    DB.properties = [{ id: 'p1', name: 'Studio Lyon 7e', type: 'Appartement', regime: 'LMNP', surface: 24, price: 128000, notary: 9600, works: 6500, buyD: '2023-05-15', rent: 690, vacancy: 0.5, mgmt: 0.07, charges: 0, copro: 65, taxFonciere: 720, pno: 110, maintenance: 250, values: [{ d: '2023-05-15', v: 128000 }, { d: ymd(addMonths(today(), -1)), v: 139000 }] }];
+    DB.loans = [{ id: 'l1', name: 'Crédit studio', capital: 120000, rate: 0.0385, months: 240, start: '2023-06-01', insurance: 18, propertyId: 'p1' }];
     save(); renderAll(); nav('dash');
   });
   await page.waitForTimeout(1200); await shot('tableau', null, top);
@@ -57,6 +66,19 @@ async function shots(browser) {
   await page.evaluate(() => { nav('budget'); window.scrollTo(0, 0); }); await shot('budget', null, top);
   await page.evaluate(() => { nav('placements'); setPlace('immo'); const h = [...document.querySelectorAll('#place-body h2')].find((x) => x.textContent.includes('Crowdfunding')); if (h) window.scrollTo(0, h.getBoundingClientRect().top + window.scrollY - 70); });
   await shot('bricks', null, top);
+  // v18 : bien immobilier détaillé, fiche PEA, cash-flow, écran de verrouillage
+  await page.evaluate(() => { nav('placements'); setPlace('immo'); window.scrollTo(0, 0); }); await shot('immo', null, top);
+  await page.evaluate(() => {
+    DB.pea = { open: '2019-03-15', bank: 'Boursorama', versements: [{ d: '2019-03-15', m: 1000 }, { d: '2022-01-10', m: 1500 }, { d: '2024-01-05', m: 1000 }] };
+    const a = DB.assets.find((x) => x.env === 'PEA'); if (a) DB.movements.push({ d: '2026-07-08', p: a.name, t: 'Dividende', q: null, pu: null, m: 14.2, f: 0, n: '' });
+    save(); renderAll(); nav('placements'); setPlace('bourse'); window.scrollTo(0, 0);
+  });
+  await shot('pea', null, top);
+  await page.evaluate(() => { if (window.Chart && Chart.defaults) Chart.defaults.animation = false; nav('dash'); drawCashflow(); const c = document.querySelector('#cfchart'); const card = c && c.closest('.card'); if (card) window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - 70); });
+  await page.waitForTimeout(800); await shot('cashflow', null, top);
+  await page.evaluate(() => { DB.settings.lock = { enabled: true, len: 4, delay: 0, bio: true, salt: '00', hash: '00', iter: 1 }; lockNow(); lockBuf = '12'; lockDraw(''); });
+  await shot('verrou', null, top);
+  await page.evaluate(() => { DB.settings.lock = { enabled: false }; document.querySelector('#lock').classList.remove('on'); });
   await ctx.close();
 }
 

@@ -77,5 +77,42 @@ const rec = F.detectRecurring(ex, '2026-10', ['Spotify']);
 log('Abonnement détecté : Netflix 13,49 € (4 mois) ; Spotify ignoré (déjà déclaré) ; Carrefour non (montants variables)', rec.length === 1 && rec[0].label === 'Netflix' && rec[0].amt === 13.49 && rec[0].day === 14, rec);
 log('Doublon d\'import reconnu (casse et espaces ignorés)', F.sameExpense({ d: '2026-10-14', amt: 13.49, label: 'NETFLIX ' }, { d: '2026-10-14', amt: 13.490000001, label: 'netflix' }) && !F.sameExpense({ d: '2026-10-14', amt: 13.49, label: 'x' }, { d: '2026-10-15', amt: 13.49, label: 'x' }));
 
+// --- v18 : immobilier complet
+const bien = { price: 180000, notary: 14000, works: 6000, regime: 'nu', rent: 900, vacancy: 1, charges: 0, copro: 80, taxFonciere: 1200, pno: 150, maintenance: 300, mgmt: 0.07 };
+const st18 = F.propertyStats(bien, 800, 215000);
+// coût 200 000 ; loyers 900×11 = 9 900 ; charges 80×12 + 1200 + 150 + 300 + 7 % × 9 900 = 3 303 ; net (9 900 − 3 303)/200 000 = 3,2985 %
+log('Bien : coût 200 000 €, loyers encaissés 9 900 € (1 mois de vacance), charges 3 303 €', st18.cost === 200000 && st18.rentY === 9900 && st18.chargesY === 3303, st18);
+log('… rendement brut 5,4 %, net 3,30 %, cash-flow (9 900 − 3 303)/12 − 800 = −250,25 €', Math.abs(st18.grossYield - 0.054) < 1e-9 && Math.abs(st18.netYield - 0.032985) < 1e-9 && st18.cashflow === -250.25, st18);
+log('… plus-value latente 15 000 € (+7,5 %)', st18.gain === 15000 && Math.abs(st18.gainPct - 0.075) < 1e-9);
+const rp = F.propertyStats({ price: 300000, notary: 22000, regime: 'RP', rent: 900 }, 1400, 340000);
+log('Résidence principale : pas de loyer ni de rendement, plus-value 18 000 €', rp.rentY === 0 && rp.grossYield === 0 && rp.gain === 18000 && rp.cashflow === -1400, rp);
+log('Ancien bien (prix « frais inclus », charges mensuelles) : calcul inchangé', (() => { const o = F.propertyStats({ price: 200000, rent: 900, charges: 150 }, 800); return Math.abs(o.grossYield - 0.054) < 1e-9 && Math.abs(o.netYield - 0.045) < 1e-9 && o.cashflow === -50; })());
+
+// --- v18 : cash-flow et taux d'épargne
+const mv18 = [{ d: '2026-10-01', p: 'CC', t: 'Dépôt', m: 2000 }, { d: '2026-10-05', p: 'CC', t: 'Transfert', p2: 'Livret A', m: 300 }, { d: '2026-10-07', p: 'Livret A', p2: 'CC', t: 'Transfert', m: 100 }, { d: '2026-09-01', p: 'CC', t: 'Dépôt', m: 1800 }];
+const ex18 = [{ d: '2026-10-03', amt: 600, cat: 'Logement' }, { d: '2026-10-09', amt: 250, cat: 'Courses' }, { d: '2026-10-08', amt: 100, cat: 'Investissement' }, { d: '2026-09-04', amt: 1500, cat: 'Logement' }];
+const cf = F.monthCashflow(mv18, ex18, 'CC', '2026-10');
+log('Octobre : revenus 2 000 € (transferts exclus), dépenses 850 € (investissement exclu), épargne 1 150 €, taux 57,5 %', cf.income === 2000 && cf.spent === 850 && cf.invested === 100 && cf.saved === 1150 && Math.abs(cf.rate - 0.575) < 1e-9, cf);
+const ser = F.cashflowSeries(mv18, ex18, 'CC', '2026-10', 12);
+log('Série 12 mois : novembre 2025 → octobre 2026, taux moyen (1 150 + 300) / 3 800 = 38,2 %', ser.months.length === 12 && ser.months[0].ym === '2025-11' && ser.months[11].ym === '2026-10' && Math.abs(ser.avgRate - 1450 / 3800) < 1e-9, { premier: ser.months[0].ym, taux: ser.avgRate });
+log('Mois sans revenu : taux non défini (pas de division par zéro)', F.monthCashflow([], [{ d: '2026-10-01', amt: 10, cat: 'Courses' }], 'CC', '2026-10').rate === null);
+
+// --- v18 : PEA
+log('ISIN valides : FR0010315770 (Amundi MSCI World), US0378331005 (Apple), IE00B4L5Y983', F.isinValid('FR0010315770') && F.isinValid('US0378331005') && F.isinValid('ie00b4l5y983'));
+log('ISIN invalides : chiffre de contrôle faux, longueur fausse', !F.isinValid('FR0010315771') && !F.isinValid('FR001031577') && !F.isinValid(''));
+const peaOps = [{ d: '2022-03-01', t: 'Achat', q: 10, pu: 300, f: 2 }, { d: '2024-01-10', t: 'Vente', q: 4, pu: 400, f: 1 }, { d: '2025-06-01', t: 'Dividende', m: 25 }];
+const ps1 = F.peaStatus({ open: '2021-11-15', versements: [{ d: '2021-11-15', m: 3000 }, { d: '2023-01-10', m: 500 }] }, peaOps, 150000, '2026-10-22');
+// liquidités = 3 500 − 3 002 + 1 599 + 25 = 2 122
+log('PEA : 3 500 € versés, liquidités 2 122 €, reste 146 500 € de plafond', ps1.versed === 3500 && ps1.real && ps1.cash === 2122 && ps1.room === 146500, ps1);
+log('PEA ouvert le 15/11/2021 : 5 ans le 15/11/2026, pas encore atteints au 22/10/2026', ps1.fiveYears === '2026-11-15' && !ps1.mature && ps1.years > 4.9);
+const ps2 = F.peaStatus({ open: '2019-01-01', versements: [] }, peaOps, 150000, '2026-10-22');
+log('Sans versement saisi : estimation (3 002 €), pas de liquidités affichées ; plus de 5 ans', ps2.versed === 3002 && !ps2.real && ps2.cash === null && ps2.mature, ps2);
+
 console.log(out.every(Boolean) ? '\n✓ finance.js : tout est bon' : '\n✗ finance.js : erreurs');
-process.exitCode = out.every(Boolean) ? 0 : 1;
+(async () => {
+  const salt = '00112233445566778899aabbccddeeff';
+  const h1 = await F.hashPin('1234', salt, 1000), h2 = await F.hashPin('1234', salt, 1000), h3 = await F.hashPin('1235', salt, 1000), h4 = await F.hashPin('1234', 'ffeeddccbbaa99887766554433221100', 1000);
+  log('Code haché : même code + même sel → même empreinte ; code ou sel différent → empreinte différente ; jamais le code en clair', h1 === h2 && h1 !== h3 && h1 !== h4 && h1.length === 64 && !h1.includes('1234'));
+  console.log(out.every(Boolean) ? '✓ hachage OK' : '✗ erreurs');
+  process.exitCode = out.every(Boolean) ? 0 : 1;
+})();
