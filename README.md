@@ -14,7 +14,7 @@ app/                    site publié tel quel par Netlify
   js/finance.js         calculs purs (crédit, centimes, paramètres réglementaires datés, revente, budget, objectifs)
   js/csvimport.js       lecture des CSV de toute banque et des exports crypto (Bitstack…)
 netlify/functions/      fonction serveur des cours (Yahoo Finance)
-docs/                   documentation utilisateur : guide de démarrage, notes de version (PDF)
+docs/                   documentation utilisateur : guide utilisateur, notes de version (PDF)
 tests/                  tests automatiques : finance.test.js (calculs, Node seul) + parcours Playwright
 netlify.toml            configuration Netlify
 ```
@@ -37,7 +37,7 @@ netlify.toml            configuration Netlify
    - ajouter la version **en tête** de `docs/changelog.json` (textes au vouvoiement, types new / improved / fixed) ;
    - si une fonctionnalité décrite dans le guide change : mettre à jour `docs/guide/guide.html`,
      puis `"guide": true` et la liste des sections dans `"guideChanges"` ;
-   - `node docs/build.js` → `docs/dist/Invest.co - Guide de démarrage v<version>.pdf` et
+   - `node docs/build.js` → `docs/dist/Invest.co - Guide utilisateur v<version>.pdf` et
      `docs/dist/Invest.co - Notes de version <version>.pdf` (captures régénérées automatiquement ;
      le script s'arrête si le changelog ne correspond pas à `version.js` ou si une page déborde).
      Première fois : `npm install --prefix docs`.

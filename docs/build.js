@@ -1,6 +1,6 @@
 // Génère la documentation d'une version :
 //   docs/dist/Invest.co - Notes de version <v>.pdf
-//   docs/dist/Invest.co - Guide de démarrage v<v>.pdf
+//   docs/dist/Invest.co - Guide utilisateur v<v>.pdf
 // Usage : node docs/build.js          (captures d'écran + PDF)
 //         node docs/build.js --no-shots (réutilise les captures existantes)
 // Prérequis (une fois) : npm install --prefix docs   (Chart.js, pour de vrais graphiques sur les captures)
@@ -102,8 +102,8 @@ ${cur.migration ? `<div class="box b2"><b>Vos données.</b> ${esc(cur.migration)
 <h2 style="margin-top:10mm">Installer la mise à jour</h2>
 <div class="box b1">La mise à jour est proposée automatiquement à l'ouverture de l'application.<ol><li>Touchez le bandeau orange <b>« Nouvelle version »</b>.</li><li>L'application redémarre et affiche l'écran <b>Nouveautés de la version ${esc(cur.version)}</b>.</li></ol>
 <div style="margin-top:2mm">Une copie de sécurité de vos données est réalisée juste avant, et elle est restaurable dans <b>Réglages › Sauvegardes de sécurité</b>. Pour forcer la vérification : <b>Réglages › Vérifier les mises à jour</b>.</div></div>
-<h2>Guide de démarrage</h2>
-<div class="box b2">${cur.guide ? `Le guide de démarrage a été mis à jour pour cette version (<b>Guide de démarrage v${esc(cur.version)}</b>) :<ol>${(cur.guideChanges || []).map((g) => `<li>${esc(g)}</li>`).join('')}</ol>` : `Le guide de démarrage reste valable sans changement ; ses captures d'écran ont été actualisées pour la version ${esc(cur.version)}.`}</div>
+<h2>Guide utilisateur</h2>
+<div class="box b2">${cur.guide ? `Le guide utilisateur a été mis à jour pour cette version (<b>Guide utilisateur v${esc(cur.version)}</b>) :<ol>${(cur.guideChanges || []).map((g) => `<li>${esc(g)}</li>`).join('')}</ol>` : `Le guide utilisateur reste valable sans changement ; ses captures d'écran ont été actualisées pour la version ${esc(cur.version)}.`}</div>
 ${prev.length ? `<h2>Versions précédentes</h2><div class="hist">${prev.map((v) => `<b>${esc(v.version)}</b><span>${dateFr(v.date)} — ${esc(v.title)}</span>`).join('')}</div>` : ''}
 <div class="foot"><span>Invest.co — Notes de version ${esc(cur.version)} · ${edition(cur.date)}</span><span>2 / 2</span></div>
 </section></body></html>`;
@@ -128,7 +128,7 @@ async function pdf(browser, htmlFile, out) {
   const guideSrc = fs.readFileSync(path.join(DOCS, 'guide', 'guide.html'), 'utf8').replace(/\{\{VERSION\}\}/g, cur.version).replace(/\{\{EDITION\}\}/g, edition(cur.date));
   const guideTmp = path.join(DOCS, 'guide', '.build.html'); fs.writeFileSync(guideTmp, guideSrc);
   const notesTmp = path.join(DOCS, '.notes.html'); fs.writeFileSync(notesTmp, notesHtml());
-  const g = path.join(DIST, `Invest.co - Guide de démarrage v${cur.version}.pdf`), n = path.join(DIST, `Invest.co - Notes de version ${cur.version}.pdf`);
+  const g = path.join(DIST, `Invest.co - Guide utilisateur v${cur.version}.pdf`), n = path.join(DIST, `Invest.co - Notes de version ${cur.version}.pdf`);
   await pdf(browser, guideTmp, g); await pdf(browser, notesTmp, n);
   fs.unlinkSync(guideTmp); fs.unlinkSync(notesTmp);
   await browser.close();
