@@ -50,6 +50,14 @@ ul.dots li::before{content:'';position:absolute;left:0;top:2.1mm;width:5px;heigh
 .path{font-weight:600;color:var(--ink);white-space:nowrap}
 .k{display:inline-block;background:var(--card);border:1px solid var(--line2);border-radius:5px;padding:0 4px;color:var(--ink);font-size:8.5pt;line-height:1.5}
 /* ---------- encadrés ---------- */
+.qz{margin:3mm 0 2mm}.qz .row{display:grid;grid-template-columns:34mm repeat(4,1fr);gap:1.2mm;align-items:center;margin-bottom:2.2mm}
+.qz .lab{font-size:8.3pt;color:var(--ink);font-weight:600;line-height:1.3}
+.qz .seg{height:9mm;border-radius:2mm;position:relative;display:flex;align-items:center;justify-content:center;font-size:7.6pt;font-weight:600}
+.qz .on{background:var(--orange);color:#0B1420}.qz .off{background:var(--card);border:1px solid var(--line2);color:var(--ink3)}
+.qz .mk{position:absolute;top:-4.3mm;font-size:7.3pt;color:var(--ink);font-weight:700;white-space:nowrap}
+.qz .row.head{margin-bottom:5.5mm}.qz .row{margin-bottom:5.5mm}
+.qz .head .seg{height:auto;background:none;border:none;color:var(--ink3);font-weight:500;font-size:7.6pt}
+.qz .leg{display:flex;gap:6mm;font-size:8pt;color:var(--ink2);margin-top:1mm}.qz .leg i{display:inline-block;width:3.2mm;height:3.2mm;border-radius:1mm;margin-right:1.5mm;vertical-align:-0.4mm}
 .note{border-radius:10px;padding:3.5mm 4.5mm 3.5mm 13mm;position:relative;font-size:9.3pt;margin:3mm 0;color:var(--ink2)}
 .note::before{position:absolute;left:4.5mm;top:3.5mm;width:5.5mm;height:5.5mm;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 8pt 'Space Grotesk'}
 .note b.t{display:block;color:var(--ink);font-size:9.3pt;margin-bottom:.5mm}
@@ -114,13 +122,13 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
   <div class="toc">
     <div class="row"><span class="n">01</span><span class="t">Installer l'application</span><span class="d">Android, iPhone, ordinateur</span><span class="p">3</span></div>
     <div class="row"><span class="n">02</span><span class="t">Premiers réglages</span><span class="d">Données, situation fiscale</span><span class="p">4</span></div>
-    <div class="row"><span class="n">03</span><span class="t">Épargne, bourse et crypto</span><span class="d">Livrets, PEA, dividendes, CTO</span><span class="p">5</span></div>
-    <div class="row"><span class="n">04</span><span class="t">Importer vos relevés</span><span class="d">Banques et plateformes crypto</span><span class="p">7</span></div>
-    <div class="row"><span class="n">05</span><span class="t">Budget</span><span class="d">Catégories, récurrences, prévu / réel</span><span class="p">9</span></div>
-    <div class="row"><span class="n">06</span><span class="t">Immobilier et crowdfunding</span><span class="d">Biens, charges, crédits, projets</span><span class="p">10</span></div>
-    <div class="row"><span class="n">07</span><span class="t">Pilotage et sécurité</span><span class="d">Cash-flow, objectifs, verrouillage, sauvegardes</span><span class="p">12</span></div>
-    <div class="row"><span class="n">08</span><span class="t">Questions fréquentes</span><span class="d">Confidentialité, appareils, code oublié</span><span class="p">14</span></div>
-    <div class="row"><span class="n">09</span><span class="t">Informations importantes</span><span class="d">Avertissements et limites</span><span class="p">15</span></div>
+    <div class="row"><span class="n">03</span><span class="t">Épargne, bourse et crypto</span><span class="d">Livrets, quinzaines, PEA, dividendes</span><span class="p">5</span></div>
+    <div class="row"><span class="n">04</span><span class="t">Importer vos relevés</span><span class="d">Banques et plateformes crypto</span><span class="p">8</span></div>
+    <div class="row"><span class="n">05</span><span class="t">Budget</span><span class="d">Catégories, récurrences, prévu / réel</span><span class="p">10</span></div>
+    <div class="row"><span class="n">06</span><span class="t">Immobilier et crowdfunding</span><span class="d">Biens, crédits, projets, portefeuille</span><span class="p">11</span></div>
+    <div class="row"><span class="n">07</span><span class="t">Pilotage et sécurité</span><span class="d">Cash-flow, objectifs, verrouillage, sauvegardes</span><span class="p">13</span></div>
+    <div class="row"><span class="n">08</span><span class="t">Questions fréquentes</span><span class="d">Confidentialité, appareils, code oublié</span><span class="p">15</span></div>
+    <div class="row"><span class="n">09</span><span class="t">Informations importantes</span><span class="d">Avertissements et limites</span><span class="p">16</span></div>
   </div>
   <div class="rule"></div>
   <h3 style="margin-top:0">Invest.co en un coup d'œil</h3>
@@ -198,12 +206,42 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
       </ol>
       <p>Les versements et retraits suivants se saisissent comme des <b>opérations</b> : touchez le nom du produit, puis <b>+ Opération</b>. Le solde est toujours recalculé à partir de l'historique, et les intérêts suivent la règle officielle des quinzaines.</p>
       <div class="note tip"><b class="t">Plafonds surveillés</b>Invest.co vous prévient lorsqu'un livret approche de son plafond de versements, ainsi que pour le PEA.</div>
-      <h3>Assurance-vie et comptes à taux libre</h3>
-      <p>Pour une assurance-vie, un compte à terme ou un livret bancaire, indiquez le taux annoncé par votre établissement. Mettez à jour le solde lorsque vous recevez votre relevé annuel : l'ancien solde reste conservé dans l'historique.</p>
+      <h3>Lire le tableau</h3>
+      <table>
+        <tr><th>Colonne</th><th>Contenu</th></tr>
+        <tr><td>Solde</td><td>Ce qui se trouve sur le produit aujourd'hui.</td></tr>
+        <tr><td>Intérêts de l'année</td><td>Estimation nette d'impôt pour l'année en cours.</td></tr>
+        <tr><td>Intérêts perçus</td><td>Total des intérêts enregistrés sur le produit.</td></tr>
+      </table>
+      <h3>Comptes à taux libre</h3>
+      <p>Pour une assurance-vie, un livret bancaire ou un portefeuille de plateforme, indiquez le taux et sa <b>date d'entrée en vigueur</b>. Lorsqu'il change, saisissez le nouveau taux à sa date : l'ancien reste appliqué aux jours passés.</p>
     </div>
     <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/epargne.png"></div><figcaption><b>Figure 3</b> — Épargne et liquidités</figcaption></figure>
   </div>
   <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>5</span></div>
+</section>
+
+<!-- ======================= 03 · INTÉRÊTS DES LIVRETS ======================= -->
+<section class="page">
+  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>03 · Intérêts des livrets</span></div>
+  <h3 style="margin-top:0">Les intérêts à la quinzaine</h3>
+  <p class="lead">Sur les livrets réglementés (Livret A, LDDS, LEP, Livret Jeune, CEL), les intérêts ne se calculent pas au jour près mais par <b>périodes de quinze jours</b> : du 1er au 15 et du 16 à la fin du mois.</p>
+  <div class="qz">
+    <div class="row head"><span></span><span class="seg">1 – 15 mars</span><span class="seg">16 – 31 mars</span><span class="seg">1 – 15 avril</span><span class="seg">16 – 30 avril</span></div>
+    <div class="row"><span class="lab">1 000 € versés<br>le 10 mars</span><span class="seg off"><span class="mk" style="left:58%">▼ 10/03</span>sans intérêts</span><span class="seg on">intérêts</span><span class="seg on">intérêts</span><span class="seg on">intérêts</span></div>
+    <div class="row"><span class="lab">1 000 € retirés<br>le 20 mars</span><span class="seg on">intérêts</span><span class="seg off"><span class="mk" style="left:22%">▼ 20/03</span>sans intérêts</span><span class="seg off">—</span><span class="seg off">—</span></div>
+    <div class="leg"><span><i style="background:var(--orange)"></i>la somme rapporte</span><span><i style="background:var(--card);border:1px solid var(--line2)"></i>la somme ne rapporte pas</span></div>
+  </div>
+  <div class="g2" style="margin-top:4mm">
+    <div class="card"><h4>Un versement</h4><p>Il rapporte à partir du début de la quinzaine <b>suivante</b>. Versé le 10 mars : intérêts dès le 16 mars. Versé le 20 mars : dès le 1er avril.</p></div>
+    <div class="card"><h4>Un retrait</h4><p>Il cesse de rapporter dès le début de la quinzaine <b>en cours</b>. Retiré le 20 mars : plus d'intérêts depuis le 16 mars.</p></div>
+  </div>
+  <div class="note tip"><b class="t">Le bon réflexe</b>Versez en fin de quinzaine (le 15 ou le dernier jour du mois) et retirez en début de quinzaine (le 1er ou le 16). Les intérêts de l'année sont ajoutés au livret le 31 décembre.</div>
+  <p>Sous chaque livret, Invest.co indique à partir de quand un versement effectué le jour même commencera à rapporter, par exemple « Versé ce jour : intérêts dès le 1 nov. ».</p>
+  <h3>Comptes rémunérés au jour le jour</h3>
+  <p>Les livrets bancaires, l'assurance-vie et les portefeuilles de plateforme sont calculés <b>au jour le jour</b> : chaque jour, le solde rapporte le taux annuel divisé par le nombre de jours de l'année.</p>
+  <div class="note info"><b class="t">Les explications à portée de main</b>Dans l'application, les explications sont regroupées derrière les boutons <span class="k">?</span> placés à côté des titres et des champs. Touchez-les à tout moment : votre saisie en cours est conservée.</div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>6</span></div>
 </section>
 
 <!-- ======================= 03 bis BOURSE / PEA ======================= -->
@@ -228,7 +266,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     </div>
     <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/pea.png"></div><figcaption><b>Figure 4</b> — Fiche PEA et portefeuille</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>6</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>7</span></div>
 </section>
 
 <!-- ======================= 04 IMPORT BANQUE ======================= -->
@@ -251,7 +289,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     </div>
     <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/import_banque.png"></div><figcaption><b>Figure 5</b> — Aperçu avant import</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>7</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>8</span></div>
 </section>
 
 <!-- ======================= 04 bis IMPORT CRYPTO ======================= -->
@@ -277,7 +315,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     </div>
     <figure class="fig"><div class="ph" style="max-height:160mm"><img src="img/import_bitstack.png"></div><figcaption><b>Figure 6</b> — Import d'un export crypto</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>8</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>9</span></div>
 </section>
 
 <!-- ======================= 05 BUDGET ======================= -->
@@ -297,7 +335,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     </div>
     <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/budget.png"></div><figcaption><b>Figure 7</b> — Budget du mois</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>9</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>10</span></div>
 </section>
 
 <!-- ======================= 06 IMMOBILIER ======================= -->
@@ -327,7 +365,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     </div>
     <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/immo.png"></div><figcaption><b>Figure 8</b> — Bien locatif et crédit associé</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>10</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>11</span></div>
 </section>
 
 <!-- ======================= 06 bis CRÉDITS / CROWDFUNDING ======================= -->
@@ -342,10 +380,19 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
       <p>Ajoutez une nouvelle estimation datée lorsque vous en obtenez une (agence, notaire, données de ventes). Les estimations précédentes sont conservées et la plus récente est utilisée pour votre patrimoine.</p>
       <h3>Crowdfunding immobilier</h3>
       <p>Pour chaque projet (montant, taux annuel, durée, date de souscription), l'échéancier mensuel s'affiche : cochez chaque versement reçu. Un versement échu non coché apparaît en rouge et dans vos alertes ; un projet en retard reste compté dans votre patrimoine jusqu'au remboursement.</p>
+      <h3>Le portefeuille de la plateforme</h3>
+      <p>L'argent non investi sur Bricks reste sur votre portefeuille, rémunéré à son propre taux et <b>calculé au jour le jour</b>. Créez-le depuis la rubrique Crowdfunding avec son solde actuel :</p>
+      <ul class="dots">
+        <li>un nouveau projet est <b>payé depuis le portefeuille</b> ;</li>
+        <li>chaque versement coché y est <b>crédité</b>, net du prélèvement à la source ;</li>
+        <li>le <b>capital</b> y revient au remboursement ;</li>
+        <li><b>+ Intérêts reçus</b> enregistre la rémunération du portefeuille.</li>
+      </ul>
+      <div class="note info"><b class="t">Aucun double comptage</b>Rien n'est ajouté pour le passé : le solde que vous saisissez contient déjà vos opérations antérieures.</div>
     </div>
-    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/bricks.png"></div><figcaption><b>Figure 9</b> — Échéancier d'un projet</figcaption></figure>
+    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/bricks.png"></div><figcaption><b>Figure 9</b> — Portefeuille et projets</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>11</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>12</span></div>
 </section>
 
 <!-- ======================= 07 PILOTAGE ======================= -->
@@ -371,7 +418,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     </div>
     <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/cashflow.png"></div><figcaption><b>Figure 10</b> — Cash-flow et alertes</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>12</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>13</span></div>
 </section>
 
 <!-- ======================= 07 bis SÉCURITÉ / SAUVEGARDES ======================= -->
@@ -399,7 +446,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     </div>
     <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/verrou.png"></div><figcaption><b>Figure 11</b> — Écran de verrouillage</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>13</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>14</span></div>
 </section>
 
 <!-- ======================= 08 FAQ ======================= -->
@@ -421,7 +468,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
       <div class="qa"><h4>Que faire si je perds mon téléphone ?</h4><p>Vos données ne sont récupérables que depuis une sauvegarde exportée ou la synchronisation Google Drive. Nous vous recommandons de sauvegarder régulièrement.</p></div>
     </div>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>14</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>15</span></div>
 </section>
 
 <!-- ======================= 09 INFORMATIONS IMPORTANTES ======================= -->
@@ -434,6 +481,6 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
   <div class="card" style="margin-bottom:4mm"><h4 style="margin-top:0">Confidentialité et sécurité</h4><p>Vos données financières sont conservées localement sur votre appareil et ne sont pas collectées par Invest.co. Les seules destinations réseau autorisées sont les sources de cours, les bibliothèques techniques et votre Google Drive. Protégez l'accès à votre appareil (code, biométrie) et conservez vos sauvegardes exportées dans un endroit sûr : elles contiennent l'ensemble de vos informations financières en clair.</p></div>
   <div class="card"><h4 style="margin-top:0">Marques</h4><p>Les noms de banques, de plateformes et de services cités dans ce guide (notamment Bitstack, Google Drive, Chrome, Safari) sont des marques de leurs propriétaires respectifs. Leur mention a un caractère uniquement informatif et n'implique aucun partenariat.</p></div>
   <p class="small" style="margin-top:6mm">Guide utilisateur Invest.co — édition {{EDITION}}, correspondant à la version {{VERSION}} de l'application. Les écrans présentés utilisent des données fictives et peuvent différer légèrement selon votre appareil et la version installée.</p>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>15</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>16</span></div>
 </section>
 </body></html>

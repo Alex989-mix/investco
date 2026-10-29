@@ -378,6 +378,36 @@
     return v;
   }
 
+  // ---------- Épargne : taux datés, intérêts au jour le jour, quinzaines ----------
+  // Taux en vigueur à une date d'après un historique [{from:'AAAA-MM-JJ', rate}] (jamais écrasé).
+  // Avant la première date connue, on applique le premier taux (estimation prudente plutôt que zéro).
+  function rateOn(rates, date) {
+    const R = (rates || []).filter((x) => x && x.from && Number.isFinite(+x.rate)).slice().sort((a, b) => (a.from < b.from ? -1 : 1));
+    if (!R.length) return 0;
+    let r = +R[0].rate; for (const x of R) { if (x.from <= date) r = +x.rate; else break; } return r;
+  }
+  const dayIndex = (s) => { const { y, m, d } = parseYmd(s); return Math.round(Date.UTC(y, m - 1, d) / 86400000); };
+  // Intérêts calculés au jour le jour entre deux dates incluses : chaque jour rapporte solde × taux du jour / nb de jours de l'année.
+  // opening = solde au début de la période ; events = [{d, e}] (+ entrée, − sortie), pris en compte le jour même ;
+  // un solde négatif ne rapporte rien. Les jours futurs sont projetés avec le dernier solde connu.
+  function dailyInterest(opening, events, rates, from, to) {
+    const start = dayIndex(from), end = dayIndex(to); if (!(end >= start)) return 0;
+    const ev = (events || []).map((x) => ({ i: dayIndex(x.d), e: +x.e || 0 })).filter((x) => x.i >= start && x.i <= end).sort((a, b) => a.i - b.i);
+    let bal = +opening || 0, k = 0, total = 0;
+    for (let i = start; i <= end; i++) {
+      while (k < ev.length && ev[k].i === i) bal += ev[k++].e;
+      if (bal <= 0) continue;
+      const dt = new Date(i * 86400000), y = dt.getUTCFullYear(), date = fmtYmd(y, dt.getUTCMonth() + 1, dt.getUTCDate());
+      const yd = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 366 : 365;
+      total += bal * rateOn(rates, date) / yd;
+    }
+    return round2(total);
+  }
+  // Livrets réglementés : un versement rapporte à partir du 1er ou du 16 qui SUIT ; un retrait cesse de rapporter
+  // dès le 1er ou le 16 qui PRÉCÈDE (ou le jour même si c'est un 1er ou un 16).
+  function quinzStart(date) { const { y, m, d } = parseYmd(date); return d <= 15 ? fmtYmd(y, m, 16) : addMonthsYmd(fmtYmd(y, m, 1), 1); }
+  function quinzStop(date) { const { y, m, d } = parseYmd(date); return d <= 15 ? fmtYmd(y, m, 1) : fmtYmd(y, m, 16); }
+
   // Variation du jour d'une action / d'un ETF : écart du dernier cours avec la clôture de la veille,
   // en points de pourcentage arrondis au centième ; null si l'une des deux valeurs est invalide ou aberrante.
   function dayChange(price, prevClose) {
@@ -390,7 +420,7 @@
 
   const api = { round2, budgetVsActual, detectRecurring, sameExpense, toCents, fromCents, MONEY_FIELDS, serialize, deserialize, PARAM_DEFAULTS, getParam, paramHistory, paramKeys,
     addMonthsYmd, monthsDiff, loanPayment, amortization, loanStatus, propertyValue, propertyStats, resaleItem, resaleYear,
-    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange };
+    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange, rateOn, dailyInterest, quinzStart, quinzStop };
   root.Fin = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

@@ -2,6 +2,40 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "20.0",
+      "date": "2026-10-29",
+      "title": "Épargne plus lisible, portefeuille Bricks et aide intégrée",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Portefeuille de plateforme (Bricks) : l'argent non investi est suivi avec sa rémunération, calculée au jour le jour. Les nouveaux projets sont payés depuis le portefeuille, chaque versement coché y est crédité net du prélèvement à la source et le capital y revient au remboursement."
+        },
+        {
+          "type": "new",
+          "text": "Taux datés pour les comptes à taux libre : un changement de taux s'ajoute à l'historique, l'ancien taux reste appliqué aux jours passés."
+        },
+        {
+          "type": "new",
+          "text": "Aide intégrée : les explications sont regroupées derrière des boutons « ? », consultables à tout moment sans perdre la saisie en cours."
+        },
+        {
+          "type": "improved",
+          "text": "Tableau Épargne simplifié : Solde, Taux, Intérêts de l'année (estimés, nets) et Intérêts perçus. Le montant versé reste consultable dans la fiche de chaque produit."
+        },
+        {
+          "type": "improved",
+          "text": "Intérêts à la quinzaine expliqués simplement, avec, sous chaque livret, la date à partir de laquelle un versement du jour rapporte."
+        }
+      ],
+      "migration": "Vos projets reçoivent un identifiant permanent et les taux saisis manuellement sont conservés en historique daté. Créez votre portefeuille Bricks avec son solde actuel : seules les opérations à venir y sont ajoutées automatiquement.",
+      "guide": true,
+      "guideChanges": [
+        "03 · Épargne : lecture du tableau, comptes à taux libre",
+        "03 · Intérêts des livrets : les quinzaines illustrées (nouvelle page)",
+        "06 · Crowdfunding : le portefeuille de la plateforme"
+      ]
+    },
+    {
       "version": "19.1",
       "date": "2026-10-22",
       "title": "Variation du jour sur les actions et ETF",

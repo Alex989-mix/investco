@@ -58,6 +58,11 @@ async function shots(browser) {
       if (k > 0) { DB.expenses.push({ d: ym + '-05', label: 'Loyer', amt: 780, cat: 'Logement' }, { d: ym + '-12', label: 'Courses du mois', amt: 420 + j, cat: 'Courses' }, { d: ym + '-20', label: 'Sorties', amt: 160 + Math.round(j / 2), cat: 'Loisirs' }, { d: ym + '-08', label: 'PRLV BITSTACK', amt: 25, cat: 'Investissement' }); }
     }
     DB.properties = [{ id: 'p1', name: 'Studio Lyon 7e', type: 'Appartement', regime: 'LMNP', surface: 24, price: 128000, notary: 9600, works: 6500, buyD: '2023-05-15', rent: 690, vacancy: 0.5, mgmt: 0.07, charges: 0, copro: 65, taxFonciere: 720, pno: 110, maintenance: 250, values: [{ d: '2023-05-15', v: 128000 }, { d: ymd(addMonths(today(), -1)), v: 139000 }] }];
+    // v20 : portefeuille Bricks rémunéré, relié aux projets ; quelques versements pointés
+    DB.savings.push({ name: 'Portefeuille Bricks', type: 'Portefeuille plateforme', bank: 'Bricks', cap: 0, open: '2026-01-10', rate: 0.024, rates: [{ from: '2026-01-10', rate: 0.024 }], tax: 'PFU standard', ceil: null });
+    DB.movements.push({ d: '2026-01-10', p: 'Portefeuille Bricks', t: 'Dépôt', q: null, pu: null, m: 640, f: 0, n: 'Solde à l\'ouverture' });
+    DB.crowd.forEach((c, k) => { c.id = c.id || 'c' + k; c.wallet = 'Portefeuille Bricks'; });
+    DB.crowd.forEach((c, k) => { const due = crowdSchedule(c).filter((q) => q.d <= today()); due.forEach((q) => { const i = DB.crowd.indexOf(c); if (!(c.paid || []).includes(q.mk)) togglePaid(i, q.mk); }); });
     DB.loans = [{ id: 'l1', name: 'Crédit studio', capital: 120000, rate: 0.0385, months: 240, start: '2023-06-01', insurance: 18, propertyId: 'p1' }];
     save(); renderAll(); nav('dash');
   });
@@ -68,7 +73,9 @@ async function shots(browser) {
   await shot('import_banque', '#sheet');
   await page.evaluate((t) => { closeSheet(); openImport(); document.querySelector('#imp_txt').value = t; impAnalyze(); document.querySelector('#imp_result').scrollIntoView({ block: 'start' }); }, CRYPTO);
   await shot('import_bitstack', '#sheet');
-  await page.evaluate(() => { closeSheet(); nav('placements'); setPlace('epargne'); }); await shot('epargne', '#v-placements');
+  // capture de l'élément entier : la barre de navigation fixe est masquée le temps de la capture
+  await page.evaluate(() => { closeSheet(); nav('placements'); setPlace('epargne'); document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = 'hidden'; }); }); await shot('epargne', '#v-placements');
+  await page.evaluate(() => document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = ''; }));
   await page.evaluate(() => { nav('budget'); window.scrollTo(0, 0); }); await shot('budget', null, top);
   await page.evaluate(() => { nav('placements'); setPlace('immo'); const h = [...document.querySelectorAll('#place-body h2')].find((x) => x.textContent.includes('Crowdfunding')); if (h) window.scrollTo(0, h.getBoundingClientRect().top + window.scrollY - 70); });
   await shot('bricks', null, top);

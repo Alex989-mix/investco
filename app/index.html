@@ -119,6 +119,13 @@ input:focus,select:focus{outline:none;border-color:var(--orange);box-shadow:0 0 
 .subtab{flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13px;font-weight:600;color:var(--ink2);background:var(--card);border:1px solid var(--line);cursor:pointer;transition:.15s}
 .subtab.on{color:var(--orange);border-color:var(--orange);background:var(--orange-soft)}
 .live-b{white-space:nowrap;font-size:11px;font-weight:600;color:var(--ink3);margin-left:6px;vertical-align:middle;font-family:inherit}.live-b.on{color:var(--pos)}
+.hq{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink3);background:transparent;color:var(--ink2);font:700 11px/1 'Inter',sans-serif;cursor:pointer;margin-left:5px;vertical-align:middle;padding:0;flex:none;text-transform:none;letter-spacing:0}
+.hq:hover,.hq:focus-visible{border-color:var(--orange);color:var(--orange);outline:none}
+#hlp{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center}
+#hlp.on{display:flex}
+#hlp .hlp-card{background:var(--card);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:20px 20px calc(22px + env(safe-area-inset-bottom,0));max-height:80vh;overflow-y:auto;animation:slideUp .22s ease}
+#hlp .hlp-b{font-size:13.5px;line-height:1.65;color:var(--ink2);margin-top:8px}#hlp .hlp-b b{color:var(--ink)}#hlp .hlp-b ul{margin:6px 0 6px 18px}#hlp .hlp-b p{margin:6px 0}
+@media(min-width:640px){#hlp{align-items:center}#hlp .hlp-card{border-radius:18px}}
 .chk{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:transparent;font-weight:800;transition:.15s;flex:none}
 .chk.on{background:var(--pos);border-color:var(--pos);color:#fff}
 .chk.miss{border-color:var(--neg);color:var(--neg)}
@@ -188,6 +195,7 @@ input.bad{border-color:var(--neg)!important;box-shadow:0 0 0 2px var(--negbg)}
 </div>
 
 <div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
+<div id="hlp" role="dialog" aria-modal="true" aria-labelledby="hlp-t" onclick="if(event.target===this)hideHelp()"><div class="hlp-card"><div class="spread"><h2 id="hlp-t" style="font-size:17px"></h2><button class="btn sm" onclick="hideHelp()">Compris</button></div><div class="hlp-b" id="hlp-b"></div></div></div>
 <div class="toast" id="toast"></div>
 <div id="lock" aria-modal="true" role="dialog"><div class="lk-logo"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
   <h2>Invest.co</h2><div class="sub" id="lk-sub">Entre ton code</div><div class="dots" id="lk-dots"></div><div class="msg" id="lk-msg"></div>
@@ -361,7 +369,8 @@ const PS_REDUIT=new Set(['PEL','CEL','Assurance-vie']);
 const cryptoTaxRate=()=>DB.settings.cryptoRegime==='bareme'?taxBareme():taxPFU();
 // Plafond d'un produit : valeur saisie sur le produit, sinon plafond réglementaire de son type
 const ceilFor=(s)=>(s.ceil!=null&&s.ceil!=='')?+s.ceil:param('ceil.'+s.type);
-function rateFor(s){if(s.rate!=null&&s.rate!=='')return +s.rate;
+function rateFor(s){if(Array.isArray(s.rates)&&s.rates.length)return Fin.rateOn(s.rates,ymd(today()));
+  if(s.rate!=null&&s.rate!=='')return +s.rate;
   if(s.type==='PEL')return param('rate.PEL',s.open||ymd(today()))||0; // taux fixé à l'ouverture
   return param('rate.'+s.type)||0;}
 // Taux réglementé en vigueur à une date donnée (paramètres datés)
@@ -389,20 +398,31 @@ function yearAvgBalance(s){
   let bal=(s.cap||0)-net,seg=jan1,w=0;const day=86400000;
   pts.forEach(p=>{w+=bal*Math.max(0,(p.d-seg)/day);bal+=p.e;seg=p.d;});
   w+=bal*Math.max(0,(dec31-seg)/day);const tot=(dec31-jan1)/day;return tot>0?w/tot:(s.cap||0);}
+const WALLET='Portefeuille plateforme';
+// Historique des taux d'un produit à taux libre (sinon taux unique / réglementé)
+const savingRates=(s)=>(Array.isArray(s.rates)&&s.rates.length)?s.rates:[{from:'1900-01-01',rate:rateFor(s)}];
+const savingEvents=(s)=>DB.movements.map(m=>({d:String(m.d).slice(0,10),e:movEffect(m,s.name)})).filter(x=>x.e!==0);
+// Intérêts au jour le jour sur une période (solde de chaque jour × taux du jour) ; les jours futurs sont projetés avec le solde actuel
+function savingInterestBetween(s,from,to){const t=ymd(today()),ev=savingEvents(s);
+  const opening=ev.filter(x=>x.d<from).reduce((a,x)=>a+x.e,0);
+  return Fin.dailyInterest(opening,ev.filter(x=>x.d>=from&&x.d<=t),savingRates(s),from,to);}
+function savingYearInterest(s){const y=today().getFullYear();return savingInterestBetween(s,y+'-01-01',y+'-12-31');}
 function savingCalc(s){
   const versed=DB.movements.reduce((a,m)=>{
     if(m.t==='Dépôt'&&m.p===s.name)return a+(m.m||0);if(m.t==='Retrait'&&m.p===s.name)return a-(m.m||0);
     if(m.t==='Transfert'&&m.p===s.name)return a-(m.m||0);if(m.t==='Transfert'&&m.p2===s.name)return a+(m.m||0);return a;},0);
-  const rate=rateFor(s);const auto=QUINZ.has(s.type)&&(s.rate==null||s.rate==='');
-  const brut=auto?quinzInterest(s):yearAvgBalance(s)*rate;let net=brut;
+  const rate=rateFor(s);const auto=QUINZ.has(s.type)&&(s.rate==null||s.rate==='')&&!(s.rates&&s.rates.length);
+  const brut=auto?quinzInterest(s):((s.type==='Compte courant'||QUINZ.has(s.type))?yearAvgBalance(s)*rate:savingYearInterest(s));let net=brut; // livret à taux forcé : quinzaines conservées
   const av8=(s.tax==='PFU assurance-vie'&&s.open&&monthsBetween(s.open,today())>=96);
   const red=PS_REDUIT.has(s.type);
   if(s.tax==='PFU standard')net=brut*(1-(red?taxAV():taxPFU()));
   else if(s.tax==='PFU assurance-vie')net=brut*(1-(av8?taxPSr():taxAV())); // > 8 ans : abattement, en pratique PS seuls
   else if(s.tax==='Barème'||s.tax==='Barème TMI 0%')net=brut*(1-taxBareme(undefined,red));
   const gains=(s.cap||0)-versed;
-  const cat=s.type==='Assurance-vie'?'Assurance-vie':(s.type==='Compte courant'?'Liquidités':'Épargne réglementée');
-  return {versed,rate,brut,net,gains,cat,av8};
+  // Intérêts réellement perçus = opérations « Intérêts » enregistrées sur le produit (hors ajustements de solde)
+  const received=r2(DB.movements.reduce((a,m)=>a+(m.p===s.name&&m.t==='Intérêts'?(+m.m||0):0),0));
+  const cat=s.type==='Assurance-vie'?'Assurance-vie':(s.type==='Compte courant'||s.type===WALLET?'Liquidités':'Épargne réglementée');
+  return {versed,rate,brut,net,gains,received,cat,av8,auto};
 }
 // ---- Bricks / crowdfunding
 // Taux d'imposition des intérêts (réglage ; PFU par défaut)
@@ -410,7 +430,7 @@ function savingCalc(s){
 const APP_V=self.APP_VERSION||'?';
 // Schéma des données : à incrémenter quand une version change la structure stockée,
 // en ajoutant la migration correspondante dans MIGRATIONS (ne jamais modifier une migration existante).
-const SCHEMA=6;
+const SCHEMA=7;
 const MIGRATIONS={
   // v16 → v16.1 : en v16, la case du versement n°k portait le libellé du mois k-1
   // (mois de souscription compté à tort). On décale chaque case pointée vers le bon mois.
@@ -445,6 +465,10 @@ const MIGRATIONS={
     (DB.properties||[]).forEach(p=>{if(!p.regime)p.regime=(+p.rent>0)?'nu':'RP';if(!p.type)p.type='Appartement';
       ['notary','works','copro','taxFonciere','pno','maintenance','vacancy','mgmt'].forEach(k=>{if(p[k]==null)p[k]=0;});});
     DB.settings.lock=DB.settings.lock||{enabled:false};},
+  // v19 → v20 : identifiant stable pour chaque projet (liens avec le portefeuille de la plateforme) ;
+  // taux manuels des produits d'épargne conservés en historique daté (jamais écrasé).
+  7(){(DB.crowd||[]).forEach((c,k)=>{if(!c.id)c.id='c'+Date.now().toString(36)+k;});
+    (DB.savings||[]).forEach(s=>{if(!Array.isArray(s.rates))s.rates=(s.rate!=null&&s.rate!=='')?[{from:s.open||'2000-01-01',rate:+s.rate}]:[];});},
 };
 function migrate(){DB.meta=DB.meta||{updatedAt:0};let v=DB.meta.schema||1;if(v>=SCHEMA)return;
   if(!isFresh)backupLocal('Avant migration des données (schéma '+v+' → '+SCHEMA+')');
@@ -518,8 +542,8 @@ function consolidate(){
   const invested=bI+iI+sI+RE.cost,value=bV+iV+sV+RE.value,net=r2(value-RE.debt); // patrimoine net = actifs − capital restant dû
   const immoMonthly=DB.crowd.filter(c=>c.st==='En cours').reduce((a,c)=>a+crowdCalc(c).monthly*(1-crowdTaxRate()),0);
   const y=today().getFullYear(),jan=new Date(y,0,1);let apports=0;
-  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
-  DB.crowd.forEach(c=>{if(new Date(c.sub)>=jan)apports+=c.amt;});
+  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.link||m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
+  DB.crowd.forEach(c=>{if(new Date(c.sub)>=jan&&!crowdLink(c,'sub'))apports+=c.amt;}); // projet payé depuis le portefeuille : pas d'argent nouveau
   apports+=RE.principalYear; // le capital de crédit remboursé est un effort d'épargne, pas un gain
   // argent envoyé du compte courant vers une plateforme : il réapparaît dans l'actif acheté (déjà compté en apport)
   DB.expenses.forEach(e=>{if(e.cat==='Investissement'&&pd(e.d)>=jan)apports-=(+e.amt||0);});
@@ -714,8 +738,8 @@ function onboardStart(){
   save();closeSheet();renderAll();nav('placements');toast('Base vierge — ajoute tes actifs');}
 
 function editBudgets(){const cb=DB.settings.catBudgets||{};
-  openSheet(`<div class="spread"><h2>Budgets par catégorie</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
-   <div class="note" style="margin-top:0">Fixe une limite mensuelle. Une alerte s'affiche quand tu la dépasses.</div>
+  openSheet(`<div class="spread"><h2>Budgets par catégorie ${hq('budgets')}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   
    ${CATS.map(c=>`<div class="field"><label>${c} (€/mois)</label><input type="text" inputmode="decimal" autocomplete="off" id="cb_${c}" value="${fin(cb[c]||'')}" placeholder="sans limite"></div>`).join('')}
    <button class="btn primary" style="width:100%;margin-top:16px" onclick="saveBudgets()">Enregistrer</button>`);}
 function saveBudgets(){const cb={};CATS.forEach(c=>{const v=num('cb_'+c);if(v!=null)cb[c]=v;});DB.settings.catBudgets=cb;save();closeSheet();renderBudget();toast('Budgets enregistrés');}
@@ -763,13 +787,13 @@ function renderDash(){
    <div class="kpis" style="margin-top:12px">
      <div class="kpi"><div class="k-l">Revenus Bricks / mois</div><div class="k-v" style="font-size:19px">${eur(c.immoMonthly)}</div><div class="k-s muted">net d'impôt</div></div>
      ${(DB.properties||[]).length?`<div class="kpi"><div class="k-l">Cash-flow locatif / mois</div><div class="k-v ${c.reCashflow>=0?'pos':'neg'}" style="font-size:19px">${c.reCashflow>=0?'+':''}${eur(c.reCashflow)}</div><div class="k-s muted">loyers − charges − crédits</div></div>`:''}
-     <div class="kpi"><div class="k-l">Intérêts épargne / an</div><div class="k-v" style="font-size:19px">${eur0(c.sN)}</div><div class="k-s muted">net · à la quinzaine</div></div>
+     <div class="kpi"><div class="k-l">Intérêts épargne / an</div><div class="k-v" style="font-size:19px">${eur0(c.sN)}</div><div class="k-s muted">nets, estimés sur l'année</div></div>
    </div>
    ${cashflowHtml()}${alertsHtml()}${backupHtml()}${goalHtml()}
    <div class="card pad" style="margin-top:12px"><div class="spread"><span style="font-weight:600;font-size:13.5px">📄 Récap fiscal ${today().getFullYear()}</span><button class="btn sm" onclick="taxRecap()">Voir</button></div></div>
-   <div class="sec"><div class="sec-h"><h2>Évolution du patrimoine</h2></div>
+   <div class="sec"><div class="sec-h"><h2>Évolution du patrimoine ${hq('evo')}</h2></div>
      <div class="card pad"><div style="position:relative;height:180px"><canvas id="evo"></canvas></div>
-     <div class="note">Point ajouté automatiquement à chaque changement de mois, ou fige un repère via Réglages.</div></div></div>
+     </div></div>
    ${perfHtml()}
    <div class="sec"><div class="sec-h"><h2>Répartition par classe d'actifs</h2></div>
      <div class="card pad"><div style="display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:16px;align-items:center">
@@ -1033,7 +1057,7 @@ function productDetail(name){
          <td class="${sign}">${detail}</td><td class="t-sub">${m.f?'frais '+eur(m.f):''}</td><td><span class="del" onclick="editMov(${gi})">✎</span></td></tr>`;}).join('')
        ||`<tr><td class="emptybox" colspan="4"><div class="ic">📄</div>Aucune opération enregistrée.</td></tr>`}
     </tbody></table></div></div>
-    <div class="note">Touche ✎ pour modifier ou supprimer une opération.</div>`);}
+    `);}
 function placeBourse(){
   const rows=DB.assets.map((a,i)=>({a,c:assetCalc(a),i}));
   const tI=rows.reduce((s,r)=>s+r.c.inv,0),tV=rows.reduce((s,r)=>s+r.c.value,0);
@@ -1048,7 +1072,7 @@ function placeBourse(){
      ${P.open?`<div style="font-size:12.5px;margin-top:10px;color:${P.mature?'var(--pos)':'var(--ink2)'}">${P.mature?'✓ Plus de 5 ans : retraits possibles sans clôturer le plan ; seuls les prélèvements sociaux s\'appliquent sur les gains.':'⏳ 5 ans le <b style="color:var(--ink)">'+pd(P.fiveYears).toLocaleDateString('fr-FR')+'</b>. Avant cette date, un retrait entraîne en principe la clôture du plan et l\'imposition des gains.'}</div>`:''}
    </div>`:'';
   $('#place-body').innerHTML=peaHtml+`
-   <div class="sec-h" style="margin-top:14px"><h2>Actions, ETF & crypto <span data-live-badge>${liveBadgeHtml()}</span></h2><span class="row" style="gap:6px"><button class="btn sm" onclick="refreshPrices()">↻ Cours</button><button class="btn sm" onclick="priceDetail()" title="Détail de l'actualisation">ⓘ</button><button class="btn sm primary" onclick="editAsset(-1)">+ Actif</button></span></div>
+   <div class="sec-h" style="margin-top:14px"><h2>Actions, ETF & crypto ${hq('bourse')} <span data-live-badge>${liveBadgeHtml()}</span></h2><span class="row" style="gap:6px"><button class="btn sm" onclick="refreshPrices()">↻ Cours</button><button class="btn sm" onclick="priceDetail()" title="Détail de l'actualisation">ⓘ</button><button class="btn sm primary" onclick="editAsset(-1)">+ Actif</button></span></div>
    <div class="card"><div class="twrap"><table><thead><tr><th>Actif</th><th>Investi</th><th>PRU</th><th>Qté</th><th>Cours</th><th>Valeur</th><th>+/–</th><th>Statut</th><th></th></tr></thead>
    <tbody>${rows.map(({a,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.assets[${i}].name)"><div class="t-name">${esc(a.name)} ›</div><div class="t-sub">${esc(a.ticker||'')} · ${esc(a.env||a.type)}${c.divs?' · div. '+eur0(c.divs):''}${liveChg(a)}</div></td>
      <td>${eur0(c.inv)}</td><td>${c.pru?eur(c.pru):'—'}</td><td>${QTY(c.qty)}</td><td>${a.price?eur(a.price):'—'}</td><td>${eur0(c.value)}</td>
@@ -1059,24 +1083,99 @@ function placeBourse(){
      <div class="spread" style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--line)"><span class="muted">Point mort</span><b>${eur(c.pm)}</b></div>
      <div class="spread" style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--line)"><span class="muted">Frais couverts</span><b>${eur(c.fc)}</b></div>
      <div class="spread" style="font-size:13px;padding:3px 0"><span class="muted">+${(DB.settings.objNet*100).toFixed(0)}% net</span><b>${eur(c.po)}</b></div></div>`).join('')}</div></div>
-   <div class="note">Crypto : cours en direct (Kraken) tant que l'appli est ouverte. ↻ actualise ETF & actions (Yahoo — couvre Euronext/PEA/Amundi sans clé) et la crypto via CoinGecko. Appuie sur ⓘ pour voir, actif par actif, ce qui a réussi ou échoué.</div>`;
+   `;
 }
+// Ligne concrète sous chaque produit : à partir de quand un versement rapporte, et comment les intérêts sont calculés
+function savingWhen(s,c){const t=ymd(today());
+  if(QUINZ.has(s.type))return `<div style="margin-top:2px">Versé ce jour : intérêts dès le ${pd(Fin.quinzStart(t)).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} ${hq('quinz')}</div>`;
+  if(s.type===WALLET)return `<div style="margin-top:2px">Intérêts au jour le jour sur le solde</div>`;
+  return '';}
+// ---- Aide : chaque explication est derrière un « ? » ; la fenêtre d'aide se superpose sans fermer la saisie en cours
+const hq=(k)=>`<button type="button" class="hq" aria-label="Explication" title="Explication" onclick="event.stopPropagation();event.preventDefault();showHelp('${k}')">?</button>`;
+const HELP={
+  epargne:['Épargne : comment lire le tableau',()=>`<p><b>Solde</b> : ce qu'il y a sur le produit aujourd'hui, recalculé depuis tes opérations.</p>
+    <p><b>Intérêts ${today().getFullYear()}</b> : estimation des intérêts de l'année, nets d'impôt selon la fiscalité du produit. Les jours à venir sont projetés avec le solde actuel.</p>
+    <p><b>Intérêts perçus</b> : total des opérations « Intérêts » enregistrées sur le produit (les ajustements de solde n'en font pas partie). Le montant versé net reste visible dans la fiche du produit.</p>
+    ${HELP.quinz[1]()}
+    <p><b>Portefeuille de plateforme</b> (ex. Bricks) : intérêts calculés au jour le jour sur le solde, au taux indiqué.</p>
+    <p><b>Assurance-vie</b> : l'abattement annuel est pris en compte après 8 ans.</p>`],
+  quinz:['Les intérêts à la quinzaine',()=>`<p>Sur les livrets réglementés (Livret A, LDDS, LEP, Livret Jeune, CEL), les intérêts se calculent par <b>périodes de 15 jours</b> : du 1er au 15 et du 16 à la fin du mois.</p>
+    <ul><li>Un <b>versement</b> rapporte à partir du début de la quinzaine <b>suivante</b>. Versé le 10 mars → intérêts dès le 16 mars. Versé le 20 mars → dès le 1er avril.</li>
+    <li>Un <b>retrait</b> cesse de rapporter dès le début de la quinzaine <b>en cours</b>. Retiré le 20 mars → plus d'intérêts depuis le 16 mars.</li>
+    <li>Les intérêts sont ajoutés au livret une fois par an, le <b>31 décembre</b>.</li></ul>
+    <p>Bon réflexe : verser en fin de quinzaine (le 15 ou le dernier jour du mois), retirer en début de quinzaine (le 1er ou le 16).</p>`],
+  wallet:['Le portefeuille de la plateforme',()=>`<p>L'argent non investi sur Bricks (ou une autre plateforme) reste sur ton portefeuille, rémunéré à son propre taux, <b>calculé au jour le jour</b>.</p>
+    <ul><li>Un projet <b>payé depuis le portefeuille</b> en débite le montant.</li>
+    <li>Chaque versement mensuel que tu <b>coches</b> y est crédité, net du prélèvement à la source (PFU ${fin(r2(taxPFU()*100))} %). Tu peux corriger le montant dans les opérations.</li>
+    <li>« <b>Capital reçu</b> » à l'échéance y recrédite le capital.</li>
+    <li>« <b>+ Intérêts reçus</b> » enregistre la rémunération du portefeuille, préremplie avec l'estimation : remplace-la par le montant réel.</li></ul>
+    <p>Pour un portefeuille existant, saisis son solde actuel : seuls les prochains mouvements sont ajoutés automatiquement, jamais l'historique. Quand le taux change, saisis le nouveau avec sa date : l'ancien reste utilisé pour les jours passés.</p>`],
+  rate:['Taux annuel',()=>`<p>Laisse vide pour un livret réglementé : le taux officiel en vigueur est appliqué automatiquement, avec ses changements.</p>
+    <p>Pour un produit à taux libre (livret bancaire, portefeuille de plateforme, assurance-vie…), saisis le taux et sa date d'entrée en vigueur. Un nouveau taux s'ajoute à l'historique, sans effacer l'ancien.</p>`],
+  solde:['Solde actuel',()=>`<p>Le solde est calculé depuis les opérations. Si tu le modifies ici, l'écart est enregistré comme une opération : dépôt d'ouverture pour un produit sans opération, sinon « Ajustement » daté d'aujourd'hui.</p><p>Le compte courant sert de base au Budget.</p>`],
+  crowd:['Crowdfunding',()=>`<p>Le versement mensuel est calculé depuis le taux annuel : capital × taux ÷ 12.</p>
+    <p>Coche chaque versement reçu. <b>Case rouge</b> : versement échu non encore coché. <b>Pointillés</b> : à venir.</p>
+    <p>Un projet en retard ou en défaut reste compté dans ton patrimoine jusqu'à « Capital reçu ».</p>`],
+  bourse:['Cours des actions, ETF et cryptos',()=>`<p><b>Crypto</b> : cours en direct (Kraken) tant que l'appli est ouverte, avec la variation sur 24 h.</p>
+    <p><b>Actions et ETF</b> : ↻ actualise les cours via Yahoo (couvre Euronext, le PEA et les ETF Amundi, sans clé), avec un différé d'environ 15 minutes, et affiche la variation du jour.</p><p>ⓘ détaille, ligne par ligne, ce qui a réussi ou échoué.</p>`],
+  prices:['Détail des cours',()=>`<p>✅ mis à jour · ✋ cours manuel · ⚠️ échec.</p><p>Si un ETF Amundi échoue : ouvre-le ▸ Modifier, règle <b>Source = Yahoo</b> et vérifie le <b>symbole Yahoo</b> (ex. <code>CW8.PA</code>, <code>PE500.PA</code>, <code>PAEEM.PA</code>). Les cours Euronext ne sont pas couverts par le plan gratuit Twelve Data, Yahoo oui.</p>`],
+  src:['Source des cours',()=>`<p>ETF Amundi / PEA : laisse <b>Auto</b>. L'appli interroge Yahoo (ex. ticker <code>CW8</code> → <code>CW8.PA</code>), gratuit et sans clé.</p><p>Crypto : en direct via Kraken, CoinGecko en secours (<code>BTC-EUR</code>). Twelve Data (clé) sert de secours pour les actions US.</p><p>Si un ETF ne remonte pas, force <b>Yahoo</b> et saisis le symbole exact (ex. <code>PE500.PA</code>).</p>`],
+  live:['Cours crypto en direct',()=>`<p>Seuls les noms des paires (ex. BTC/EUR) sont envoyés à Kraken : aucun montant, aucune donnée personnelle.</p><p>La connexion se coupe dès que l'appli passe en arrière-plan.</p>`],
+  peaVers:['Versements sur le PEA',()=>`<p>Les versements (argent déposé sur le PEA) comptent pour le plafond de ${eur0(param('ceil.PEA')||0)}. Une vente ne libère pas de plafond.</p>`],
+  budgets:['Budgets par catégorie',()=>`<p>Fixe une limite mensuelle par catégorie. Une alerte s'affiche quand tu la dépasses.</p>`],
+  evo:['Évolution du patrimoine',()=>`<p>Un point est ajouté automatiquement à chaque changement de mois. Tu peux aussi figer un repère via les Réglages.</p>`],
+  recurring:['Dépenses récurrentes',()=>`<p>Loyer, abonnements, assurances : elles se déduisent automatiquement du compte courant à chaque échéance passée, à l'ouverture de l'appli.</p>`],
+  resale:['Achat-revente',()=>`<p><b>Coût</b> = prix d'achat + frais d'achat. <b>Marge brute</b> = vente − coût. <b>Marge nette</b> = marge brute − frais de plateforme et d'envoi.</p><p>Le régime fiscal se choisit dans Réglages ▸ Ma situation fiscale.</p>`],
+  resaleRegime:['Régime de l\'achat-revente',()=>`<p>Acheter pour revendre avec profit est une activité commerciale (micro-BIC : imposition sur le chiffre d'affaires après abattement).</p><p>Revendre ses propres affaires d'occasion n'est pas imposable, sauf objet vendu plus de 5 000 € et bijoux / objets d'art.</p>`],
+  rules:['Règles de catégories',()=>`<p>Si le libellé d'une dépense contient le mot-clé, elle reçoit la catégorie choisie, à l'import de relevé comme à la saisie.</p><p>Tes règles passent avant les règles intégrées.</p>`],
+  import:['Importer un relevé',()=>`<p>Tout relevé CSV de banque (ligne de titres, colonnes et format reconnus automatiquement) ou export de plateforme crypto (Bitstack, Coinbase…).</p><p>Les opérations déjà importées sont ignorées.</p>`],
+  impTypes:['Types de ligne',()=>`<p><b>Achat</b> : ajouté à ton prix de revient.</p><p><b>Gratuit</b> (parrainage, bonus) : crypto reçue à coût nul.</p><p><b>Ignorer</b> : retrait vers ton portefeuille ou dépôt d'euros, qui ne sont ni des achats ni des ventes.</p>`],
+  notif:['Rappels',()=>`<p>Alerte à l'ouverture : budget dépassé, versement Bricks à pointer, plafond d'épargne proche, objectif en retard, seuil de déclaration DAC7.</p>`],
+  params:['Paramètres réglementaires',()=>`<p>Taux, plafonds et seuils utilisés par les calculs, avec leur date d'entrée en vigueur.</p><p>Quand une règle change, ajoute la nouvelle valeur à sa date : l'ancienne reste utilisée pour les périodes passées.</p>`],
+  lock:['Verrouillage',()=>`<p>Le code est demandé à l'ouverture et au retour dans l'appli.</p><p>C'est un écran de protection : tes données ne sont pas chiffrées.</p>`],
+};
+function showHelp(k){const h=HELP[k];if(!h)return;$('#hlp-t').textContent=h[0];$('#hlp-b').innerHTML=h[1]();$('#hlp').classList.add('on');}
+function hideHelp(){$('#hlp').classList.remove('on');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#hlp').classList.contains('on'))hideHelp();});
 function placeEpargne(){
   const rows=DB.savings.map((s,i)=>({s,c:savingCalc(s),i}));
-  const tVer=rows.reduce((a,r)=>a+r.c.versed,0),tCap=rows.reduce((a,r)=>a+(r.s.cap||0),0),tNet=rows.reduce((a,r)=>a+r.c.net,0);
+  const tCap=rows.reduce((a,r)=>a+(r.s.cap||0),0),tNet=rows.reduce((a,r)=>a+r.c.net,0),tRec=rows.reduce((a,r)=>a+r.c.received,0),Y=today().getFullYear();
   $('#place-body').innerHTML=`
-   <div class="sec-h" style="margin-top:14px"><h2>Épargne & liquidités</h2><button class="btn sm primary" onclick="editSaving(-1)">+ Produit</button></div>
-   <div class="card"><div class="twrap"><table><thead><tr><th>Produit</th><th>Versé net</th><th>Capital</th><th>Taux</th><th>Intérêts nets/an</th><th>Gains</th><th></th></tr></thead>
-   <tbody>${rows.map(({s,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.savings[${i}].name)"><div class="t-name">${esc(s.name)} ›</div><div class="t-sub">${esc(s.bank||'')}${c.av8?' · AV +8 ans':''}${(()=>{const ci=ceilingInfo(s);return ci?` · <span style="color:${ci.level==='full'?'var(--neg)':ci.level==='near'?'var(--warn)':'var(--ink3)'}">plafond ${Math.round(ci.ratio*100)} %</span>`:'';})()}</div></td>
-     <td>${eur0(c.versed)}</td><td>${eur0(s.cap||0)}</td><td>${(c.rate*100).toFixed(2).replace('.',',')}%</td><td>${eur(c.net)}</td>
-     <td class="${c.gains>=0?'pos':'neg'}">${c.gains>=0?'+':''}${eur0(c.gains)}</td><td><span class="del" onclick="editSaving(${i})">✎</span></td></tr>`).join('')}</tbody>
-   <tfoot><tr><td>TOTAL</td><td>${eur0(tVer)}</td><td>${eur0(tCap)}</td><td></td><td>${eur(tNet)}</td><td></td><td></td></tr></tfoot></table></div></div>
+   <div class="sec-h" style="margin-top:14px"><h2>Épargne & liquidités ${hq('epargne')}</h2><button class="btn sm primary" onclick="editSaving(-1)">+ Produit</button></div>
+   <div class="card"><div class="twrap"><table><thead><tr><th>Produit</th><th>Solde</th><th>Taux</th><th>Intérêts ${Y} <span style="font-weight:500;text-transform:none">(estim., nets)</span></th><th>Intérêts perçus</th><th></th></tr></thead>
+   <tbody>${rows.map(({s,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.savings[${i}].name)"><div class="t-name">${esc(s.name)} ›</div><div class="t-sub">${esc(s.bank||'')}${c.av8?' · AV +8 ans':''}${(()=>{const ci=ceilingInfo(s);return ci?` · <span style="color:${ci.level==='full'?'var(--neg)':ci.level==='near'?'var(--warn)':'var(--ink3)'}">plafond ${Math.round(ci.ratio*100)} %</span>`:'';})()}${savingWhen(s,c)}</div></td>
+     <td>${eur0(s.cap||0)}</td><td>${(c.rate*100).toFixed(2).replace('.',',')} %</td><td>${eur(c.net)}</td>
+     <td>${c.received?eur(c.received):'—'}</td><td><span class="del" onclick="editSaving(${i})">✎</span></td></tr>`).join('')}</tbody>
+   <tfoot><tr><td>TOTAL</td><td>${eur0(tCap)}</td><td></td><td>${eur(tNet)}</td><td>${tRec?eur(tRec):'—'}</td><td></td></tr></tfoot></table></div></div>
    ${tmi()===0?`<div class="card pad" style="margin-top:14px;background:var(--hero)"><div style="font-weight:650;margin-bottom:6px;color:#fff">Mémo — non imposable (TMI 0 %)</div>
      <div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">• Option pour le barème (case 2OP) : ${fin(r2(taxBareme()*100))} % au lieu de ${fin(r2(taxPFU()*100))} % (PFU) sur les intérêts et plus-values.<br>• LEP ${fin(r2((param('rate.LEP')||0)*100))} % net, plafond ${eur0(param('ceil.LEP'))} ; Livret A ${fin(r2((param('rate.Livret A')||0)*100))} %, plafond ${eur0(param('ceil.Livret A'))}.<br>• Taux et plafonds à jour dans Réglages ▸ Paramètres réglementaires.</div></div>`:''}
-   <div class="note">Intérêts calculés à la quinzaine (règle Livret A) : un versement porte intérêt au 1er/16 suivant, un retrait cesse au 1er/16 précédent. AV : abattement pris en compte après 8 ans.</div>`;
+`;
 }
 function nextPayDate(c){const n=crowdCalc(c).next;return n?n.d:null;}
-function markRepaid(i){DB.crowd[i].st='Remboursé';save();renderPlacements();toast('Projet remboursé — pense à enregistrer le dépôt du capital');}
+// ---- Portefeuille de plateforme (ex. Bricks) : les projets y sont payés, les intérêts et le capital y reviennent.
+// Chaque opération créée automatiquement porte un lien « crowd:<projet>:<sub|AAAA-MM|cap> » : jamais de doublon,
+// et elle est exclue des apports (l'argent ne fait que circuler entre le portefeuille et les projets).
+const wallets=()=>DB.savings.filter(s=>s.type===WALLET);
+function walletFor(c){return c&&c.wallet?DB.savings.find(s=>s.name===c.wallet&&s.type===WALLET)||null:null;}
+const crowdKey=(c,k)=>'crowd:'+c.id+':'+k;
+function crowdLink(c,k){return c&&c.id?DB.movements.find(m=>m.link===crowdKey(c,k))||null:null;}
+function crowdUnlink(c,k){if(c&&c.id)DB.movements=DB.movements.filter(m=>m.link!==crowdKey(c,k));}
+function crowdUnlinkAll(c){if(c&&c.id)DB.movements=DB.movements.filter(m=>!(m.link&&m.link.startsWith('crowd:'+c.id+':')));}
+function crowdSetLink(c,k,mv){crowdUnlink(c,k);DB.movements.push(Object.assign({q:null,pu:null,f:0,n:''},mv,{link:crowdKey(c,k)}));}
+// Intérêts d'un projet crédités nets du prélèvement à la source (PFU), comme le font les plateformes françaises
+const couponNet=(c)=>r2(crowdCalc(c).monthly*(1-taxPFU()));
+function crowdCap(c){if(c.st!=='Remboursé'){crowdUnlink(c,'cap');return false;}const w=walletFor(c);if(!w||crowdLink(c,'cap'))return false;
+  const e=ymd(addMonths(c.sub,c.dur||0)),t=ymd(today());
+  crowdSetLink(c,'cap',{d:e<t?e:t,p:w.name,t:'Dépôt',m:c.amt,n:'Capital remboursé « '+c.name+' »'});return true;}
+function markRepaid(i){const c=DB.crowd[i];c.st='Remboursé';const back=crowdCap(c);save();renderAll();
+  toast(back?'Projet remboursé : '+eur(c.amt)+' recrédités sur « '+c.wallet+' »':'Projet remboursé — pense à enregistrer le dépôt du capital');}
+// Estimation des intérêts du portefeuille depuis le dernier versement de rémunération (opération « Intérêts » saisie à la main)
+function walletAccrued(s){const t=ymd(today());const last=DB.movements.filter(m=>m.p===s.name&&m.t==='Intérêts'&&!m.link).map(m=>String(m.d).slice(0,10)).sort().pop();
+  const from=last?ymd(new Date(pd(last).getTime()+86400000)):(s.open&&s.open<=t?s.open:t.slice(0,8)+'01');
+  const amt=from<=t?savingInterestBetween(s,from,t):0;return {from,amt,net:r2(amt*(1-(s.tax==='Exonéré'?0:taxPFU())))};}
+function walletInterest(name){const s=findSaving(name);if(!s)return;const a=walletAccrued(s),net=a.net;
+  dupTemplate={d:ymd(today()),p:name,p2:'',t:'Intérêts',q:'',pu:'',m:net>0?net:'',f:'',n:'Rémunération du portefeuille'};editMov(-1);dupTemplate=null;
+  toast('Montant estimé : corrige-le avec le montant réel de la plateforme');}
 function placeImmo(){
   const RE=realEstate(),t=ymd(today());
   const props=(DB.properties||[]).map((p,i)=>({p,c:propertyCalc(p),i})),loans=(DB.loans||[]).map((l,i)=>({l,c:loanCalc(l),i}));
@@ -1102,7 +1201,7 @@ function placeImmo(){
        <div class="progress" style="margin-top:10px"><span style="width:${(100*(1-c.crd/(l.capital||1))).toFixed(0)}%;background:var(--orange)"></span></div>
        <button class="btn sm" style="width:100%;margin-top:10px" onclick="loanTable(${i})">Tableau d'amortissement</button></div>`).join('')
      ||`<div class="card"><div class="emptybox"><div class="ic">🏦</div>Aucun crédit en cours.</div></div>`}
-   <div class="sec-h" style="margin-top:18px"><h2>Crowdfunding (Bricks)</h2></div>`;
+   <div class="sec-h" style="margin-top:18px"><h2>Crowdfunding (Bricks) ${hq('crowd')}</h2></div>`;
   const rows=DB.crowd.map((c,i)=>({c,cc:crowdCalc(c),i}));
   const act=rows.filter(r=>crowdActive(r.c));
   const capPlace=act.reduce((a,r)=>a+(r.c.amt||0),0);
@@ -1118,6 +1217,7 @@ function placeImmo(){
      <div class="kpi"><div class="k-l">Revenus / mois</div><div class="k-v" style="font-size:19px">${eur(monthlyNet)}</div><div class="k-s muted">net (${DB.settings.crowdTax==='bareme'?'barème':'PFU'} ${fin(r2(tx*100))} %)</div></div>
      ${capDue>0?`<div class="kpi" style="border-color:var(--warn)"><div class="k-l">Capital à récupérer</div><div class="k-v" style="font-size:19px;color:var(--warn)">${eur(capDue)}</div></div>`:''}
    </div>
+   ${walletsHtml()}
    <div class="sec-h" style="margin-top:18px"><h2>Projets</h2><button class="btn sm primary" onclick="editCrowd(-1)">+ Projet</button></div>
    ${rows.map(({c,cc,i})=>{
      const prog=c.dur?Math.min(1,cc.elapsed/c.dur):0;const paid=new Set(c.paid||[]);
@@ -1141,8 +1241,18 @@ function placeImmo(){
            return `<div style="display:flex;flex-wrap:wrap;gap:7px">${head.map(box).join('')}</div>${rest.length?`<details style="margin-top:6px"><summary class="sub" style="cursor:pointer">Voir les ${rest.length} versements suivants</summary><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px">${rest.map(box).join('')}</div></details>`:''}`;})()}
          <div class="sub" style="margin-top:6px">Case rouge : versement échu non coché · case en pointillés : à venir</div></div>`:''}
      </div>`;}).join('')||`<div class="card"><div class="emptybox"><div class="ic">🏠</div>Aucun projet. Ajoute ton premier investissement Bricks.</div></div>`}
-   <div class="note">Le versement mensuel est calculé depuis le taux annuel (capital × taux ÷ 12). Une case rouge = versement échu non encore pointé. Un projet en retard ou en défaut reste compté dans ton patrimoine jusqu'à « Capital reçu ».</div>`;
+`;
 }
+// Portefeuille(s) de plateforme : argent en attente, rémunéré au jour le jour
+function walletsHtml(){const W=wallets();
+  if(!W.length)return `<div class="card pad" style="margin-top:12px"><div class="spread"><div><div class="t-name">Portefeuille de la plateforme ${hq('wallet')}</div><div class="t-sub">Suis l'argent non investi et sa rémunération</div></div><button class="btn sm" onclick="editSaving(-1,true)">+ Créer</button></div></div>`;
+  return W.map(w=>{const c=savingCalc(w),a=walletAccrued(w),n=DB.crowd.filter(x=>x.wallet===w.name&&crowdActive(x)).length;
+    return `<div class="card pad" style="margin-top:12px"><div class="spread"><div><div class="t-name" style="font-size:15px">${esc(w.name)} ${hq('wallet')}</div><div class="t-sub">${fin(r2(c.rate*10000)/100)} %/an · au jour le jour · ${n} projet${n>1?'s':''} lié${n>1?'s':''}</div></div><span class="del" onclick="editSaving(${DB.savings.indexOf(w)})">✎ modifier</span></div>
+      <div class="kpis" style="margin-top:10px;grid-template-columns:repeat(3,1fr);gap:8px">
+        <div><div class="k-l">Solde disponible</div><div style="font-weight:650;font-family:'Space Grotesk'" class="${(w.cap||0)<0?'neg':''}">${eur(w.cap||0)}</div></div>
+        <div><div class="k-l">Intérêts ${today().getFullYear()}</div><div style="font-weight:650;font-family:'Space Grotesk'">${eur(c.net)}</div><div class="t-sub">estimés, nets</div></div>
+        <div><div class="k-l">Courus</div><div style="font-weight:650;font-family:'Space Grotesk'">${eur(a.net)}</div><div class="t-sub">nets, depuis le ${pd(a.from).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</div></div></div>
+      <div class="row" style="gap:8px;margin-top:10px"><button class="btn sm" style="flex:1" onclick="walletInterest(DB.savings[${DB.savings.indexOf(w)}].name)">+ Intérêts reçus</button><button class="btn sm" style="flex:1" onclick="productDetail(DB.savings[${DB.savings.indexOf(w)}].name)">Opérations</button></div></div>`;}).join('');}
 
 
 function addDetectedRecurring(k){const r=Fin.detectRecurring(DB.expenses,ymKey(today()),DB.recurring.map(x=>x.label))[k];if(!r)return;
@@ -1188,12 +1298,12 @@ function renderBudget(){
      ${monthExpenses(ymk).slice().sort((a,b)=>a.d<b.d?1:-1).map(e=>{const gi=DB.expenses.indexOf(e);return `<tr><td><div class="t-name">${esc(e.label)}</div><div class="t-sub">${new Date(e.d).toLocaleDateString('fr-FR')}${e.auto?' · auto':''}</div></td>
        <td><span class="tag" style="background:var(--card2);color:var(--ink2)">${e.cat}</span></td><td class="neg">−${eur0(e.amt)}</td><td><span class="del" onclick="editExpense(${gi})">✎</span></td></tr>`;}).join('')||`<tr><td class="emptybox" colspan="4"><div class="ic">💸</div>Aucune dépense ce mois.</td></tr>`}
      </tbody></table></div></div></div>
-   <div class="sec"><div class="sec-h"><h2>Dépenses récurrentes <span class="tag or">${eur0(recTot)}/mois</span></h2><button class="btn sm primary" onclick="editRecurring(-1)">+ Récurrent</button></div>
+   <div class="sec"><div class="sec-h"><h2>Dépenses récurrentes ${hq('recurring')} <span class="tag or">${eur0(recTot)}/mois</span></h2><button class="btn sm primary" onclick="editRecurring(-1)">+ Récurrent</button></div>
      <div class="card"><div class="twrap"><table><tbody>
      ${DB.recurring.map((r,i)=>`<tr><td><div class="t-name">${esc(r.label)}${r.active?'':' <span class="sub">(inactif)</span>'}</div><div class="t-sub">le ${r.day} · ${r.cat}</div></td>
        <td>${eur(r.amt)}</td><td><span class="del" onclick="editRecurring(${i})">✎</span></td></tr>`).join('')||`<tr><td class="emptybox" colspan="3"><div class="ic">🔁</div>Aucune dépense récurrente.</td></tr>`}
      </tbody></table></div></div>
-     <div class="note">Les récurrentes se déduisent automatiquement du compte courant à chaque échéance passée, à l'ouverture de l'appli.</div></div>`;
+     </div>`;
   if(catArr.length){const surf=getComputedStyle(document.documentElement).getPropertyValue('--card')||'#16202E';
     if(catChart)catChart.destroy();
     catChart=new Chart($('#cat'),{type:'doughnut',data:{labels:catArr.map(c=>c[0]),datasets:[{data:catArr.map(c=>c[1]),backgroundColor:catArr.map(c=>CATCOL[c[0]]||'#63788A'),borderColor:surf,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.label+' : '+eur0(x.parsed)}}}}});}
@@ -1213,7 +1323,7 @@ function renderRevente(){
   const years=[...new Set(DB.resale.filter(r=>r.sellD).map(r=>+String(r.sellD).slice(0,4)).concat([today().getFullYear()]))].sort((a,b)=>b-a);
   const alerts=Y.dac7.filter(d=>d.reported||d.near);
   $('#v-revente').innerHTML=`
-   <div class="spread" style="margin-top:14px"><h2>Achat-revente</h2><select onchange="revYear=+this.value;renderRevente()" style="width:auto">${years.map(x=>`<option ${x===y?'selected':''}>${x}</option>`).join('')}</select></div>
+   <div class="spread" style="margin-top:14px"><h2>Achat-revente ${hq('resale')}</h2><select onchange="revYear=+this.value;renderRevente()" style="width:auto">${years.map(x=>`<option ${x===y?'selected':''}>${x}</option>`).join('')}</select></div>
    <div class="kpis" style="margin-top:10px">
      <div class="kpi hero"><div class="k-l">Marge nette ${y}</div><div class="k-v ${Y.net>=0?'pos':'neg'}">${Y.net>=0?'+':''}${eur(Y.net)}</div><div class="k-s muted">${Y.count} vente${Y.count>1?'s':''} · brute ${eur(Y.gross)}</div></div>
      <div class="kpi"><div class="k-l">Chiffre d'affaires</div><div class="k-v" style="font-size:20px">${eur(Y.revenue)}</div><div class="k-s muted">${Y.avgDays!=null?'vendu en '+Y.avgDays+' j en moyenne':'—'}</div></div>
@@ -1228,7 +1338,7 @@ function renderRevente(){
    <tbody>${rows.map(({r,c,i})=>`<tr><td><div class="t-name">${esc(r.name)}</div><div class="t-sub">${r.plat?esc(r.plat)+' · ':''}acheté ${r.buyD?pd(r.buyD).toLocaleDateString('fr-FR'):'—'}${c.days!=null?' · '+c.days+' j':''}</div></td>
      <td>${eur(c.cost)}</td><td>${c.sold?eur(r.sell):'—'}</td><td class="${c.net>=0?'pos':'neg'}">${c.sold?((c.net>=0?'+':'')+eur(c.net)):'—'}${c.sold&&c.sellCosts?`<div class="t-sub">frais ${eur(c.sellCosts)}</div>`:''}</td>
      <td>${esc(r.st)}</td><td><span class="del" onclick="editResale(${i})">✎</span></td></tr>`).join('')||`<tr><td class="empty" colspan="6">Aucun article. Ajoute ton premier achat-revente.</td></tr>`}</tbody></table></div></div>
-   <div class="note">Coût = prix d'achat + frais d'achat. Marge brute = vente − coût ; marge nette = marge brute − frais de plateforme et d'envoi. Le régime fiscal se choisit dans Réglages ▸ Ma situation fiscale.</div>`;
+   `;
 }
 
 function openSheet(h){$('#sheet').innerHTML=h;$('#ov').className='ov on';}
@@ -1272,8 +1382,8 @@ function autoCat(label){const l=(label||'').toLowerCase();
   for(const c in CATKW){if(CATKW[c].some(w=>l.includes(w)))return c;}return 'Autres';}
 function matchAccount(label){const l=(label||'').toLowerCase();return DB.savings.find(s=>s.type!=='Compte courant'&&(l.includes(s.name.toLowerCase())||l.includes((s.type||'').toLowerCase())));}
 function openRules(){const R=DB.settings.catRules||[];
-  openSheet(`<div class="spread"><h2>Règles de catégories</h2><button class="btn sm" onclick="closeSheet();openSettings()">Retour</button></div>
-   <div class="hint" style="margin-top:4px">Si le libellé d'une dépense contient le mot-clé, elle reçoit la catégorie choisie (import de relevé et saisie). Tes règles passent avant les règles intégrées.</div>
+  openSheet(`<div class="spread"><h2>Règles de catégories ${hq('rules')}</h2><button class="btn sm" onclick="closeSheet();openSettings()">Retour</button></div>
+   
    <div class="card" style="margin-top:10px"><div class="twrap"><table><tbody>${R.map((r,i)=>`<tr><td>« ${esc(r.kw)} »</td><td>→ ${esc(r.cat)}</td><td><span class="del" onclick="delRule(${i})">✕</span></td></tr>`).join('')||'<tr><td class="emptybox">Aucune règle personnelle.</td></tr>'}</tbody></table></div></div>
    <div class="two" style="margin-top:12px"><div class="field"><label>Mot-clé</label><input id="ru_kw" placeholder="ex. boulangerie"></div><div class="field"><label>Catégorie</label><select id="ru_cat">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></div></div>
    <div class="row" style="gap:8px"><button class="btn primary" style="flex:1" onclick="addRule()">Ajouter la règle</button><button class="btn" onclick="applyRules()">Recatégoriser mes dépenses</button></div>`);}
@@ -1282,12 +1392,12 @@ function addRule(){const kw=$('#ru_kw').value.trim();if(kw.length<2){toast('Mot-
 function delRule(i){DB.settings.catRules.splice(i,1);save();openRules();}
 function applyRules(){let n=0;DB.expenses.forEach(e=>{if(e.auto)return;const l=(e.label||'').toLowerCase();const r=(DB.settings.catRules||[]).find(r=>l.includes(r.kw.toLowerCase()));if(r&&e.cat!==r.cat){e.cat=r.cat;n++;}});
   save();renderAll();toast(n+' dépense'+(n>1?'s':'')+' recatégorisée'+(n>1?'s':''));}
-function openImport(){openSheet(`<div class="spread"><h2>Importer un relevé</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+function openImport(){openSheet(`<div class="spread"><h2>Importer un relevé ${hq('import')}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
   <div class="field"><label>Colle ton relevé (CSV ou texte), ou charge un fichier</label><textarea id="imp_txt" rows="5" style="width:100%;font-family:monospace;font-size:12px;background:var(--card2);color:var(--ink);border:1px solid var(--line2);border-radius:10px;padding:10px" placeholder="14/09/2026  VIR LIVRET A  +200,00&#10;03/09/2026  CARREFOUR  -82,00"></textarea></div>
   <div class="two"><div class="field"><button class="btn" style="width:100%" onclick="$('#imp_csv').click()">📄 Fichier CSV</button><input type="file" id="imp_csv" accept=".csv,.txt,text/csv" style="display:none" onchange="impFile(event,'csv')"></div>
     <div class="field"><button class="btn" style="width:100%" onclick="$('#imp_pdf').click()">📕 Fichier PDF</button><input type="file" id="imp_pdf" accept=".pdf,application/pdf" style="display:none" onchange="impFile(event,'pdf')"></div></div>
   <button class="btn primary" style="width:100%;margin-top:8px" onclick="impAnalyze()">Analyser</button>
-  <div class="hint">Tout relevé CSV de banque (ligne de titres, colonnes et format reconnus automatiquement) ou export de plateforme crypto (Bitstack, Coinbase…). Les opérations déjà importées sont ignorées.</div>
+  
   <div id="imp_result"></div>`);}
 function impFile(e,kind){const f=e.target.files[0];if(!f)return;
   if(kind==='csv'){const r=new FileReader();r.onload=()=>{$('#imp_txt').value=CsvImp.decode(new Uint8Array(r.result));impAnalyze();};r.onerror=()=>toast('Lecture impossible',true);r.readAsArrayBuffer(f);}
@@ -1394,9 +1504,9 @@ function impBuildOps(){
     <div class="two">${sel('qty','Quantité de crypto')}${sel('eur','Montant en €')}</div>
     <div class="two">${sel('fee','Frais')}<div class="field"><label>Actif dans l'appli</label><select id="op_asset" onchange="impOps.forEach(o=>o.target=this.value);renderOpsReview()">${cryptos.map(a=>`<option ${def&&def.name===a.name?'selected':''}>${esc(a.name)}</option>`).join('')}<option value="__new">+ Créer « Bitcoin »</option></select></div></div>
     <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)"><input type="checkbox" id="op_feeincl" checked style="width:auto"> Le montant en € inclut déjà les frais (montant débité de ton compte)</label>
-    <div id="op_review" style="margin-top:10px"></div>
+    <div class="sub" style="margin-top:10px">Types de ligne ${hq('impTypes')}</div><div id="op_review" style="margin-top:6px"></div>
     <button class="btn primary" style="width:100%;margin-top:10px" onclick="impDoOps()">Importer</button>
-    <div class="hint">Achat : ajouté à ton prix de revient. Gratuit (parrainage, bonus) : bitcoins reçus à coût nul. Ignorer : retrait vers ton portefeuille ou dépôt d'euros, qui ne sont ni des achats ni des ventes.</div>`;
+    `;
   if(!cryptos.length)$('#op_asset').value='__new';
   renderOpsReview();}
 function renderOpsReview(){const K=['Achat','Vente','Gratuit','Ignorer'];
@@ -1435,7 +1545,7 @@ function editMov(i){
    <div class="field"><label>Note</label><input id="f_n" value="${esc(m.n||'')}"></div>
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveMov(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="dupMov(${i})">Dupliquer</button><button class="btn" onclick="delMov(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);
   movFields();}
-function dupMov(i){dupTemplate=Object.assign({},DB.movements[i],{d:ymd(today())});editMov(-1);dupTemplate=null;}
+function dupMov(i){dupTemplate=Object.assign({},DB.movements[i],{d:ymd(today())});delete dupTemplate.link;editMov(-1);dupTemplate=null;}
 function movFields(){const t=$('#f_t').value,tr=(t==='Transfert');
   $('#w_dest').style.display=tr?'block':'none';$('#w_qp').style.display=(t==='Achat'||t==='Vente')?'grid':'none';
   $('#w_f').style.display=(t==='Achat'||t==='Vente')?'block':'none';$('#f_pl').textContent=tr?'Depuis (compte source)':'Produit / actif';
@@ -1451,6 +1561,7 @@ function saveMov(i){const t=$('#f_t').value,p=val('f_p');if(!p){toast('Indique u
     o={d:val('f_d')||ymd(today()),p,p2,t:'Transfert',q:null,pu:null,m:amt,f:0,n:val('f_n')||''};}
   else{if(t==='Dividende'&&(!DB.assets.some(a=>a.name===p)||!(num('f_m')>0))){toast('Dividende : choisis une ligne de bourse et un montant',true);return;}
     o={d:val('f_d')||ymd(today()),p,t,q:t==='Dividende'?null:num('f_q'),pu:t==='Dividende'?null:num('f_pu'),m:num('f_m'),f:t==='Dividende'?0:(num('f_f')||0),n:val('f_n')||''};}
+  if(old&&old.link)o.link=old.link; // opération créée par un projet : le lien est conservé
   if(i>=0)DB.movements[i]=o;else DB.movements.push(o);
   save();closeSheet();renderAll();toast(t==='Transfert'?'Transfert enregistré':'Opération enregistrée');}
 function delMov(i){DB.movements.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
@@ -1458,8 +1569,8 @@ function delMov(i){DB.movements.splice(i,1);save();closeSheet();renderAll();toas
 function editPea(){const p=DB.pea||{open:'',bank:'',versements:[]},V=(p.versements||[]).slice().sort((a,b)=>a.d<b.d?1:-1);
   openSheet(`<div class="spread"><h2>Fiche PEA</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="two"><div class="field"><label>Date d'ouverture</label><input type="date" id="pe_open" value="${p.open||''}"></div><div class="field"><label>Établissement</label><input id="pe_bank" value="${esc(p.bank||'')}" placeholder="Boursorama, Fortuneo…"></div></div>
-   <div class="field"><label>Ajouter un versement</label><div class="two"><input type="date" id="pe_vd" value="${ymd(today())}"><input type="text" inputmode="decimal" autocomplete="off" id="pe_vm" placeholder="montant en €"></div>
-     <div class="hint">Les versements (argent déposé sur le PEA) comptent pour le plafond de ${eur0(param('ceil.PEA')||0)}. Une vente ne libère pas de plafond.</div></div>
+   <div class="field"><label>Ajouter un versement ${hq('peaVers')}</label><div class="two"><input type="date" id="pe_vd" value="${ymd(today())}"><input type="text" inputmode="decimal" autocomplete="off" id="pe_vm" placeholder="montant en €"></div>
+     </div>
    ${V.length?`<div class="field"><label>Versements (${eur0(V.reduce((a,v)=>a+v.m,0))})</label>${V.map(v=>`<div class="spread" style="font-size:12.5px;padding:3px 0;border-bottom:1px solid var(--line)"><span>${pd(v.d).toLocaleDateString('fr-FR')}</span><span>${eur(v.m)} <span class="del" onclick="delPeaVers('${v.d}',${v.m})">✕</span></span></div>`).join('')}</div>`:''}
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="savePea()">Enregistrer</button></div>`);}
 function savePea(){const vm=num('pe_vm'),vd=val('pe_vd');DB.pea=DB.pea||{versements:[]};DB.pea.versements=DB.pea.versements||[];
@@ -1473,8 +1584,8 @@ function editAsset(i){const a=i>=0?DB.assets[i]:{name:'',ticker:'',type:'Crypto'
    <div class="two"><div class="field"><label>Ticker</label><input id="a_ticker" value="${esc(a.ticker||'')}" placeholder="BTC-EUR / AAPL"></div><div class="field"><label>Type</label><select id="a_type">${['Action','ETF','Crypto'].map(t=>`<option ${a.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
    <div class="two"><div class="field"><label>Enveloppe</label><select id="a_env">${['PEA','CTO','Bitstack','Autre'].map(t=>`<option ${a.env===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="field"><label>Devise</label><select id="a_cur">${['EUR','USD'].map(t=>`<option ${a.cur===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
    <div class="two"><div class="field"><label>Cours actuel (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="a_price" value="${fin(a.price??'')}"></div><div class="field"><label>Frais vente (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="a_fee" value="${fin((a.sellFee*100)||'')}"></div></div>
-   <div class="two"><div class="field"><label>Source du cours</label><select id="a_src">${[['auto','Auto'],['yahoo','Yahoo (Euronext/PEA)'],['twelvedata','Twelve Data'],['manuel','Manuel']].map(s=>`<option value="${s[0]}" ${(a.src||'auto')===s[0]?'selected':''}>${s[1]}</option>`).join('')}</select></div><div class="field"><label>Symbole Yahoo</label><input id="a_ysym" value="${a.ysym||''}" placeholder="auto (ex: CW8.PA)"></div></div>
-   <div class="hint">ETF Amundi / PEA : laisse <b>Auto</b> — l'appli interroge Yahoo (ex. ticker <code>CW8</code> → <code>CW8.PA</code>), gratuit et sans clé. Crypto → CoinGecko (<code>BTC-EUR</code>). Twelve Data (clé) sert de secours pour les actions US. Si un ETF ne remonte pas, force <b>Yahoo</b> et saisis le symbole exact (ex. <code>PE500.PA</code>).</div>
+   <div class="two"><div class="field"><label>Source du cours</label><select id="a_src">${[['auto','Auto'],['yahoo','Yahoo (Euronext/PEA)'],['twelvedata','Twelve Data'],['manuel','Manuel']].map(s=>`<option value="${s[0]}" ${(a.src||'auto')===s[0]?'selected':''}>${s[1]}</option>`).join('')}</select></div><div class="field"><label>Symbole Yahoo ${hq('src')}</label><input id="a_ysym" value="${a.ysym||''}" placeholder="auto (ex: CW8.PA)"></div></div>
+   
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveAsset(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delAsset(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
 function saveAsset(i){const name=$('#a_name').value.trim();if(!name){toast('Nom ?',true);return;}
   const isin=$('#a_isin').value.trim().toUpperCase().replace(/\s/g,'');if(isin&&!Fin.isinValid(isin)){toast('ISIN invalide (12 caractères, ex. FR0010315770)',true);$('#a_isin').classList.add('bad');return;}
@@ -1483,21 +1594,27 @@ function saveAsset(i){const name=$('#a_name').value.trim();if(!name){toast('Nom 
   save();closeSheet();renderAll();toast('Actif enregistré');}
 function delAsset(i){DB.assets.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
-function editSaving(i){const s=i>=0?DB.savings[i]:{name:'',type:'Livret A',bank:'',cap:'',open:ymd(today()),rate:'',tax:'Exonéré',ceil:''};
-  const types=['Livret A','LDDS','LEP','Livret Jeune','PEL','CEL','Livret bancaire','Assurance-vie','Compte courant','Autre'],taxes=['Exonéré','PFU standard','PFU assurance-vie','Barème'];
+function editSaving(i,wallet){const s=i>=0?DB.savings[i]:(wallet?{name:'Portefeuille Bricks',type:WALLET,bank:'Bricks',cap:'',open:ymd(today()),rate:0.024,tax:'PFU standard',ceil:''}:{name:'',type:'Livret A',bank:'',cap:'',open:ymd(today()),rate:'',tax:'Exonéré',ceil:''});
+  const types=['Livret A','LDDS','LEP','Livret Jeune','PEL','CEL','Livret bancaire',WALLET,'Assurance-vie','Compte courant','Autre'],taxes=['Exonéré','PFU standard','PFU assurance-vie','Barème'];
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouveau'} produit</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="two"><div class="field"><label>Nom</label><input id="s_name" value="${esc(s.name)}"></div><div class="field"><label>Type</label><select id="s_type">${types.map(t=>`<option ${s.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
-   <div class="two"><div class="field"><label>Établissement</label><input id="s_bank" value="${esc(s.bank||'')}"></div><div class="field"><label>Solde actuel (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_cap" value="${fin(s.cap??'')}"></div></div>
-   <div class="two"><div class="field"><label>Date d'ouverture</label><input type="date" id="s_open" value="${s.open||''}"></div><div class="field"><label>Taux manuel (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_rate" value="${fin(s.rate!=null&&s.rate!==''?(s.rate*100):'')}" placeholder="auto"></div></div>
+   <div class="two"><div class="field"><label>Établissement</label><input id="s_bank" value="${esc(s.bank||'')}"></div><div class="field"><label>Solde actuel (€) ${hq('solde')}</label><input type="text" inputmode="decimal" autocomplete="off" id="s_cap" value="${fin(s.cap??'')}"></div></div>
+   <div class="two"><div class="field"><label>Date d'ouverture</label><input type="date" id="s_open" value="${s.open||''}"></div><div class="field"><label>Taux annuel (%) ${hq('rate')}</label><input type="text" inputmode="decimal" autocomplete="off" id="s_rate" value="${fin(rateShown(s)==null?'':r2(rateShown(s)*10000)/100)}" placeholder="auto"></div></div>
+   <div class="two"><div class="field"><label>Taux en vigueur depuis le</label><input type="date" id="s_rated" value="${ymd(today())}"></div><div class="field"><label>Historique des taux</label><div style="font-size:12.5px;line-height:1.7">${(s.rates||[]).length?(s.rates||[]).slice().sort((a,b)=>a.from<b.from?1:-1).map(x=>`<div class="spread"><span>${fin(r2(x.rate*10000)/100)} % depuis le ${pd(x.from).toLocaleDateString('fr-FR')}</span>${i>=0&&s.rates.length>1?`<span class="del" onclick="delSavingRate(${i},'${x.from}')">✕</span>`:''}</div>`).join(''):'<span class="muted">—</span>'}</div></div></div>
    <div class="two"><div class="field"><label>Fiscalité</label><select id="s_tax">${taxes.map(t=>`<option ${s.tax===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="field"><label>Plafond de versements (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_ceil" value="${fin(s.ceil??'')}" placeholder="${param('ceil.'+(s.type||'Livret A'))!=null?'réglementaire : '+fin(param('ceil.'+(s.type||'Livret A'))):'aucun'}"></div></div>
-   <div class="hint">Taux vide = automatique (livrets réglementés). Le solde est calculé depuis les opérations ; si tu le modifies ici, l'écart est enregistré comme une opération (dépôt d'ouverture pour un produit sans opération, sinon « Ajustement » daté d'aujourd'hui). Le compte courant sert de base au Budget.</div>
+   
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveSaving(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delSaving(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
 function saveSaving(i){const name=$('#s_name').value.trim();if(!name){toast('Nom ?',true);return;}const r=num('s_rate');
   const capIn=num('s_cap'),ceil=num('s_ceil');
   if(DB.savings.some((x,k)=>k!==i&&x.name===name)){toast('Un produit porte déjà ce nom',true);return;}
-  const o={name,type:$('#s_type').value,bank:$('#s_bank').value.trim(),cap:0,open:val('s_open'),rate:r==null?null:r/100,tax:$('#s_tax').value,ceil};
+  // Taux : historique daté, jamais écrasé ; un nouveau taux s'ajoute à sa date d'entrée en vigueur
+  let rates=(i>=0&&Array.isArray(DB.savings[i].rates))?DB.savings[i].rates.map(x=>Object.assign({},x)):[];
+  if(r==null)rates=[];
+  else{if(r<0||r>30){toast('Taux entre 0 et 30 %',true);return;}const from=val('s_rated')||ymd(today()),nr=Math.round(r*1e4)/1e6;
+    if(!rates.length||Math.abs(Fin.rateOn(rates,from)-nr)>1e-9){rates=rates.filter(x=>x.from!==from);rates.push({from:rates.length?from:(val('s_open')&&val('s_open')<from?val('s_open'):from),rate:nr});}}
+  const o={name,type:$('#s_type').value,bank:$('#s_bank').value.trim(),cap:0,open:val('s_open'),rate:r==null?null:Fin.rateOn(rates,ymd(today())),rates,tax:$('#s_tax').value,ceil};
   if(i>=0){const old=DB.savings[i].name;
-    if(old!==name)DB.movements.forEach(m=>{if(m.p===old)m.p=name;if(m.p2===old)m.p2=name;}); // les opérations suivent le nouveau nom
+    if(old!==name){DB.movements.forEach(m=>{if(m.p===old)m.p=name;if(m.p2===old)m.p2=name;});(DB.crowd||[]).forEach(c=>{if(c.wallet===old)c.wallet=name;});} // opérations et projets suivent le nouveau nom
     DB.savings[i]=o;}else DB.savings.push(o);
   // Capital saisi : on n'écrase pas le solde, on enregistre l'écart comme une opération datée
   // (produit sans aucune opération → dépôt d'ouverture ; sinon → ajustement daté d'aujourd'hui)
@@ -1506,6 +1623,9 @@ function saveSaving(i){const name=$('#s_name').value.trim();if(!name){toast('Nom
       ?{d:ymd(today()),p:name,t:'Ajustement',q:null,pu:null,m:diff,f:0,n:'Correction du solde'}
       :{d:o.open||ymd(today()),p:name,t:'Dépôt',q:null,pu:null,m:diff,f:0,n:'Solde à l\'ouverture'});}
   save();closeSheet();renderAll();toast('Produit enregistré');}
+function delSavingRate(i,from){const s=DB.savings[i];s.rates=(s.rates||[]).filter(x=>x.from!==from);s.rate=s.rates.length?Fin.rateOn(s.rates,ymd(today())):null;save();editSaving(i);}
+// Taux affiché dans la fiche : taux en vigueur (historique) ou taux manuel
+const rateShown=(s)=>(Array.isArray(s.rates)&&s.rates.length)?Fin.rateOn(s.rates,ymd(today())):((s.rate!=null&&s.rate!=='')?+s.rate:null);
 function delSaving(i){const n=DB.savings[i].name;const k=DB.movements.filter(m=>m.p===n||m.p2===n).length;
   if(k&&!confirm('Supprimer « '+n+' » et ses '+k+' opération(s) ?'))return;
   DB.movements=DB.movements.filter(m=>m.p!==n&&m.p2!==n);DB.savings.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
@@ -1573,12 +1693,17 @@ function loanTable(i){const l=DB.loans[i],rows=Fin.amortization(l),t=ymd(today()
    <div class="hint" style="margin-top:4px">Mensualité ${eur(Fin.loanPayment(l.capital,l.rate,l.months))} hors assurance · coût total des intérêts ${eur(Fin.loanStatus(l,t).totalInterest)}</div>
    <div class="card" style="margin-top:10px"><div class="twrap"><table><thead><tr><th>Année</th><th>Intérêts</th><th>Capital remboursé</th><th>Restant dû fin d'année</th></tr></thead><tbody>
    ${Object.entries(years).map(([y,v])=>`<tr style="${y===t.slice(0,4)?'font-weight:650':''}"><td>${y}</td><td>${eur(v.i)}</td><td>${eur(v.p)}</td><td>${eur(v.crd)}</td></tr>`).join('')}</tbody></table></div></div>`);}
-function editCrowd(i){const c=i>=0?DB.crowd[i]:{name:'',plat:'Bricks',amt:'',rate:null,sub:ymd(today()),dur:24,day:8,st:'En cours',paid:[]};
+function editCrowd(i){const c=i>=0?DB.crowd[i]:{name:'',plat:'Bricks',amt:'',rate:null,sub:ymd(today()),dur:24,day:8,st:'En cours',paid:[],wallet:''};
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouveau'} projet</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="two"><div class="field"><label>Nom</label><input id="c_name" value="${esc(c.name)}"></div><div class="field"><label>Plateforme</label><input id="c_plat" value="${esc(c.plat)}"></div></div>
    <div class="two"><div class="field"><label>Montant (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="c_amt" value="${fin(c.amt??'')}" placeholder="ex. 37,50"></div><div class="field"><label>Taux annuel (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="c_rate" value="${fin(c.rate==null?'':c.rate*100)}" placeholder="ex. 10,5"></div></div>
    <div class="two"><div class="field"><label>Souscription</label><input type="date" id="c_sub" value="${c.sub}"></div><div class="field"><label>Durée (mois)</label><input type="text" inputmode="numeric" autocomplete="off" id="c_dur" value="${fin(c.dur)}"></div></div>
    <div class="two"><div class="field"><label>Jour de versement</label><input type="text" inputmode="numeric" autocomplete="off" id="c_day" value="${fin(c.day)}"></div><div class="field"><label>Statut</label><select id="c_st">${['En cours','Remboursé','Retard','Défaut'].map(t=>`<option ${c.st===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
+   ${(()=>{const W=wallets();if(!W.length)return `<div class="field"><label>Portefeuille de la plateforme ${hq('wallet')}</label><button class="btn sm" style="width:100%" onclick="closeSheet();editSaving(-1,true)">+ Créer le portefeuille ${esc(c.plat||'Bricks')}</button></div>`;
+     const cur=i>=0?(c.wallet||''):((W.find(w=>(w.name+' '+(w.bank||'')).toLowerCase().includes((c.plat||'').toLowerCase()))||W[0]).name);
+     const deb=i>=0?!!crowdLink(c,'sub'):true;
+     return `<div class="field"><label>Portefeuille lié ${hq('wallet')}</label><select id="c_wallet" onchange="$('#c_debit').disabled=!this.value"><option value="">Aucun</option>${W.map(w=>`<option ${w.name===cur?'selected':''}>${esc(w.name)}</option>`).join('')}</select>
+       <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13px;color:var(--ink)"><input type="checkbox" id="c_debit" ${deb?'checked':''} ${cur?'':'disabled'}> Payé depuis ce portefeuille (le montant en est débité)</label></div>`;})()}
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveCrowd(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="delCrowd(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);}
 function saveCrowd(i){const name=$('#c_name').value.trim();if(!name){toast('Nom ?',true);return;}
   const amt=num('c_amt'),rate=num('c_rate'),dur=num('c_dur'),day=num('c_day');
@@ -1586,10 +1711,34 @@ function saveCrowd(i){const name=$('#c_name').value.trim();if(!name){toast('Nom 
   if(rate==null||rate<0||rate>30){toast('Taux annuel entre 0 et 30 % (ex. 10,5)',true);return;}
   if(dur!=null&&!(Number.isInteger(dur)&&dur>0)){toast('Durée en mois entiers',true);return;}
   if(day!=null&&!(Number.isInteger(day)&&day>=1&&day<=31)){toast('Jour de versement entre 1 et 31',true);return;}
-  const o={name,plat:$('#c_plat').value.trim(),amt:r2(amt),rate:Math.round(rate*1e4)/1e6,sub:val('c_sub')||ymd(today()),dur:dur||12,day:day||8,st:$('#c_st').value,paid:(i>=0?DB.crowd[i].paid:[])||[]};
-  if(i>=0)DB.crowd[i]=o;else DB.crowd.push(o);save();closeSheet();renderAll();nav('placements');setPlace('immo');toast('Projet enregistré');}
-function delCrowd(i){DB.crowd.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
-function togglePaid(i,mk){const c=DB.crowd[i];c.paid=c.paid||[];const x=c.paid.indexOf(mk);if(x>=0)c.paid.splice(x,1);else c.paid.push(mk);save();renderPlacements();}
+  const old=i>=0?DB.crowd[i]:null;
+  const o={id:old&&old.id?old.id:'c'+Date.now().toString(36),name,plat:$('#c_plat').value.trim(),amt:r2(amt),rate:Math.round(rate*1e4)/1e6,sub:val('c_sub')||ymd(today()),dur:dur||12,day:day||8,st:$('#c_st').value,
+    wallet:$('#c_wallet')?$('#c_wallet').value:(old&&old.wallet)||'',paid:(old?old.paid:[])||[]};
+  if(i>=0)DB.crowd[i]=o;else DB.crowd.push(o);
+  const w=walletFor(o);let warn='';
+  if(!w)crowdUnlinkAll(o); // plus de portefeuille lié : les opérations automatiques sont retirées
+  else{
+    if($('#c_debit')&&$('#c_debit').checked){const before=savingBalance(w)+(crowdLink(o,'sub')?+crowdLink(o,'sub').m:0);
+      crowdSetLink(o,'sub',{d:o.sub,p:w.name,t:'Retrait',m:o.amt,n:'Investissement projet « '+name+' »'});
+      if(before<o.amt)warn=' · attention : solde du portefeuille insuffisant ('+eur(before)+')';}
+    else crowdUnlink(o,'sub');
+    // Intérêts déjà crédités par l'appli : ils suivent le portefeuille, le montant et le taux.
+    // On n'en crée JAMAIS rétroactivement (le solde saisi du portefeuille les contient déjà) : seuls les prochains pointages créditent.
+    const changed=old&&(old.amt!==o.amt||old.rate!==o.rate);
+    (o.paid||[]).forEach(mk=>{const m=crowdLink(o,mk),p=crowdSchedule(o).find(q=>q.mk===mk);if(!m)return;
+      if(p)crowdSetLink(o,mk,{d:ymd(p.d),p:w.name,t:'Intérêts',m:changed?couponNet(o):m.m,n:'Intérêts projet « '+name+' »'});else crowdUnlink(o,mk);});
+    const cap=crowdLink(o,'cap');if(cap){cap.p=w.name;cap.m=o.amt;}
+  }
+  if(o.st!=='Remboursé')crowdUnlink(o,'cap');else if(!old||old.st!=='Remboursé')crowdCap(o); // capital recrédité seulement au passage à « Remboursé »
+  save();closeSheet();renderAll();nav('placements');setPlace('immo');toast('Projet enregistré'+warn,!!warn);}
+function delCrowd(i){const c=DB.crowd[i],n=DB.movements.filter(m=>m.link&&c.id&&m.link.startsWith('crowd:'+c.id+':')).length;
+  if(n&&!confirm('Supprimer « '+c.name+' » et les '+n+' opération'+(n>1?'s':'')+' créée'+(n>1?'s':'')+' sur le portefeuille (paiement, intérêts, capital) ?'))return;
+  crowdUnlinkAll(c);DB.crowd.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
+function togglePaid(i,mk){const c=DB.crowd[i];c.paid=c.paid||[];const x=c.paid.indexOf(mk);
+  if(x>=0){c.paid.splice(x,1);crowdUnlink(c,mk);}
+  else{c.paid.push(mk);const w=walletFor(c),p=crowdSchedule(c).find(q=>q.mk===mk);
+    if(w&&p)crowdSetLink(c,mk,{d:ymd(p.d),p:w.name,t:'Intérêts',m:couponNet(c),n:'Intérêts projet « '+c.name+' »'});}
+  save();renderAll();}
 
 function editExpense(i){const e=i>=0?DB.expenses[i]:{d:ymd(today()),label:'',amt:'',cat:'Courses'};
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouvelle'} dépense</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
@@ -1638,7 +1787,7 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
   openSheet(`<div class="spread"><h2>Réglages</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="field"><label>Valeur du patrimoine au 1ᵉʳ janvier ${y} (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_snap" value="${fin(s.snapshots[y]??'')}"><button class="btn sm" style="width:100%;margin-top:8px" onclick="useCurrentAsRef()">Utiliser la valeur actuelle</button></div>
    <div class="field"><label>Thème</label><select id="set_theme"><option value="dark" ${s.theme==='dark'?'selected':''}>Sombre</option><option value="light" ${s.theme==='light'?'selected':''}>Clair</option></select></div>
-   <div class="field"><button class="btn" style="width:100%" onclick="enableNotif()">${s.notif?'🔔 Rappels activés':'🔕 Activer les rappels'}</button><div class="hint">Alerte à l'ouverture : budget dépassé, versement Bricks à pointer, plafond d'épargne proche, objectif en retard, seuil DAC7.</div></div>
+   <div class="field"><button class="btn" style="width:100%" onclick="enableNotif()">${s.notif?'🔔 Rappels activés':'🔕 Activer les rappels'}</button><div class="hint">Ce qui déclenche une alerte ${hq('notif')}</div></div>
    <div class="field"><button class="btn" style="width:100%" onclick="closeSheet();openGuide()">📖 Guide : synchronisation Google Drive</button></div>
 
    <div class="field" style="border-top:1px solid var(--line);padding-top:14px"><label>☁️ Synchronisation Google Drive</label>
@@ -1654,14 +1803,14 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
        <div class="field"><label>Objectif net de revente (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_obj" value="${fin(s.objNet*100)}"></div></div>
      <div class="field"><label>Plus-values crypto / CTO</label><select id="set_crypto"><option value="pfu" ${s.cryptoRegime!=='bareme'?'selected':''}>PFU (flat tax)</option><option value="bareme" ${s.cryptoRegime==='bareme'?'selected':''}>Barème (TMI + prélèvements sociaux)</option></select></div>
      <div class="field"><label>Intérêts Bricks / crowdfunding</label><select id="set_crowdtax"><option value="pfu" ${(s.crowdTax||'pfu')==='pfu'?'selected':''}>PFU (flat tax)</option><option value="bareme" ${s.crowdTax==='bareme'?'selected':''}>Barème (TMI + prélèvements sociaux)</option></select></div>
-     <div class="field"><label>Achat-revente</label><select id="set_resale"><option value="occasionnel" ${s.resaleRegime!=='microbic'?'selected':''}>Ventes occasionnelles d'objets personnels (non imposables)</option><option value="microbic" ${s.resaleRegime==='microbic'?'selected':''}>Activité d'achat-revente (micro-BIC)</option></select>
-       <div class="hint">Acheter pour revendre avec profit est une activité commerciale (micro-BIC : imposition sur le chiffre d'affaires après abattement). Revendre ses propres affaires d'occasion n'est pas imposable, sauf objet vendu plus de 5 000 € et bijoux / objets d'art.</div></div>
+     <div class="field"><label>Achat-revente ${hq('resaleRegime')}</label><select id="set_resale"><option value="occasionnel" ${s.resaleRegime!=='microbic'?'selected':''}>Ventes occasionnelles d'objets personnels (non imposables)</option><option value="microbic" ${s.resaleRegime==='microbic'?'selected':''}>Activité d'achat-revente (micro-BIC)</option></select>
+       </div>
      <div class="hint">Avec ces choix : PFU ${fin(r2(taxPFU()*100))} % · barème ${fin(r2(taxBareme()*100))} % · prélèvements sociaux ${fin(r2(taxPS()*100))} % (${fin(r2(taxPSr()*100))} % pour l'assurance-vie et l'épargne logement).</div>
      <div class="row" style="gap:8px;margin-top:8px"><button class="btn sm" style="flex:1" onclick="closeSheet();openParams()">📐 Paramètres réglementaires</button><button class="btn sm" style="flex:1" onclick="closeSheet();openRules()">🏷️ Règles de catégories</button></div>
    </div>
    <details class="field" style="border-top:1px solid var(--line);padding-top:12px"><summary style="cursor:pointer;color:var(--ink2);font-size:13px">Avancé : sources des cours et indices</summary>
-     <div class="field"><label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:13.5px"><input type="checkbox" id="set_live" ${s.liveCrypto!==false?'checked':''}> Cours crypto en direct (Kraken)</label>
-       <div class="hint">Seuls les noms des paires (ex. BTC/EUR) sont envoyés à Kraken : aucun montant, aucune donnée personnelle. Connexion coupée dès que l'appli passe en arrière-plan.</div></div>
+     <div class="field"><label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:13.5px"><input type="checkbox" id="set_live" ${s.liveCrypto!==false?'checked':''}> Cours crypto en direct (Kraken) ${hq('live')}</label>
+       </div>
      <div class="field"><label>Clé API Twelve Data (secours pour les actions US)</label><input id="set_key" value="${esc(s.stockKey||'')}" placeholder="facultatif"></div>
      <div class="two"><div class="field"><label>Symbole MSCI World</label><input id="set_bmsci" value="${esc((s.benchSym||{}).MSCI||'URTH')}"></div><div class="field"><label>Symbole CAC 40</label><input id="set_bcac" value="${esc((s.benchSym||{}).CAC||'CAC')}"></div></div>
    </details>
@@ -1678,8 +1827,8 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
 // ---- Paramètres réglementaires : consultation de l'historique, ajout d'une valeur datée (jamais d'écrasement)
 const pFmt=(p)=>p.unit==='%'?fin(r2(p.value*10000)/100)+' %':p.unit==='€'?eur(p.value):fin(p.value);
 function openParams(){const keys=Fin.paramKeys(),t=ymd(today());
-  openSheet(`<div class="spread"><h2>Paramètres réglementaires</h2><button class="btn sm" onclick="closeSheet();openSettings()">Retour</button></div>
-   <div class="hint" style="margin-top:4px">Taux, plafonds et seuils utilisés par les calculs, avec leur date d'entrée en vigueur. Quand une règle change, ajoute la nouvelle valeur à sa date : l'ancienne reste utilisée pour les périodes passées.</div>
+  openSheet(`<div class="spread"><h2>Paramètres réglementaires ${hq('params')}</h2><button class="btn sm" onclick="closeSheet();openSettings()">Retour</button></div>
+   
    ${keys.map(k=>{const h=Fin.paramHistory(k,DB.params),cur=h.find(p=>p.from<=t)||h[h.length-1];
      return `<div class="card pad" style="margin-top:10px"><div class="spread"><div><div class="t-name">${esc(cur.label)}</div><div class="t-sub">${esc(cur.src||'')}</div></div><div style="text-align:right"><b>${pFmt(cur)}</b><div class="t-sub">depuis le ${pd(cur.from).toLocaleDateString('fr-FR')}</div></div></div>
        <details style="margin-top:6px"><summary class="sub" style="cursor:pointer">Historique (${h.length}) · ajouter une valeur</summary>
@@ -1786,11 +1935,11 @@ function priceDetail(){
   const r=DB.settings.lastPriceReport;
   if(!r){openSheet(`<div class="spread"><h2>Détail des cours</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>${liveReportHtml()}<div class="note">Appuie sur ↻ pour actualiser les autres cours.</div>`);return;}
   const rows=r.rep.map(x=>`<div class="spread" style="padding:9px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px">${x[1]===1?'✅':x[1]===2?'✋':'⚠️'} ${x[0]}</span><span style="font-size:11.5px;color:var(--ink3);text-align:right;max-width:55%">${x[2]}</span></div>`).join('');
-  openSheet(`<div class="spread"><h2>Détail des cours</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+  openSheet(`<div class="spread"><h2>Détail des cours ${hq('prices')}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    ${liveReportHtml()}
    <div class="note">Dernière actualisation : ${new Date(r.t).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}.</div>
    ${rows}
-   <div class="hint" style="margin-top:12px">✅ mis à jour · ✋ cours manuel · ⚠️ échec. Si un ETF Amundi échoue : ouvre-le ▸ Modifier, règle <b>Source = Yahoo</b> et vérifie le <b>symbole Yahoo</b> (ex. <code>CW8.PA</code>, <code>PE500.PA</code>, <code>PAEEM.PA</code>). Les cours Euronext ne sont pas couverts par le plan gratuit Twelve Data — Yahoo oui.</div>`);
+   `);
 }
 
 // ---- Cours crypto en direct : flux public Kraken (WebSocket, sans clé ni compte) ----
@@ -1930,10 +2079,10 @@ document.addEventListener('visibilitychange',()=>{if(!lk().enabled)return;
   else if(lockHiddenAt&&!lockIsOn()&&Date.now()-lockHiddenAt>=(lk().delay||0)*1000)lockNow();});
 // Réglages du verrouillage
 function lockSettingsHtml(){const L=lk();
-  return `<div class="field" style="border-top:1px solid var(--line);padding-top:14px"><label>🔒 Verrouillage</label>
+  return `<div class="field" style="border-top:1px solid var(--line);padding-top:14px"><label>🔒 Verrouillage ${hq('lock')}</label>
     ${L.enabled?`<div class="row" style="gap:8px;flex-wrap:wrap"><select id="lk_delay" onchange="DB.settings.lock.delay=+this.value;save();toast('Délai enregistré')" style="flex:1;min-width:140px">${[[0,'Immédiat'],[60,'Après 1 min'],[300,'Après 5 min'],[900,'Après 15 min']].map(([v,l])=>`<option value="${v}" ${(L.delay||0)===v?'selected':''}>${l}</option>`).join('')}</select>
       <button class="btn sm" onclick="lockBioToggle()">${L.bio?'Désactiver l\'empreinte':'👆 Activer l\'empreinte'}</button><button class="btn sm" onclick="lockSetup(true)">Changer le code</button><button class="btn sm" style="color:var(--neg)" onclick="lockDisable()">Désactiver</button></div>
-      <div class="hint">Code demandé à l'ouverture et au retour dans l'appli. C'est un écran de protection : tes données ne sont pas chiffrées.</div>`
+      `
     :`<button class="btn" style="width:100%" onclick="lockSetup(false)">Activer le verrouillage par code</button><div class="hint">Code à 4 à 6 chiffres, et empreinte ou visage si ton téléphone le permet.</div>`}</div>`;}
 function lockSetup(change){openSheet(`<div class="spread"><h2>${change?'Changer le':'Choisir un'} code</h2><button class="btn sm" onclick="closeSheet();openSettings()">Retour</button></div>
    ${change?`<div class="field"><label>Code actuel</label><input type="password" inputmode="numeric" autocomplete="off" id="lk_old" maxlength="6"></div>`:''}

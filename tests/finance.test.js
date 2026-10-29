@@ -122,6 +122,16 @@ console.log(out.every(Boolean) ? '\n✓ finance.js : tout est bon' : '\n✗ fina
   // ===== v19.1 : variation du jour des actions et ETF =====
   log('Variation du jour : 101,50 € pour une clôture à 100 € → +1,5 % ; 99 € → -1 %', F.dayChange(101.5, 100) === 1.5 && F.dayChange(99, 100) === -1 && F.dayChange(706.12, 712.94) === -0.96);
   log('Variation du jour : clôture absente, nulle, texte ou écart aberrant (≥ 100 %) → non affichée', [[100, null], [100, 0], [100, 'abc'], [null, 100], [250, 100], [-5, 100], [Infinity, 100]].every(([a, b]) => F.dayChange(a, b) === null));
+  // ===== v20 : épargne au jour le jour, taux datés, quinzaines =====
+  const R = [{ from: '2026-01-01', rate: 0.024 }];
+  log('Intérêts au jour le jour : 10 000 € à 2,4 % sur l\'année 2026 = 240,00 €', F.dailyInterest(10000, [], R, '2026-01-01', '2026-12-31') === 240);
+  log('Intérêts au jour le jour : 10 000 € à 2,4 % sur octobre (31 j) = 20,38 €', F.dailyInterest(10000, [], R, '2026-10-01', '2026-10-31') === 20.38);
+  log('Versement en cours de période : 5 000 € le 1er juillet → 5 000 × 2,4 % × 184/365 = 60,49 €', F.dailyInterest(0, [{ d: '2026-07-01', e: 5000 }], R, '2026-01-01', '2026-12-31') === 60.49);
+  log('Taux daté : 2,4 % puis 2 % au 1er juillet, jamais écrasé (10 000 € : 181 j à 2,4 % + 184 j à 2 % = 219,84 €)', F.dailyInterest(10000, [], [{ from: '2026-07-01', rate: 0.02 }, { from: '2026-01-01', rate: 0.024 }], '2026-01-01', '2026-12-31') === 219.84);
+  log('Taux daté : lecture à une date (avant, pendant, après un changement)', F.rateOn([{ from: '2026-01-01', rate: 0.024 }, { from: '2026-07-01', rate: 0.02 }], '2026-06-30') === 0.024 && F.rateOn([{ from: '2026-01-01', rate: 0.024 }, { from: '2026-07-01', rate: 0.02 }], '2026-07-01') === 0.02 && F.rateOn([], '2026-01-01') === 0);
+  log('Solde négatif ou période vide : aucun intérêt', F.dailyInterest(-500, [], R, '2026-01-01', '2026-12-31') === 0 && F.dailyInterest(1000, [], R, '2026-02-01', '2026-01-01') === 0);
+  log('Quinzaines : versement le 10/03 → intérêts dès le 16/03 ; le 20/03 → dès le 01/04 ; le 31/12 → dès le 01/01', F.quinzStart('2026-03-10') === '2026-03-16' && F.quinzStart('2026-03-20') === '2026-04-01' && F.quinzStart('2026-12-31') === '2027-01-01' && F.quinzStart('2026-03-15') === '2026-03-16');
+  log('Quinzaines : retrait le 20/03 → plus d\'intérêts depuis le 16/03 ; le 10/03 → depuis le 01/03 ; le 16/03 → depuis le 16/03', F.quinzStop('2026-03-20') === '2026-03-16' && F.quinzStop('2026-03-10') === '2026-03-01' && F.quinzStop('2026-03-16') === '2026-03-16');
   console.log(out.every(Boolean) ? '✓ hachage OK' : '✗ erreurs');
   process.exitCode = out.every(Boolean) ? 0 : 1;
 })();

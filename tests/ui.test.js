@@ -18,7 +18,7 @@ const sheetOpen = (page) => page.evaluate(() => document.querySelector('#ov').cl
   // ===== 1. Livret A : supprimer toutes ses opérations, au doigt =====
   await click('.nav a[data-v="placements"]');
   await page.evaluate(() => setPlace('epargne'));
-  log('Données d\'exemple : Livret A à 14 520 € (inchangé par la migration)', (await cellOf('Livret A'))?.[2] === '14 520 €', await cellOf('Livret A'));
+  log('Données d\'exemple : Livret A à 14 520 € (inchangé par la migration)', (await cellOf('Livret A'))?.[1] === '14 520 €', await cellOf('Livret A'));
   for (let k = 0; k < 10; k++) {
     await page.evaluate(() => setPlace('epargne'));
     await page.locator('#place-body tr', { hasText: 'Livret A' }).locator('.t-name').first().click(); await page.waitForTimeout(150);
@@ -29,14 +29,14 @@ const sheetOpen = (page) => page.evaluate(() => document.querySelector('#ov').cl
   }
   await page.evaluate(() => setPlace('epargne'));
   const la = await cellOf('Livret A');
-  log('Livret A sans aucune opération : solde 0 €, versé 0 €, gains 0 €', la && la[1] === '0 €' && la[2] === '0 €' && /^\+?0 €$/.test(la[5]), la);
-  log('Livret A sans opération : intérêts 0 €', la && /^0,00 €$/.test(la[4]), la && la[4]);
+  log('Livret A sans aucune opération : solde 0 €, aucun intérêt perçu', la && la[1] === '0 €' && la[4] === '—', la);
+  log('Livret A sans opération : intérêts 0 €', la && /^0,00 €$/.test(la[3]), la && la[3]);
 
   // ===== 2. Saisir un solde dans le formulaire du produit → opération « Ajustement » =====
   await page.locator('#place-body tr', { hasText: 'Livret A' }).locator('.del').first().click(); await page.waitForTimeout(150);
   await typeIn(page, '#s_cap', '1 000,50'); await page.locator('#sheet button', { hasText: 'Enregistrer' }).click(); await page.waitForTimeout(150);
   await page.evaluate(() => setPlace('epargne'));
-  log('Solde saisi « 1 000,50 » → Livret A à 1 001 €', (await cellOf('Livret A'))?.[2] === '1 001 €', await cellOf('Livret A'));
+  log('Solde saisi « 1 000,50 » → Livret A à 1 001 €', (await cellOf('Livret A'))?.[1] === '1 001 €', await cellOf('Livret A'));
   const adj = await page.evaluate(() => DB.movements.filter(m => m.p === 'Livret A').map(m => [m.t, m.m]));
   log('… enregistré comme un dépôt d\'ouverture de 1 000,50 € (versé, pas des gains)', JSON.stringify(adj) === '[["Dépôt",1000.5]]' && (await cellOf('Livret A'))[1] === '1 001 €', adj);
   // Correction ultérieure du solde → « Ajustement »
@@ -44,7 +44,7 @@ const sheetOpen = (page) => page.evaluate(() => document.querySelector('#ov').cl
   await typeIn(page, '#s_cap', '1 010,50'); await page.locator('#sheet button', { hasText: 'Enregistrer' }).click(); await page.waitForTimeout(150);
   await page.evaluate(() => setPlace('epargne'));
   const adj2 = await page.evaluate(() => DB.movements.filter(m => m.p === 'Livret A').map(m => [m.t, m.m]));
-  log('Correction du solde à 1 010,50 € → « Ajustement » de +10 €', JSON.stringify(adj2) === '[["Dépôt",1000.5],["Ajustement",10]]' && (await cellOf('Livret A'))[2] === '1 011 €', adj2);
+  log('Correction du solde à 1 010,50 € → « Ajustement » de +10 €', JSON.stringify(adj2) === '[["Dépôt",1000.5],["Ajustement",10]]' && (await cellOf('Livret A'))[1] === '1 011 €', adj2);
   await page.locator('#place-body tr', { hasText: 'Livret A' }).locator('.del').first().click(); await page.waitForTimeout(150);
   await typeIn(page, '#s_cap', '1 000,50'); await page.locator('#sheet button', { hasText: 'Enregistrer' }).click(); await page.waitForTimeout(150);
 
@@ -52,7 +52,7 @@ const sheetOpen = (page) => page.evaluate(() => document.querySelector('#ov').cl
   await page.locator('#place-body tr', { hasText: 'Livret A' }).locator('.del').first().click(); await page.waitForTimeout(150);
   await page.fill('#s_name', 'Livret A Boursorama'); await page.locator('#sheet button', { hasText: 'Enregistrer' }).click(); await page.waitForTimeout(150);
   await page.evaluate(() => setPlace('epargne'));
-  log('Renommage : « Livret A Boursorama » garde ses 1 001 €', (await cellOf('Livret A Boursorama'))?.[2] === '1 001 €', await cellOf('Livret A Boursorama'));
+  log('Renommage : « Livret A Boursorama » garde ses 1 001 €', (await cellOf('Livret A Boursorama'))?.[1] === '1 001 €', await cellOf('Livret A Boursorama'));
 
   // ===== 4. Transfert Livret → compte courant via le bouton Ajouter =====
   const ccBefore = await page.evaluate(() => compteCourant().cap);

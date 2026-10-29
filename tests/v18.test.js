@@ -137,7 +137,7 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
     localStorage.setItem('investco_v1', JSON.stringify(old)); load();
     const p = DB.properties[0]; return { schema: DB.meta.schema, pea: DB.pea, regime: p.regime, notary: p.notary, c: propertyCalc(p) };
   });
-  log('Migration v17.2 : fiche PEA créée, bien existant « Location nue » avec calculs inchangés', mig.schema === 6 && mig.pea && Array.isArray(mig.pea.versements) && mig.regime === 'nu' && mig.notary === 0 && Math.abs(mig.c.grossYield - 0.054) < 1e-9 && Math.abs(mig.c.netYield - 0.045) < 1e-9, mig);
+  log('Migration v17.2 : fiche PEA créée, bien existant « Location nue » avec calculs inchangés', mig.schema >= 6 && mig.pea && Array.isArray(mig.pea.versements) && mig.regime === 'nu' && mig.notary === 0 && Math.abs(mig.c.grossYield - 0.054) < 1e-9 && Math.abs(mig.c.netYield - 0.045) < 1e-9, mig);
 
   // ===== 6. Tour : nouvelles fenêtres, aucun NaN =====
   const fails = [];
