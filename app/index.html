@@ -126,6 +126,30 @@ input:focus,select:focus{outline:none;border-color:var(--orange);box-shadow:0 0 
 #hlp .hlp-card{background:var(--card);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:20px 20px calc(22px + env(safe-area-inset-bottom,0));max-height:80vh;overflow-y:auto;animation:slideUp .22s ease}
 #hlp .hlp-b{font-size:13.5px;line-height:1.65;color:var(--ink2);margin-top:8px}#hlp .hlp-b b{color:var(--ink)}#hlp .hlp-b ul{margin:6px 0 6px 18px}#hlp .hlp-b p{margin:6px 0}
 @media(min-width:640px){#hlp{align-items:center}#hlp .hlp-card{border-radius:18px}}
+.hero2{background:var(--hero);border-radius:18px;padding:18px;margin-top:16px}.hero2 .k-l{color:#9fb0c2}
+.hero2 .big{font-family:'Space Grotesk';font-weight:700;font-size:34px;color:#fff;letter-spacing:-.02em;margin-top:2px}
+.hero2 .hl1{font-size:13.5px;color:#c9d4df;margin-top:6px}.hero2 .hl2{font-size:12.5px;color:#8a9bb0;margin-top:2px}.hero2 .hl3{font-size:11.5px;color:#6f8297;margin-top:8px}
+.hero2 .pos{color:var(--pos)}.hero2 .neg{color:var(--neg)}
+.kpis.k3 .k-v{font-size:17px;color:var(--ink)}.kpis.k3 .k-v.neg{color:var(--neg)}.kpis.k3 .kpi.hero .k-v{color:#fff}.kpis.k3 .u{font-size:11px;font-weight:500}.kpis.k3 .k-s{font-size:10.5px;line-height:1.35}
+.kpis.k3 .v2{font-family:'Space Grotesk';font-weight:650;font-size:15px;margin-top:3px}
+.al{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}.al:first-of-type{margin-top:6px}
+button.chip{cursor:pointer;font-family:inherit}
+.fv{font-family:'Space Grotesk';font-weight:650;font-size:18px;color:var(--ink);white-space:nowrap;text-align:right}
+.tot{font-family:'Space Grotesk';font-weight:700;font-size:24px;color:var(--ink)}
+.grp{display:flex;justify-content:space-between;align-items:center;margin:16px 2px 8px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.grp b{font-family:'Space Grotesk';letter-spacing:0;text-transform:none;color:var(--ink);font-size:14px}.grp .hq{text-transform:none}
+.gsub{font-size:11.5px;color:var(--ink3);margin:-4px 2px 8px;line-height:1.5}.lnk{color:var(--orange);cursor:pointer}
+.bkline{font-size:12.5px;color:var(--warn);margin-top:10px}
+.fiche{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:8px;cursor:pointer}
+.chip{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--card2);color:var(--ink2);border:1px solid var(--line2);white-space:nowrap}
+.chip.ok{background:rgba(61,209,160,.12);color:var(--pos);border-color:rgba(61,209,160,.35)}.chip.warn{background:rgba(247,147,26,.13);color:var(--orange);border-color:rgba(247,147,26,.4)}.chip.neg{background:rgba(232,108,100,.12);color:var(--neg);border-color:rgba(232,108,100,.35)}
+.kpis.k3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.kpis.k3 .kpi{padding:11px 11px}.kpis.k3 .k-l{font-size:11px}
+.g2k{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:12px}.g2k b{font-family:'Space Grotesk';font-size:15px}
+.lst .li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13px;cursor:pointer}
+.lst .li .s{font-size:11.5px;color:var(--ink3);margin-top:1px}.lst .li.hl{background:var(--orange-soft);margin:0 -8px;padding:10px 8px;border-radius:8px}
+.switch{position:relative;display:inline-block;width:42px;height:24px;flex:none}.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;border-radius:12px;background:var(--line2);transition:.2s;cursor:pointer}.switch span:after{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.switch input:checked+span{background:var(--pos)}.switch input:checked+span:after{transform:translateX(18px)}
 .chk{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:transparent;font-weight:800;transition:.15s;flex:none}
 .chk.on{background:var(--pos);border-color:var(--pos);color:#fff}
 .chk.miss{border-color:var(--neg);color:var(--neg)}
@@ -184,10 +208,11 @@ input.bad{border-color:var(--neg)!important;box-shadow:0 0 0 2px var(--negbg)}
   <div class="view" id="v-placements"></div>
   <div class="view" id="v-budget"></div>
   <div class="view" id="v-revente"></div>
+  <div class="view" id="v-analyse"></div>
 </div>
 
 <div class="nav">
-  <a class="on" data-v="dash" onclick="nav('dash')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Bord</a>
+  <a class="on" data-v="dash" onclick="nav('dash')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Accueil</a>
   <a data-v="placements" onclick="nav('placements')"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Placements</a>
   <a data-v="budget" onclick="nav('budget')"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>Budget</a>
   <a data-v="revente" onclick="nav('revente')"><svg viewBox="0 0 24 24"><path d="M3 6h18l-2 13H5L3 6z"/><path d="M8 6a4 4 0 0 1 8 0"/></svg>Revente</a>
@@ -329,7 +354,7 @@ function findSaving(name){return DB.savings.find(s=>s.name===name);}
 // Effet d'une opération sur le solde d'un compte d'épargne / courant (+ entrée, − sortie)
 // « Intérêts » et « Ajustement » modifient le solde sans compter comme un versement.
 function movEffect(m,name){const v=+m.m||0;
-  if(m.p===name){if(m.t==='Dépôt'||m.t==='Intérêts'||m.t==='Ajustement')return v;if(m.t==='Retrait'||m.t==='Transfert')return -v;}
+  if(m.p===name){if(m.t==='Dépôt'||m.t==='Reprise'||m.t==='Intérêts'||m.t==='Ajustement')return v;if(m.t==='Retrait'||m.t==='Transfert')return -v;}
   if(m.t==='Transfert'&&m.p2===name)return v;return 0;}
 // Le solde n'est jamais saisi en dur : il est recalculé depuis les opérations (et les dépenses pour le compte courant).
 // Supprimer toutes les opérations d'un livret ramène donc son solde à 0.
@@ -409,7 +434,7 @@ function savingInterestBetween(s,from,to){const t=ymd(today()),ev=savingEvents(s
 function savingYearInterest(s){const y=today().getFullYear();return savingInterestBetween(s,y+'-01-01',y+'-12-31');}
 function savingCalc(s){
   const versed=DB.movements.reduce((a,m)=>{
-    if(m.t==='Dépôt'&&m.p===s.name)return a+(m.m||0);if(m.t==='Retrait'&&m.p===s.name)return a-(m.m||0);
+    if((m.t==='Dépôt'||m.t==='Reprise')&&m.p===s.name)return a+(m.m||0);if(m.t==='Retrait'&&m.p===s.name)return a-(m.m||0);
     if(m.t==='Transfert'&&m.p===s.name)return a-(m.m||0);if(m.t==='Transfert'&&m.p2===s.name)return a+(m.m||0);return a;},0);
   const rate=rateFor(s);const auto=QUINZ.has(s.type)&&(s.rate==null||s.rate==='')&&!(s.rates&&s.rates.length);
   const brut=auto?quinzInterest(s):((s.type==='Compte courant'||QUINZ.has(s.type))?yearAvgBalance(s)*rate:savingYearInterest(s));let net=brut; // livret à taux forcé : quinzaines conservées
@@ -430,7 +455,7 @@ function savingCalc(s){
 const APP_V=self.APP_VERSION||'?';
 // Schéma des données : à incrémenter quand une version change la structure stockée,
 // en ajoutant la migration correspondante dans MIGRATIONS (ne jamais modifier une migration existante).
-const SCHEMA=7;
+const SCHEMA=8;
 const MIGRATIONS={
   // v16 → v16.1 : en v16, la case du versement n°k portait le libellé du mois k-1
   // (mois de souscription compté à tort). On décale chaque case pointée vers le bon mois.
@@ -469,6 +494,13 @@ const MIGRATIONS={
   // taux manuels des produits d'épargne conservés en historique daté (jamais écrasé).
   7(){(DB.crowd||[]).forEach((c,k)=>{if(!c.id)c.id='c'+Date.now().toString(36)+k;});
     (DB.savings||[]).forEach(s=>{if(!Array.isArray(s.rates))s.rates=(s.rate!=null&&s.rate!=='')?[{from:s.open||'2000-01-01',rate:+s.rate}]:[];});},
+  // v20 → v21 : les soldes saisis à l'ouverture d'un compte sont de l'argent déjà détenu (« Reprise d'existant »),
+  // ni une épargne nouvelle ni un gain ; échéanciers Bricks enrichis (montants reçus, remboursements anticipés) ;
+  // la valeur au 1er janvier est désormais reconstituée automatiquement (l'ancienne valeur saisie n'est plus utilisée).
+  8(){(DB.movements||[]).forEach(m=>{if(m.t==='Dépôt'&&m.n==='Solde à l\'ouverture')m.t='Reprise';
+      else if(m.t==='Ajustement'&&m.n==='Reprise du solde v16'&&(+m.m||0)>0)m.t='Reprise';});
+    (DB.crowd||[]).forEach(c=>{c.reps=c.reps||[];c.recv=c.recv||[];c.hold=c.hold||[];});
+    const st=DB.settings||{};st.refManual=st.refManual||{};st.snapFin=st.snapFin||{};st.crowdAuto=st.crowdAuto||{on:false};DB.refPrices=DB.refPrices||[];},
 };
 function migrate(){DB.meta=DB.meta||{updatedAt:0};let v=DB.meta.schema||1;if(v>=SCHEMA)return;
   if(!isFresh)backupLocal('Avant migration des données (schéma '+v+' → '+SCHEMA+')');
@@ -487,22 +519,23 @@ function crowdTaxRate(){return DB.settings.crowdTax==='bareme'?taxBareme():taxPF
 // Un projet non remboursé (En cours, Retard, Défaut) reste dans le patrimoine
 const crowdActive=c=>c.st!=='Remboursé';
 // Échéancier : versement n°k au « jour de versement » du k-ième mois après la souscription (fin de mois gérée)
-function crowdSchedule(c){const out=[],s=pd(c.sub),day=+c.day||s.getDate();
-  for(let k=1;k<=(c.dur||0);k++){const last=new Date(s.getFullYear(),s.getMonth()+k+1,0).getDate();
-    const d=new Date(s.getFullYear(),s.getMonth()+k,Math.min(day,last));out.push({k,d,mk:ymKey(d)});}return out;}
+function crowdSchedule(c){return Fin.crowdDues(c).map(x=>({k:x.k,d:pd(x.d),ymd:x.d,mk:x.mk,cap:x.cap,gross:x.gross}));}
+// Montant net d'une échéance : montant réellement reçu s'il a été saisi, sinon brut − prélèvement à la source (PFU)
+function crowdRecv(c,mk){return (c.recv||[]).find(r=>r.mk===mk)||null;}
+function crowdNet(c,p){const o=crowdRecv(c,p.mk);return o?+o.m:r2(p.gross*(1-taxPFU()));}
 function crowdCalc(c,now=today()){
-  // Versement mensuel calculé depuis le taux annuel, arrondi au centime
-  const monthly=r2((c.amt||0)*(c.rate||0)/12);
-  const sch=crowdSchedule(c),ech=addMonths(c.sub,c.dur||0);
-  const due=sch.filter(p=>p.d<=now),paid=new Set(c.paid||[]);
-  const received=sch.filter(p=>paid.has(p.mk)).length;
+  const sch=crowdSchedule(c),t=ymd(now),ech=addMonths(c.sub,c.dur||0),paid=new Set(c.paid||[]);
+  const due=sch.filter(p=>p.d<=now),next=sch.find(p=>p.d>now)||null,cur=next||sch[sch.length-1];
+  const monthly=cur?cur.gross:0; // versement mensuel actuel, sur le capital restant
+  const recvd=sch.filter(p=>paid.has(p.mk));
   const missing=due.filter(p=>!paid.has(p.mk)).length;
-  const next=sch.find(p=>p.d>now)||null;
-  return {monthly,sch,due,ech,next,elapsed:due.length,received,receivedAmt:r2(received*monthly),missing,
-    remaining:sch.length-due.length,mature:now>=ech,capital:crowdActive(c)?(c.amt||0):0};}
-// Intérêts imposables d'une année : versements pointés + versements échus non pointés d'un projet « En cours »
-function crowdYearInterest(c,y){const cc=crowdCalc(c),paid=new Set(c.paid||[]);
-  return r2(cc.due.filter(p=>p.d.getFullYear()===y&&(paid.has(p.mk)||c.st==='En cours')).length*cc.monthly);}
+  const capNow=crowdActive(c)?Fin.crowdCapitalAt(c,t):0;
+  return {monthly,sch,due,ech,next,elapsed:due.length,received:recvd.length,receivedAmt:r2(recvd.reduce((a,p)=>a+p.gross,0)),
+    receivedNet:r2(recvd.reduce((a,p)=>a+crowdNet(c,p),0)),missing,remaining:sch.length-due.length,
+    mature:now>=ech,capital:capNow,total:sch.length};}
+// Intérêts imposables d'une année : échéances reçues (montant réel ramené en brut) + échéances échues d'un projet « En cours »
+function crowdYearInterest(c,y){const paid=new Set(c.paid||[]),now=today();
+  return r2(crowdSchedule(c).filter(p=>p.d<=now&&p.d.getFullYear()===y&&(paid.has(p.mk)||c.st==='En cours')).reduce((a,p)=>{const o=crowdRecv(c,p.mk);return a+(o?+o.m/(1-taxPFU()):p.gross);},0));}
 
 function compteCourant(){return DB.savings.find(s=>s.type==='Compte courant');}
 function monthExpenses(ymk){return DB.expenses.filter(e=>ymKey(e.d)===ymk);}
@@ -532,24 +565,50 @@ function propertyCalc(p){const t=ymd(today());
 function realEstate(){const P=(DB.properties||[]).map(propertyCalc);
   return {value:r2(P.reduce((a,x)=>a+x.value,0)),cost:r2((DB.properties||[]).reduce((a,p)=>a+Fin.propertyCost(p),0)),
     debt:r2((DB.loans||[]).reduce((a,l)=>a+loanCalc(l).crd,0)),cashflow:r2(P.reduce((a,x)=>a+x.cashflow,0)),
-    principalYear:r2((DB.loans||[]).reduce((a,l)=>a+loanCalc(l).principalYear,0))};}
+    principalYear:r2((DB.loans||[]).reduce((a,l)=>a+loanCalc(l).principalYear,0)),
+    // capital déjà remboursé depuis le 1er janvier (échéances passées seulement)
+    principalYTD:r2((DB.loans||[]).reduce((a,l)=>{const t=ymd(today()),y=t.slice(0,4);return a+Fin.amortization(l).filter(r=>r.date.slice(0,4)===y&&r.date<=t).reduce((s,r)=>s+r.principal,0);},0))};}
+// ---- Valeur du patrimoine au 1er janvier, reconstituée à partir des données (et non saisie à la main) :
+// soldes d'épargne au 31/12 (opérations datées), titres détenus × cours de clôture de fin d'année (sinon prix de revient),
+// projets en cours, biens détenus à leur estimation, moins le capital restant dû des crédits à cette date.
+// Une « Reprise d'existant » compte comme détenue au 1er janvier. Une valeur saisie dans Réglages ▸ Avancé l'emporte.
+function refPrice(a,y){const r=(DB.refPrices||[]).find(x=>x.y===y&&x.name===a.name);return r?+r.px:null;}
+function qtyAt(a,R){let q=0;DB.movements.forEach(m=>{if(m.p!==a.name||!(String(m.d)<R))return;const qq=m.q!=null?+m.q:((m.m!=null&&m.pu)?m.m/m.pu:0);if(m.t==='Achat')q+=qq;else if(m.t==='Vente')q=Math.max(0,q-qq);});return q;}
+function costAt(a,R){const mv=DB.movements.filter(m=>m.p===a.name&&String(m.d)<R).slice().sort((x,y)=>x.d<y.d?-1:1);let cost=0,qty=0;
+  mv.forEach(m=>{const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m!=null?m.m:0),q=m.q!=null?m.q:((m.m!=null&&m.pu)?m.m/m.pu:0);
+    if(m.t==='Achat'){cost+=g+(m.f||0);qty+=q;}else if(m.t==='Vente'){const u=qty?cost/qty:0,qs=Math.min(q,qty);cost-=u*qs;qty-=qs;}});return Math.max(0,cost);}
+function yearRef(y){const R=y+'-01-01',eve=ymd(new Date(y-1,11,31)),man=(DB.settings.refManual||{})[y];
+  let sav=0,ast=0,crowd=0,re=0,debt=0,approx=[];
+  DB.savings.forEach(s=>{DB.movements.forEach(m=>{const e=movEffect(m,s.name);if(!e)return;if(String(m.d)<R||m.t==='Reprise')sav+=e;});
+    if(s.type==='Compte courant')sav-=(DB.expenses||[]).filter(e=>String(e.d)<R).reduce((a,e)=>a+(+e.amt||0),0);});
+  DB.assets.forEach(a=>{const q=qtyAt(a,R);if(q<=1e-12)return;const px=refPrice(a,y);if(px!=null)ast+=q*px;else{ast+=costAt(a,R);approx.push(a.name);}});
+  const P=DB.pea||{};if((P.versements||[]).length){const ops=peaOps().filter(m=>String(m.d)<R),st=Fin.peaStatus({open:P.open,bank:P.bank,versements:P.versements.filter(v=>String(v.d)<R)},ops,param('ceil.PEA')||0,eve);if(st.real&&st.cash>0)ast+=st.cash;}
+  DB.crowd.forEach(c=>{if(!(String(c.sub)<R))return;const cap=crowdLink(c,'cap');if(c.st==='Remboursé'&&(cap?String(cap.d)<R:ymd(addMonths(c.sub,c.dur||0))<R))return;crowd+=Fin.crowdCapitalAt(c,eve);});
+  (DB.properties||[]).forEach(p=>{if(p.buyD&&!(p.buyD<R))return;re+=Fin.propertyValue(p,eve);});
+  (DB.loans||[]).forEach(l=>{if(!(String(l.start)<R))return;debt+=Fin.loanStatus(l,eve).crd;});
+  const auto=r2(sav+ast+crowd+re-debt);
+  return {date:R,auto,value:man!=null?+man:auto,manual:man!=null,approx};}
 function consolidate(){
   let bI=0,bV=0;DB.assets.forEach(a=>{const c=assetCalc(a);bI+=c.inv;bV+=c.value;});
-  let iI=0,iV=0;DB.crowd.filter(crowdActive).forEach(c=>{iI+=c.amt||0;iV+=c.amt||0;});
+  let iI=0,iV=0;DB.crowd.filter(crowdActive).forEach(c=>{const k=crowdCalc(c).capital;iI+=k;iV+=k;});
   let sI=0,sV=0,sN=0,dispo=0;DB.savings.forEach(s=>{const c=savingCalc(s);sI+=c.versed;sV+=(s.cap||0);sN+=c.net;if(c.cat!=='Assurance-vie')dispo+=(s.cap||0);});
   const RE=realEstate();const PEA=peaCalc(),peaCash=PEA.real&&PEA.cash>0?PEA.cash:0;
   bI+=peaCash;bV+=peaCash;
   const invested=bI+iI+sI+RE.cost,value=bV+iV+sV+RE.value,net=r2(value-RE.debt); // patrimoine net = actifs − capital restant dû
-  const immoMonthly=DB.crowd.filter(c=>c.st==='En cours').reduce((a,c)=>a+crowdCalc(c).monthly*(1-crowdTaxRate()),0);
+  const immoMonthly=DB.crowd.filter(c=>c.st==='En cours').reduce((a,c)=>{const k=crowdCalc(c);return a+(k.next?k.monthly:0)*(1-crowdTaxRate());},0);
   const y=today().getFullYear(),jan=new Date(y,0,1);let apports=0;
-  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.link||m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
+  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.link||m.t==='Reprise'||m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
   DB.crowd.forEach(c=>{if(new Date(c.sub)>=jan&&!crowdLink(c,'sub'))apports+=c.amt;}); // projet payé depuis le portefeuille : pas d'argent nouveau
-  apports+=RE.principalYear; // le capital de crédit remboursé est un effort d'épargne, pas un gain
-  // argent envoyé du compte courant vers une plateforme : il réapparaît dans l'actif acheté (déjà compté en apport)
-  DB.expenses.forEach(e=>{if(e.cat==='Investissement'&&pd(e.d)>=jan)apports-=(+e.amt||0);});
-  const snap=DB.settings.snapshots[y];const yearGain=snap!=null?net-snap-apports:null;
+  apports+=RE.principalYTD; // le capital de crédit déjà remboursé cette année est un effort d'épargne, pas un gain
+  // bien acheté cette année : l'apport personnel (coût − emprunt) est de l'argent investi, pas un gain
+  (DB.properties||[]).forEach(p=>{if(p.buyD&&pd(p.buyD)>=jan){const L=loansOf(p.id).filter(l=>pd(l.start)>=jan).reduce((a,l)=>a+(+l.capital||0),0);apports+=Math.max(0,Fin.propertyCost(p)-L);}});
+  // Dépenses du compte courant : l'argent dépensé sort du patrimoine (ce n'est pas une perte de placement),
+  // et un virement vers une plateforme réapparaît dans l'actif acheté (déjà compté en apport) : on retire donc toutes les dépenses.
+  // Épargne versée = revenus et versements extérieurs − dépenses.
+  DB.expenses.forEach(e=>{if(pd(e.d)>=jan)apports-=(+e.amt||0);});
+  const R=yearRef(y),snap=R.value;const yearGain=snap!=null?r2(net-snap-apports):null;
   const yearPerf=(snap!=null&&(snap+apports)>0)?yearGain/(snap+apports):null;
-  return {invested,value,net,debt:RE.debt,reValue:RE.value,reCashflow:RE.cashflow,pv:value-invested,pvp:invested?(value-invested)/invested:0,bI,bV,iI,iV,sI,sV,sN,dispo,immoMonthly,apports,snap,yearGain,yearPerf};
+  return {ref:R,invested,value,net,debt:RE.debt,reValue:RE.value,reCashflow:RE.cashflow,pv:value-invested,pvp:invested?(value-invested)/invested:0,bI,bV,iI,iV,sI,sV,sN,dispo,immoMonthly,apports,snap,yearGain,yearPerf};
 }
 function repartition(){const g=k=>DB.assets.filter(a=>a.type===k);const sum=(a,f)=>a.reduce((x,y)=>x+f(y),0);
   const A=g('Action'),E=g('ETF'),C=g('Crypto'),cf=DB.crowd.filter(crowdActive);
@@ -557,7 +616,7 @@ function repartition(){const g=k=>DB.assets.filter(a=>a.type===k);const sum=(a,f
   const rows=[['Actions',sum(A,a=>assetCalc(a).inv),sum(A,a=>assetCalc(a).value)],
     ['ETF',sum(E,a=>assetCalc(a).inv),sum(E,a=>assetCalc(a).value)],
     ['Crypto',sum(C,a=>assetCalc(a).inv),sum(C,a=>assetCalc(a).value)],
-    ['Crowdfunding immobilier',sum(cf,c=>c.amt||0),sum(cf,c=>c.amt||0)],
+    ['Crowdfunding immobilier',sum(cf,c=>crowdCalc(c).capital),sum(cf,c=>crowdCalc(c).capital)],
     ['Immobilier',sum(DB.properties||[],p=>Fin.propertyCost(p)),sum(DB.properties||[],p=>Fin.propertyValue(p,ymd(today())))],
     ['Épargne réglementée',sum(sav('Épargne réglementée'),s=>savingCalc(s).versed),sum(sav('Épargne réglementée'),s=>s.cap||0)],
     ['Assurance-vie',sum(sav('Assurance-vie'),s=>savingCalc(s).versed),sum(sav('Assurance-vie'),s=>s.cap||0)],
@@ -573,10 +632,7 @@ function countUp(el,to){if(!el)return;const dur=600,t0=performance.now();
   function step(t){const p=Math.min(1,(t-t0)/dur);const e=1-Math.pow(1-p,3);el.textContent=eur0(Math.round(to*e));if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);}
 function backupNow(){exportData();DB.settings.lastBackup=ymd(today());save();renderAll();toast('Sauvegarde téléchargée');}
 function backupHtml(){const d=daysSince(DB.settings.lastBackup);if(d<14)return '';
-  return `<div class="card pad" style="margin-top:12px;border:1px solid var(--warn);background:var(--warnbg)">
-    <div class="spread"><div><div style="font-weight:600;color:var(--warn)">🛡️ Sauvegarde tes données</div>
-    <div style="font-size:12.5px;color:var(--ink2);margin-top:3px">${DB.settings.lastBackup?'Dernière sauvegarde il y a '+d+' jours.':'Aucune sauvegarde encore.'} Tes données ne vivent que sur cet appareil.</div></div>
-    <button class="btn primary sm" onclick="backupNow()" style="flex:none">Sauvegarder</button></div></div>`;}
+  return `<div class="bkline">⚠ ${DB.settings.lastBackup?'Dernière sauvegarde il y a '+d+' jours':'Aucune sauvegarde encore'} · <span class="lnk" onclick="backupNow()">Sauvegarder</span></div>`;}
 // ---- Objectifs d'épargne : cible, échéance, comptes suivis (* = patrimoine net), effort mensuel
 function goalCurrent(g){const acc=g.accounts||['*'];if(acc.includes('*'))return consolidate().net;
   return acc.reduce((t,n)=>{const sv=DB.savings.find(x=>x.name===n);if(sv)return t+(+sv.cap||0);const as=DB.assets.find(x=>x.name===n);return t+(as?assetCalc(as).value:0);},0);}
@@ -609,13 +665,30 @@ function alertsList(){const A=[],t=ymd(today()),ymk=ymKey(today()),cats=catBreak
   DB.savings.forEach(s=>{const c=ceilingInfo(s);if(c&&c.level)A.push({lvl:c.level==='full'?'neg':'warn',txt:c.level==='full'?`${s.name} : plafond de versements atteint (${eur0(ceilFor(s))}). Les intérêts continuent de s'ajouter.`:`${s.name} : plafond bientôt atteint, encore ${eur0(c.room)} de versements possibles.`,go:"nav('placements');setPlace('epargne')"});});
   const pea=peaInfo();if(pea&&pea.level)A.push({lvl:pea.level==='full'?'neg':'warn',txt:`PEA : environ ${eur0(pea.versed)} versés sur ${eur0(pea.ceil)} autorisés.`,go:"nav('placements');setPlace('bourse')"});
   Object.keys(cb).forEach(k=>{if(cb[k]>0&&(cats[k]||0)>cb[k])A.push({lvl:'neg',txt:`Budget ${k} dépassé : ${eur0(cats[k])} sur ${eur0(cb[k])}.`,go:"nav('budget')"});});
-  DB.crowd.forEach(c=>{if(crowdActive(c)){const m=crowdCalc(c).missing;if(m>0)A.push({lvl:'warn',txt:`Bricks « ${c.name} » : ${m} versement${m>1?'s':''} à pointer.`,go:"nav('placements');setPlace('immo')"});}});
+  {let n=0;DB.crowd.forEach((c,i)=>{if(!crowdActive(c))return;const k=crowdCalc(c);
+     if(k.mature)A.push({lvl:'warn',txt:`Capital à récupérer : « ${c.name} » (${eur0(k.capital)}).`,go:`crowdDetail(${i})`,btn:'Voir'});
+     else if(c.st!=='En cours'&&k.missing>0)A.push({lvl:'warn',txt:`« ${c.name} » en ${c.st==='Défaut'?'défaut':'retard'} : ${k.missing} versement${k.missing>1?'s':''} à pointer.`,go:`crowdDetail(${i})`,btn:'Pointer'});
+     else if(c.st==='En cours')n+=k.missing;});
+   if(n>0)A.push({lvl:'warn',txt:`${n} versement${n>1?'s':''} Bricks à pointer.`,go:"nav('placements');setPlace('crowd')",act:'crowdPointAll()',btn:'Tout pointer'});}
   (DB.goals||[]).forEach(g=>{const P=Fin.goalProgress(g,goalCurrent(g),t);if(P.late)A.push({lvl:'neg',txt:`Objectif « ${g.name} » : échéance dépassée, il manque ${eur0(P.left)}.`,go:"nav('dash')"});});
   Fin.resaleYear(DB.resale,today().getFullYear(),{dac7Count:param('revente.dac7.ventes'),dac7Amount:param('revente.dac7.montant')}).dac7.forEach(d=>{if(d.reported||d.near)A.push({lvl:'warn',txt:`${d.plat} : ${d.count} ventes / ${eur0(d.amount)} cette année (seuil de déclaration DAC7 : ${param('revente.dac7.ventes')} ventes ou ${eur0(param('revente.dac7.montant'))}).`,go:"nav('revente')"});});
   return A;}
 function alertsHtml(){const A=alertsList();if(!A.length)return '';
   return `<div class="card pad" style="margin-top:12px"><div style="font-weight:650;margin-bottom:6px">🔔 À surveiller (${A.length})</div>${A.map(a=>`<div onclick="${a.go}" style="cursor:pointer;font-size:13px;padding:6px 0;border-top:1px solid var(--line);color:${a.lvl==='neg'?'var(--neg)':'var(--warn)'}">${esc(a.txt)}</div>`).join('')}</div>`;}
 
+// ---- Plus-values crypto (article 150 VH bis) : calcul sur l'ensemble du portefeuille crypto, cession par cession
+// Valeur globale du portefeuille à chaque vente : saisie sur la vente, sinon estimée (quantités détenues × prix de la
+// vente pour la crypto vendue, dernier cours connu pour les autres).
+function cryptoOps(){const C=DB.assets.filter(a=>a.type==='Crypto'&&a.env!=='PEA'),names=new Set(C.map(a=>a.name)),ops=[];
+  DB.movements.filter(m=>names.has(m.p)&&(m.t==='Achat'||m.t==='Vente')).forEach(m=>{const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(+m.m||0);
+    if(m.t==='Achat')ops.push({d:String(m.d).slice(0,10),t:'Achat',cost:r2(g+(+m.f||0))});
+    else ops.push({d:String(m.d).slice(0,10),t:'Vente',price:r2(g),fees:+m.f||0,vg:m.vg!=null?+m.vg:cryptoVgEstimate(m)});});
+  return ops;}
+function cryptoVgEstimate(m){const d=String(m.d).slice(0,10);let v=0;
+  DB.assets.filter(a=>a.type==='Crypto'&&a.env!=='PEA').forEach(a=>{let q=0;DB.movements.forEach(x=>{if(x.p!==a.name||x===m)return;const xd=String(x.d).slice(0,10);if(xd>d)return;const qq=x.q!=null?+x.q:((x.m!=null&&x.pu)?x.m/x.pu:0);if(x.t==='Achat')q+=qq;else if(x.t==='Vente'&&(xd<d))q=Math.max(0,q-qq);});
+    const px=a.name===m.p&&m.pu?+m.pu:(+a.price||0);v+=q*px;});
+  return r2(v);}
+function cryptoTaxYear(y){return Fin.cryptoTax(cryptoOps(),y,param('crypto.seuil.cessions')||0);}
 function fiscalData(){
   const y=today().getFullYear(),jan=new Date(y,0,1);
   let pelInt=0,pelName='',livretBancaireInt=0,celInt=0,hasExo=false;
@@ -630,8 +703,9 @@ function fiscalData(){
   const interestsTotal=pelInt+livretBancaireInt+celInt+bricks;
   let pvStock=0,pvCrypto=0;
   // Plus-values réalisées de l'année, calculées au PRU du moment de chaque vente
-  DB.assets.forEach(a=>{if(a.env==='PEA')return; // les ventes à l'intérieur du PEA ne sont pas imposées tant que le plan reste ouvert
-    assetCalc(a).realized.filter(r=>pd(r.d).getFullYear()===y).forEach(r=>{if(a.type==='Crypto')pvCrypto+=r.pv;else pvStock+=r.pv;});});
+  DB.assets.forEach(a=>{if(a.env==='PEA'||a.type==='Crypto')return; // ventes dans le PEA non imposées tant que le plan reste ouvert ; crypto : formule à part
+    assetCalc(a).realized.filter(r=>pd(r.d).getFullYear()===y).forEach(r=>{pvStock+=r.pv;});});
+  const CX=cryptoTaxYear(y);pvCrypto=CX.taxable;
   let revRevenue=0,revCount=0;DB.resale.forEach(r=>{if(r.st==='Vendu'&&r.sellD&&new Date(r.sellD)>=jan){revRevenue+=r.sell||0;revCount++;}});
   const revBase=Fin.resaleYear(DB.resale,y,{regime:DB.settings.resaleRegime,abattement:param('revente.microbic.abattement')}).taxable;
   let avRachat=0,avTaxable=0,avAbat=0,avOver8=false;
@@ -643,7 +717,7 @@ function fiscalData(){
   let avNext=null;DB.savings.filter(s=>s.type==='Assurance-vie'&&s.open).forEach(s=>{const yr=new Date(s.open).getFullYear()+8;if(avNext==null||yr<avNext)avNext=yr;});
   const rate=taxBareme();
   const totalTaxable=interestsTotal+Math.max(0,pvStock)+Math.max(0,pvCrypto)+revBase+avTaxable;
-  return {y,pelInt,pelName,celInt,livretBancaireInt,bricks,interestsTotal,hasExo,pvStock,pvCrypto,revRevenue,revCount,revBase,avRachat,avTaxable,avAbat,avOver8,avNext,rate,totalTaxable,estTax:totalTaxable*rate};
+  return {cx:CX,y,pelInt,pelName,celInt,livretBancaireInt,bricks,interestsTotal,hasExo,pvStock,pvCrypto,revRevenue,revCount,revBase,avRachat,avTaxable,avAbat,avOver8,avNext,rate,totalTaxable,estTax:totalTaxable*rate};
 }
 function fiscSections(f){
   const S=[];
@@ -657,8 +731,9 @@ function fiscSections(f){
   S.push({t:"Tes intérêts",a:f.interestsTotal,pos:f.interestsTotal===0,lines:iL,c:f.interestsTotal>0?"À reporter case 2TR (ou 2OP si tu choisis le barème).":""});
   // Bourse/crypto
   const pv=Math.max(0,f.pvStock)+Math.max(0,f.pvCrypto);
-  let bL=[];if(pv<=0){bL.push("Tu n'as rien vendu cette année, donc rien à déclarer.");bL.push("Tes gains sur actions et cryptos ne sont imposés que le jour où tu les vends.");}
-  else{if(f.pvStock>0)bL.push(`Tu as réalisé ${eur0(f.pvStock)} de plus-value en bourse.`);if(f.pvCrypto>0)bL.push(`Tu as réalisé ${eur0(f.pvCrypto)} de plus-value en crypto.`);}
+  let bL=[];if(pv<=0&&!f.cx.lines.length){bL.push("Tu n'as rien vendu cette année, donc rien à déclarer.");bL.push("Tes gains sur actions et cryptos ne sont imposés que le jour où tu les vends.");}
+  else{if(f.pvStock>0)bL.push(`Tu as réalisé ${eur0(f.pvStock)} de plus-value en bourse.`);if(f.pvCrypto>0)bL.push(`Crypto : ${eur0(f.cx.cessions)} de ventes, ${eur0(f.pvCrypto)} de plus-value imposable (calcul officiel sur l'ensemble de ton portefeuille crypto, formulaire 2086).`);}
+  if(f.cx.lines.length&&f.cx.exempt)bL.push(`Crypto : ${eur0(f.cx.cessions)} de ventes cette année, sous le seuil de ${eur0(param('crypto.seuil.cessions'))} : plus-value non imposable.`);
   {const dv=DB.assets.filter(a=>a.env!=='PEA').reduce((t,a)=>t+assetCalc(a).divsY,0),dp=DB.assets.filter(a=>a.env==='PEA').reduce((t,a)=>t+assetCalc(a).divsY,0);
    if(dv>0)bL.push(`Dividendes perçus hors PEA : ${eur0(dv)}. Ils sont en principe déjà imposés à la source et figurent sur ta déclaration préremplie : vérifie-les.`);
    if(dp>0)bL.push(`Dividendes perçus dans ton PEA : ${eur0(dp)}, non imposables tant qu'ils restent dans le plan.`);}
@@ -769,61 +844,84 @@ function drawCashflow(){const el=$('#cfchart');if(!el)return;const S=cashflowDat
     {type:'line',label:'Taux d\'épargne',data:S.map(x=>x.rate==null?null:Math.round(x.rate*1000)/10),borderColor:'#F7931A',backgroundColor:'#F7931A',tension:.3,pointRadius:2,spanGaps:true,yAxisID:'y2'}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:tick,boxWidth:10,font:{size:10}}},tooltip:{callbacks:{label:x=>x.dataset.yAxisID==='y2'?x.dataset.label+' : '+fin(x.parsed.y)+' %':x.dataset.label+' : '+eur0(x.parsed.y)}}},
       scales:{x:{ticks:{color:tick,font:{size:10}}},y:{ticks:{color:tick,font:{size:10},callback:v=>v>=1000?(v/1000)+' k':v}},y2:{position:'right',grid:{display:false},ticks:{color:'#F7931A',font:{size:10},callback:v=>v+' %'}}}}});}
+// ---- Accueil : patrimoine expliqué, 3 chiffres utiles, alertes, objectifs ; le détail est dans « Analyse »
+function homeStats(){const c=consolidate(),S=cashflowData(),M=S.months,m=M[M.length-1];
+  const spentM=M.filter(x=>x.spent>0),avgSpent=spentM.length?spentM.reduce((a,x)=>a+x.spent,0)/spentM.length:0;
+  const incM=M.slice(0,-1).filter(x=>x.income>0),avgSaved=incM.length?incM.reduce((a,x)=>a+x.saved,0)/incM.length:null;
+  const y1=ymd(addMonths(today(),-12)),divs=DB.movements.filter(x=>x.t==='Dividende'&&String(x.d)>=y1).reduce((a,x)=>a+(+x.m||0),0);
+  const passive=r2(c.sN/12+c.immoMonthly+divs/12);
+  return {c,m,avgSpent,months:avgSpent>0?c.dispo/avgSpent:null,avgSaved,passive};}
 function renderDash(){
-  const c=consolidate(),rep=repartition(),y=today().getFullYear();
-  const newYear=(today().getMonth()===0&&DB.settings.snapshots[y]==null&&!DB.settings.dismissY?.[y]);
-  const banner=newYear?`<div class="card pad" style="margin-top:16px;border:1px solid var(--orange);background:var(--orange-soft)">
-     <div style="font-weight:650">🎉 Bonne année ${y} !</div><div style="font-size:13px;color:var(--ink2);margin-top:4px;line-height:1.5">Mets à jour le solde de tes comptes (intérêts crédités), puis fige la valeur de départ.</div>
-     <div class="row" style="gap:8px;margin-top:10px"><button class="btn primary sm" onclick="archiveYear()">Figer la référence ${y}</button><button class="btn sm" onclick="dismissYear(${y})">Plus tard</button></div></div>`:'';
-  const yb=c.snap!=null?`<div class="kpi"><div class="k-l">Gain de l'année</div><div class="k-v ${c.yearGain>=0?'pos':'neg'}">${c.yearGain>=0?'+':''}${eur0(c.yearGain)}</div><div class="k-s muted">perf ${c.yearPerf!=null?PCT(c.yearPerf):'—'}</div></div>`
-    :`<div class="kpi"><div class="k-l">Gain de l'année</div><div class="k-v mut3" style="font-size:14px;font-weight:500;margin-top:10px">Fige la valeur de départ (Réglages)</div></div>`;
-  $('#v-dash').innerHTML=`${banner}
-   <div class="kpis" style="margin-top:16px">
-     <div class="kpi hero"><div class="k-l">Patrimoine net</div><div class="k-v"><span id="heroval">${eur0(c.net)}</span></div><div class="k-s ${c.pv>=0?'pos':'neg'}">${c.pv>=0?'+':''}${eur0(c.pv)} · ${PCT(c.pvp)}</div>${c.debt>0?`<div class="k-s muted">actifs ${eur0(c.value)} − crédits ${eur0(c.debt)}</div>`:''}</div>
-     <div class="kpi"><div class="k-l">Total versé</div><div class="k-v">${eur0(c.invested)}</div></div>
-     ${yb}
-     <div class="kpi"><div class="k-l">Épargne disponible</div><div class="k-v" style="font-size:20px">${eur0(c.dispo)}</div><div class="k-s muted">livrets + courant</div></div>
-   </div>
-   <div class="kpis" style="margin-top:12px">
-     <div class="kpi"><div class="k-l">Revenus Bricks / mois</div><div class="k-v" style="font-size:19px">${eur(c.immoMonthly)}</div><div class="k-s muted">net d'impôt</div></div>
-     ${(DB.properties||[]).length?`<div class="kpi"><div class="k-l">Cash-flow locatif / mois</div><div class="k-v ${c.reCashflow>=0?'pos':'neg'}" style="font-size:19px">${c.reCashflow>=0?'+':''}${eur(c.reCashflow)}</div><div class="k-s muted">loyers − charges − crédits</div></div>`:''}
-     <div class="kpi"><div class="k-l">Intérêts épargne / an</div><div class="k-v" style="font-size:19px">${eur0(c.sN)}</div><div class="k-s muted">nets, estimés sur l'année</div></div>
-   </div>
-   ${cashflowHtml()}${alertsHtml()}${backupHtml()}${goalHtml()}
-   <div class="card pad" style="margin-top:12px"><div class="spread"><span style="font-weight:600;font-size:13.5px">📄 Récap fiscal ${today().getFullYear()}</span><button class="btn sm" onclick="taxRecap()">Voir</button></div></div>
+  const H=homeStats(),c=H.c,R=c.ref,delta=R&&R.value!=null?r2(c.net-R.value):null,mo=today().toLocaleDateString('fr-FR',{month:'long'});
+  const gainTxt=c.yearGain==null?'':(c.yearGain>=0?`+${eur0(c.yearGain)} de gains`:`${eur0(c.yearGain)} de pertes`);
+  const A=alertsList();
+  $('#v-dash').innerHTML=`
+   <div class="hero2"><div class="k-l">Patrimoine net</div><div class="big"><span id="heroval">${eur0(c.net)}</span></div>
+     ${delta!=null?`<div class="hl1"><b class="${delta>=0?'pos':'neg'}">${delta>=0?'+':''}${eur0(delta)}</b> depuis le 1<sup>er</sup> janvier ${hq('ref')}</div>
+     <div class="hl2">dont ${eur0(Math.max(0,c.apports))} épargnés et ${gainTxt}${R.approx.length?' · estimation':''}</div>`:''}
+     ${c.debt>0?`<div class="hl3">Actifs ${eur0(c.value)} − crédits ${eur0(c.debt)}</div>`:''}</div>
+   <div class="kpis k3" style="margin-top:10px">
+     <div class="kpi" onclick="nav('placements');setPlace('epargne')"><div class="k-l">Disponible</div><div class="k-v">${eur0(c.dispo)}</div><div class="k-s muted">${H.months!=null?(H.months>24?'plus de 2 ans de dépenses':fin(Math.round(H.months*10)/10)+' mois de dépenses'):'livrets + courant'}</div></div>
+     <div class="kpi" onclick="nav('analyse')"><div class="k-l">Revenus passifs</div><div class="k-v">${eur0(H.passive)}<span class="u">/mois</span></div><div class="k-s muted">intérêts · Bricks · dividendes</div></div>
+     <div class="kpi" onclick="nav('budget')"><div class="k-l">Épargné en ${mo}</div><div class="k-v ${H.m.saved>=0?'':'neg'}">${H.m.income||H.m.spent?(H.m.saved>=0?'':'')+eur0(H.m.saved):'—'}</div><div class="k-s muted">${H.avgSaved!=null?'moyenne '+eur0(H.avgSaved)+'/mois':'revenus − dépenses'}</div></div></div>
+   ${A.length?`<div class="card pad" style="margin-top:12px"><div style="font-weight:650;font-size:14.5px">À surveiller</div>
+     ${A.slice(0,3).map(alertRow).join('')}${A.length>3?`<div class="t-sub" style="margin-top:8px;cursor:pointer" onclick="allAlerts()">Voir les ${A.length} alertes ›</div>`:''}</div>`:''}
+   ${goalHtml()}
+   <div class="fiche" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center" onclick="nav('analyse')"><div><div class="t-name">📊 Analyse</div><div class="t-sub">Évolution, performance, répartition, cash-flow, fiscalité</div></div><span class="muted" style="font-size:20px">›</span></div>
+   ${backupHtml()}`;
+  if(!dashAnimated){countUp($('#heroval'),c.net);dashAnimated=true;}
+}
+function alertRow(a){return `<div class="al"><span style="color:${a.lvl==='neg'?'var(--neg)':'var(--ink)'}">${esc(a.txt)}</span><button class="chip ${a.lvl==='neg'?'neg':'warn'}" onclick="${a.act||a.go}">${a.btn||'Voir'}</button></div>`;}
+function allAlerts(){const A=alertsList();openSheet(`<div class="spread"><h2>À surveiller (${A.length})</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>${A.map(a=>alertRow(Object.assign({},a,{act:'closeSheet();'+(a.act||a.go)}))).join('')}`);}
+// ---- Analyse : évolution, répartition (brute / nette), performance, cash-flow, fiscalité
+let repNet=false;
+function renderAnalyse(){const c=consolidate(),R=c.ref,rep=repartitionView();
+  $('#v-analyse').innerHTML=`
+   <div class="spread" style="margin-top:14px"><button class="btn sm" onclick="nav('dash')">‹ Accueil</button><h2 style="margin:0">Analyse</h2><span style="width:70px"></span></div>
+   <div class="card pad" style="margin-top:12px"><div style="font-weight:650;font-size:14px">Année ${today().getFullYear()} ${hq('ref')}</div>
+     <div class="kpis k3" style="margin-top:8px"><div><div class="k-l">Au 1<sup>er</sup> janvier</div><div class="v2">${eur0(R.value)}</div><div class="k-s muted">${R.manual?'valeur saisie':R.approx.length?'estimée':'reconstituée'}</div></div>
+       <div><div class="k-l">Épargne versée</div><div class="v2">${eur0(c.apports)}</div><div class="k-s muted">apports de l'année</div></div>
+       <div><div class="k-l">Gains</div><div class="v2 ${c.yearGain>=0?'pos':'neg'}">${c.yearGain>=0?'+':''}${eur0(c.yearGain)}</div><div class="k-s muted">${c.yearPerf!=null?PCT(c.yearPerf):''}</div></div></div>
+     ${R.approx.length?`<div class="t-sub" style="margin-top:8px">Cours au 31/12 manquants pour ${esc(R.approx.join(', '))} : prix de revient utilisé. Touche ↻ pour les récupérer.</div>`:''}</div>
    <div class="sec"><div class="sec-h"><h2>Évolution du patrimoine ${hq('evo')}</h2></div>
-     <div class="card pad"><div style="position:relative;height:180px"><canvas id="evo"></canvas></div>
-     </div></div>
-   ${perfHtml()}
-   <div class="sec"><div class="sec-h"><h2>Répartition par classe d'actifs</h2></div>
+     <div class="card pad"><div style="position:relative;height:180px"><canvas id="evo"></canvas></div></div></div>
+   <div class="sec"><div class="sec-h"><h2>Répartition ${hq('repart')}</h2><span class="row" style="gap:6px"><button class="btn sm ${repNet?'':'primary'}" onclick="repNet=false;renderAnalyse()">Brute</button><button class="btn sm ${repNet?'primary':''}" onclick="repNet=true;renderAnalyse()">Nette de crédits</button></span></div>
      <div class="card pad"><div style="display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:16px;align-items:center">
-       <div style="position:relative;height:180px"><canvas id="donut"></canvas></div>
-       <div class="leg">${rep.map((r,i)=>`<div class="li"><span class="dot" style="background:${PAL[i]}"></span><span style="flex:1;color:var(--ink2)">${esc(r.name)}</span><span class="bar"><span style="width:${(r.part*100).toFixed(1)}%;background:${PAL[i]}"></span></span><span style="font-weight:600;min-width:48px;text-align:right">${PCT1(r.part)}</span></div>`).join('')}</div>
-     </div></div></div>`;
+       <div style="position:relative;height:170px"><canvas id="donut"></canvas></div>
+       <div class="leg">${rep.map((r,i)=>`<div class="li"><span class="dot" style="background:${PAL[i]}"></span><span style="flex:1;color:var(--ink2)">${esc(r.name)}</span><span style="font-weight:600;min-width:48px;text-align:right">${PCT1(r.part)}</span></div>`).join('')}</div></div></div></div>
+   ${perfHtml()}
+   ${cashflowHtml()}
+   <div class="fiche" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center" onclick="taxRecap()"><div><div class="t-name">📄 Récap fiscal ${today().getFullYear()}</div><div class="t-sub">Ce qu'il faudra déclarer</div></div><span class="muted" style="font-size:20px">›</span></div>`;
   const surf=getComputedStyle(document.documentElement).getPropertyValue('--card')||'#16202E';
   const tick=getComputedStyle(document.documentElement).getPropertyValue('--ink3')||'#63788A';
   if(donutChart)donutChart.destroy();
-  donutChart=new Chart($('#donut'),{type:'doughnut',data:{labels:rep.map(r=>r.name),datasets:[{data:rep.map(r=>+(r.part*100).toFixed(1)),backgroundColor:PAL,borderColor:surf,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.label+' : '+x.parsed.toFixed(1)+' %'}}}}});
-  const snaps=DB.settings.snapshots;const keys=Object.keys(snaps).sort();
-  const labs=keys.map(k=>k),data=keys.map(k=>snaps[k]);labs.push('Auj.');data.push(Math.round(consolidate().net));
+  donutChart=new Chart($('#donut'),{type:'doughnut',data:{labels:rep.map(r=>r.name),datasets:[{data:rep.map(r=>+(r.part*100).toFixed(1)),backgroundColor:PAL,borderColor:surf,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.label+' : '+fin(x.parsed)+' %'}}}}});
+  const snaps=DB.settings.snapshots||{};const keys=Object.keys(snaps).filter(k=>/^\d{4}-\d{2}$/.test(k)&&snaps[k]!=null).sort();
+  const labs=keys.map(k=>k),data=keys.map(k=>snaps[k]);labs.push('Auj.');data.push(Math.round(c.net));
   if(evoChart)evoChart.destroy();
-  evoChart=new Chart($('#evo'),{type:'line',data:{labels:labs,datasets:[{data,borderColor:'#F7931A',backgroundColor:'rgba(247,147,26,.12)',fill:true,tension:.35,pointBackgroundColor:'#F7931A',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tick,font:{size:11}}},y:{ticks:{color:tick,callback:v=>v>=1000?(v/1000)+'k':v}}}}});
-  drawCashflow();
-  if(!dashAnimated){countUp($('#heroval'),c.net);dashAnimated=true;}
-  renderPerfChart();
+  evoChart=new Chart($('#evo'),{type:'line',data:{labels:labs,datasets:[{data,borderColor:'#F7931A',backgroundColor:'rgba(247,147,26,.12)',fill:true,tension:.35,pointBackgroundColor:'#F7931A',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tick,font:{size:10}}},y:{ticks:{color:tick,font:{size:10}}}}}});
+  drawCashflow();renderPerfChart();
 }
-
+// Répartition : brute (valeur des actifs) ou nette (l'immobilier diminué du capital restant dû)
+function repartitionView(){const R=repartition();if(!repNet)return R;const d=consolidate().debt;
+  const rows=R.map(r=>Object.assign({},r,{val:r.name==='Immobilier'?Math.max(0,r.val-d):r.val}));const tot=rows.reduce((a,r)=>a+r.val,0)||1;
+  return rows.map(r=>Object.assign(r,{part:r.val/tot}));}
 /* ======================= PERFORMANCE : TRI (XIRR) + TWR + indice ======================= */
+// Périmètre de la performance : placements financiers (bourse, crypto, épargne hors compte courant, crowdfunding).
+// Le compte courant, l'immobilier et les crédits sont exclus ; l'argent qui entre ou sort de ce périmètre est un flux.
+function finValue(){const cc=compteCourant(),c=consolidate();return r2(c.bV+c.iV+c.sV-(cc?(+cc.cap||0):0));}
 function cashFlows(){
-  const cf=[];
+  const cf=[],cc=compteCourant(),ccn=cc?cc.name:'\u0000';
   DB.movements.forEach(m=>{
-    if(m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement')return;
+    if(m.link||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende')return;
+    if(m.p===ccn&&m.t!=='Transfert')return; // compte courant hors périmètre
+    if(m.t==='Transfert'){const v=+m.m||0,d=new Date(m.d);if(!v||isNaN(d))return;if(m.p===ccn&&m.p2!==ccn)cf.push({d,a:-v});else if(m.p2===ccn&&m.p!==ccn)cf.push({d,a:+v});return;}
     const g=(m.q!=null&&m.pu!=null&&m.q!==''&&m.pu!=='')?(+m.q)*(+m.pu):(+m.m||0);
     const amt=g+(+m.f||0); if(!amt)return;
     const d=new Date(m.d); if(isNaN(d))return;
-    if(m.t==='Achat'||m.t==='Dépôt')cf.push({d,a:-amt}); else cf.push({d,a:+amt});
+    if(m.t==='Achat'||m.t==='Dépôt'||m.t==='Reprise')cf.push({d,a:-amt}); else cf.push({d,a:+amt});
   });
-  DB.crowd.forEach(c=>{if(c.sub){const d=new Date(c.sub);if(!isNaN(d))cf.push({d,a:-(+c.amt||0)});}});
+  DB.crowd.forEach(c=>{if(c.sub&&!crowdLink(c,'sub')){const d=new Date(c.sub);if(!isNaN(d))cf.push({d,a:-(+c.amt||0)});}});
   return cf.sort((a,b)=>a.d-b.d);
 }
 function xirr(flows,finalVal){
@@ -838,9 +936,9 @@ function xirr(flows,finalVal){
   return (lo+hi)/2;
 }
 function monthlySeries(){
-  const snaps=DB.settings.snapshots||{},map={};
-  Object.keys(snaps).forEach(k=>{if(snaps[k]==null)return;const mk=/^\d{4}$/.test(k)?k+'-01':k;map[mk]=+snaps[k];});
-  const curM=ymKey(today()); map[curM]=Math.round(consolidate().value);
+  const snaps=DB.settings.snapFin||{},map={};
+  Object.keys(snaps).forEach(k=>{if(snaps[k]==null)return;map[k]=+snaps[k];});
+  const curM=ymKey(today()); map[curM]=Math.round(finValue());
   return Object.keys(map).sort().map(m=>({m,v:map[m]}));
 }
 function flowByMonth(){const f={};cashFlows().forEach(x=>{const k=ymKey(x.d);f[k]=(f[k]||0)+(-x.a);});return f;}
@@ -852,32 +950,36 @@ function twrSeries(){
   return out;
 }
 function perfStats(){
-  const val=consolidate().value, flows=cashFlows();
-  const irr=xirr(flows,val), tw=twrSeries();
+  const val=finValue(), flows=cashFlows();
+  const t0=flows.length?flows[0].d:null,days=t0?(today()-t0)/86400000:0;
+  // pas de chiffre avant 3 mois de recul ; en dessous d'un an, rendement sur la période plutôt qu'annualisé
+  let irr=days>=90?xirr(flows,val):null;const irrPeriod=irr!=null&&days<365?Math.pow(1+irr,days/365)-1:null;
+  const tw0=twrSeries(),tw=tw0&&tw0.length>=4?tw0:null;
   let twr=null,twrAnnual=null;
   if(tw&&tw.length>=2){twr=tw[tw.length-1].base/100-1;
     const d0=new Date(tw[0].m+'-01'),d1=new Date(tw[tw.length-1].m+'-01'),spanY=(d1-d0)/(365.25*86400000);
     if(spanY>0.08)twrAnnual=Math.pow(1+twr,1/spanY)-1;}
-  return {val,irr,twr,twrAnnual,tw};
+  if(twrAnnual!=null&&tw&&tw.length<13)twrAnnual=null;
+  return {val,irr,irrPeriod,days,twr,twrAnnual,tw};
 }
 function perfHtml(){
-  const p=perfStats(),ch=DB.settings.indexChoice;
-  const tri=p.irr!=null?PCT(p.irr):'—';   // PCT ajoute déjà le signe +
-  const twr=p.twr!=null?PCT(p.twr):'—';
-  const twrA=p.twrAnnual!=null?PCT(p.twrAnnual):'—';
-  return `<div class="sec"><div class="sec-h"><h2>Performance</h2><button class="btn sm" onclick="openGuide()">Aide</button></div>
+  const p=perfStats(),ch=DB.settings.indexChoice,dd=p.days?pd(ymd(new Date(today().getTime()-p.days*86400000))).toLocaleDateString('fr-FR'):'';
+  const tri=p.irr==null?'—':PCT(p.irrPeriod!=null?p.irrPeriod:p.irr);
+  const triL=p.irr==null?'pas encore assez de recul (3 mois)':p.irrPeriod!=null?'depuis le '+dd+' (moins d\'un an)':'par an, versements pris en compte';
+  const twr=p.twr!=null?PCT(p.twr):'—',twrL=p.twr==null?'pas encore assez de relevés mensuels':(p.twrAnnual!=null?PCT(p.twrAnnual)+'/an · ':'')+'hors versements';
+  return `<div class="sec"><div class="sec-h"><h2>Performance des placements ${hq('perf')}</h2></div>
    <div class="kpis">
-     <div class="kpi"><div class="k-l">TRI annualisé</div><div class="k-v ${p.irr>=0?'pos':'neg'}" style="font-size:21px">${tri}</div><div class="k-s muted">rendement réel, flux pondérés (XIRR)</div></div>
-     <div class="kpi"><div class="k-l">Perf. cumulée (TWR)</div><div class="k-v ${p.twr>=0?'pos':'neg'}" style="font-size:21px">${twr}</div><div class="k-s muted">hors versements · ${twrA}/an</div></div>
+     <div class="kpi"><div class="k-l">${p.irrPeriod!=null?'Rendement':'Rendement annuel (TRI)'}</div><div class="k-v ${p.irr==null?'':(p.irr>=0?'pos':'neg')}" style="font-size:21px">${tri}</div><div class="k-s muted">${triL}</div></div>
+     <div class="kpi"><div class="k-l">Performance (TWR)</div><div class="k-v ${p.twr==null?'':(p.twr>=0?'pos':'neg')}" style="font-size:21px">${twr}</div><div class="k-s muted">${twrL}</div></div>
    </div>
    <div class="card pad" style="margin-top:12px">
-     <div class="spread" style="margin-bottom:8px"><span style="font-weight:600;font-size:13.5px">Évolution base 100 vs indice</span>
+     <div class="spread" style="margin-bottom:8px"><span style="font-weight:600;font-size:13.5px">Base 100 vs indice</span>
        <span class="row" style="gap:6px"><button class="btn sm ${ch==='MSCI'?'primary':''}" onclick="setIndex('MSCI')">MSCI World</button><button class="btn sm ${ch==='CAC'?'primary':''}" onclick="setIndex('CAC')">CAC 40</button></span></div>
      <div style="position:relative;height:190px"><canvas id="perf"></canvas></div>
      <div class="note" id="perfnote">Ligne pleine = ta performance pure ; pointillés = l'indice. Départ commun à 100.</div>
    </div></div>`;
 }
-function setIndex(c){DB.settings.indexChoice=c;save();renderDash();}
+function setIndex(c){DB.settings.indexChoice=c;save();renderAnalyse();}
 async function fetchIndexSeries(sym){
   const key=DB.settings.stockKey; if(!key)throw new Error('clé API manquante');
   const cache=(DB.settings.indexCache||{})[sym];
@@ -1023,11 +1125,12 @@ function copyTxt(t){if(navigator.clipboard)navigator.clipboard.writeText(t).then
 let placeTab='bourse';
 function renderPlacements(){
   $('#v-placements').innerHTML=`<div class="subtabs">
-    <div class="subtab ${placeTab==='bourse'?'on':''}" onclick="setPlace('bourse')">Bourse & crypto</div>
+    <div class="subtab ${placeTab==='bourse'?'on':''}" onclick="setPlace('bourse')">Bourse</div>
     <div class="subtab ${placeTab==='epargne'?'on':''}" onclick="setPlace('epargne')">Épargne</div>
-    <div class="subtab ${placeTab==='immo'?'on':''}" onclick="setPlace('immo')">Immo</div></div>
+    <div class="subtab ${placeTab==='immo'?'on':''}" onclick="setPlace('immo')">Immobilier</div>
+    <div class="subtab ${placeTab==='crowd'?'on':''}" onclick="setPlace('crowd')">Crowdfunding</div></div>
     <div id="place-body"></div>`;
-  if(placeTab==='bourse')placeBourse();else if(placeTab==='epargne')placeEpargne();else placeImmo();
+  if(placeTab==='bourse')placeBourse();else if(placeTab==='epargne')placeEpargne();else if(placeTab==='crowd')placeCrowd();else placeImmo();
 }
 function setPlace(t){placeTab=t;renderPlacements();}
 function opsFor(name){return DB.movements.map((m,gi)=>({m,gi})).filter(({m})=>m.p===name||(m.t==='Transfert'&&m.p2===name)).sort((a,b)=>a.m.d<b.m.d?1:-1);}
@@ -1035,16 +1138,18 @@ function addOpFor(name,type){dupTemplate={d:ymd(today()),p:name,p2:'',t:type,q:'
 function productDetail(name){
   const asset=DB.assets.find(a=>a.name===name),sav=DB.savings.find(s=>s.name===name),ops=opsFor(name);
   let sum='';
-  if(asset){const c=assetCalc(asset);sum=`<div class="kpis" style="margin-top:8px">
-    <div class="kpi"><div class="k-l">Quantité</div><div class="k-v" style="font-size:17px">${QTY(c.qty)}</div></div>
-    <div class="kpi"><div class="k-l">PRU</div><div class="k-v" style="font-size:17px">${c.pru?eur(c.pru):'—'}</div></div>
-    <div class="kpi"><div class="k-l">Investi</div><div class="k-v" style="font-size:17px">${eur0(c.inv)}</div></div>
-    <div class="kpi"><div class="k-l">Valeur</div><div class="k-v" style="font-size:17px">${eur0(c.value)}</div><div class="k-s ${c.pv>=0?'pos':'neg'}">${c.pv>=0?'+':''}${eur0(c.pv)}</div></div></div>`;}
-  else if(sav){const c=savingCalc(sav);sum=`<div class="kpis" style="margin-top:8px">
-    <div class="kpi"><div class="k-l">Versé net</div><div class="k-v" style="font-size:17px">${eur0(c.versed)}</div></div>
-    <div class="kpi"><div class="k-l">Capital</div><div class="k-v" style="font-size:17px">${eur0(sav.cap||0)}</div></div>
-    <div class="kpi"><div class="k-l">Gains</div><div class="k-v" style="font-size:17px;color:${c.gains>=0?'var(--pos)':'var(--neg)'}">${c.gains>=0?'+':''}${eur0(c.gains)}</div></div>
-    <div class="kpi"><div class="k-l">Intérêts/an</div><div class="k-v" style="font-size:17px">${eur(c.net)}</div></div></div>`;}
+  const ai=asset?DB.assets.indexOf(asset):-1,si=sav?DB.savings.indexOf(sav):-1;
+  if(asset){const c=assetCalc(asset),dc=dayChgHtml(asset);sum=`<div class="t-sub" style="margin-top:-4px">${esc(asset.ticker||'')} · ${esc(assetGroup(asset))}${liveAssetPair(asset)&&LIVE.status==='on'?' · <span class="pos">● direct</span>':''}</div>
+    <div style="margin-top:12px"><div class="tot" style="font-size:28px">${eur0(c.value)}</div><div style="font-size:13px">${c.inv?`<span class="${c.pv>=0?'pos':'neg'}">${c.pv>=0?'+':''}${eur0(c.pv)} · ${c.pvp>=0?'+':''}${PCT1(c.pvp)}</span>`:''}${dc?' · '+dc:''}</div></div>
+    <div class="g2k"><div><div class="k-l">Quantité</div><b>${QTY(c.qty)} ${esc(unitOf(asset))}</b></div><div><div class="k-l">Cours</div><b>${asset.price?eur(asset.price):'—'}</b></div>
+      <div><div class="k-l">Investi</div><b>${eur0(c.inv)}</b></div><div><div class="k-l">Prix de revient</div><b>${c.pru?eur(c.pru):'—'}</b></div></div>
+    ${c.qty?`<div style="margin-top:14px;font-weight:650;font-size:13.5px">Seuils de revente ${hq('seuils')} ${statusPill(c.st)}</div>
+    <div class="lst"><div class="li"><span>Point mort</span><b>${eur(c.pm)}</b></div><div class="li"><span>Frais couverts</span><b>${eur(c.fc)}</b></div><div class="li"><span>+${(DB.settings.objNet*100).toFixed(0)} % net d'impôt</span><b>${eur(c.po)}</b></div></div>`:''}
+    <div class="row" style="gap:8px;margin-top:12px"><button class="btn sm" style="flex:1" onclick="addOpFor(DB.assets[${ai}].name,'Achat')">+ Achat</button><button class="btn sm" style="flex:1" onclick="addOpFor(DB.assets[${ai}].name,'Vente')">+ Vente</button><button class="btn sm" onclick="editAsset(${ai})">✎</button></div>`;}
+  else if(sav){const c=savingCalc(sav);sum=`<div class="t-sub" style="margin-top:-4px">${esc(sav.bank||'')} · ${esc(sav.type)}</div>
+    <div style="margin-top:12px"><div class="tot" style="font-size:28px">${eur0(sav.cap||0)}</div><div class="t-sub">${c.rate?fin(r2(c.rate*10000)/100)+' % · ':''}intérêts ${today().getFullYear()} estimés : ${eur(c.net)} nets</div></div>
+    <div class="g2k"><div><div class="k-l">Versé net</div><b>${eur0(c.versed)}</b></div><div><div class="k-l">Intérêts perçus</div><b>${eur0(c.received)}</b></div></div>
+    <div class="row" style="gap:8px;margin-top:12px"><button class="btn sm" style="flex:1" onclick="editSaving(${si})">✎ Modifier le produit</button></div>`;}
   const defType=asset?'Achat':(sav&&sav.type==='Compte courant'?'Dépôt':(sav?'Dépôt':'Achat'));
   openSheet(`<div class="spread"><h2>${name}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
     ${sum}
@@ -1058,33 +1163,30 @@ function productDetail(name){
        ||`<tr><td class="emptybox" colspan="4"><div class="ic">📄</div>Aucune opération enregistrée.</td></tr>`}
     </tbody></table></div></div>
     `);}
+// Groupe d'une ligne : enveloppe (PEA, compte-titres) ou plateforme crypto
+function assetGroup(a){return a.env==='PEA'?'PEA':a.type==='Crypto'?'Crypto · '+(a.env||'plateforme'):(a.env==='CTO'||!a.env?'Compte-titres':a.env);}
+const unitOf=(a)=>a.type==='Crypto'?((a.ticker||'').split('-')[0]||''):a.type==='ETF'?'parts':'actions';
 function placeBourse(){
   const rows=DB.assets.map((a,i)=>({a,c:assetCalc(a),i}));
-  const tI=rows.reduce((s,r)=>s+r.c.inv,0),tV=rows.reduce((s,r)=>s+r.c.value,0);
-  const hasPea=DB.assets.some(x=>x.env==='PEA')||(DB.pea&&DB.pea.open);const P=peaCalc();
-  const peaHtml=hasPea?`<div class="card pad" style="margin-top:14px">
-     <div class="spread"><div><div class="t-name" style="font-size:15px">PEA${DB.pea&&DB.pea.bank?' · '+esc(DB.pea.bank):''}</div><div class="t-sub">${P.open?'ouvert le '+pd(P.open).toLocaleDateString('fr-FR')+' · '+fin(Math.floor(P.years*10)/10)+' ans':'date d\'ouverture à renseigner'}</div></div><span class="del" onclick="editPea()">✎ fiche PEA</span></div>
-     <div class="kpis" style="margin-top:10px;grid-template-columns:repeat(3,1fr);gap:8px">
-       <div><div class="k-l">Versements${P.real?'':' (estim.)'}</div><div style="font-weight:650">${eur0(P.versed)}</div><div class="t-sub">plafond ${eur0(P.ceil)}</div></div>
-       <div><div class="k-l">Encore possible</div><div style="font-weight:650">${eur0(P.room)}</div><div class="t-sub">${fin(r2(P.ratio*100))} % utilisé</div></div>
-       <div><div class="k-l">Liquidités</div><div style="font-weight:650">${P.cash==null?'—':eur(P.cash)}</div><div class="t-sub">${P.real?'non investies':'saisis tes versements'}</div></div></div>
-     <div class="progress" style="margin-top:10px"><span style="width:${Math.min(100,P.ratio*100).toFixed(0)}%;background:${P.ratio>=1?'var(--neg)':P.ratio>=0.9?'var(--warn)':'var(--orange)'}"></span></div>
-     ${P.open?`<div style="font-size:12.5px;margin-top:10px;color:${P.mature?'var(--pos)':'var(--ink2)'}">${P.mature?'✓ Plus de 5 ans : retraits possibles sans clôturer le plan ; seuls les prélèvements sociaux s\'appliquent sur les gains.':'⏳ 5 ans le <b style="color:var(--ink)">'+pd(P.fiveYears).toLocaleDateString('fr-FR')+'</b>. Avant cette date, un retrait entraîne en principe la clôture du plan et l\'imposition des gains.'}</div>`:''}
-   </div>`:'';
-  $('#place-body').innerHTML=peaHtml+`
-   <div class="sec-h" style="margin-top:14px"><h2>Actions, ETF & crypto ${hq('bourse')} <span data-live-badge>${liveBadgeHtml()}</span></h2><span class="row" style="gap:6px"><button class="btn sm" onclick="refreshPrices()">↻ Cours</button><button class="btn sm" onclick="priceDetail()" title="Détail de l'actualisation">ⓘ</button><button class="btn sm primary" onclick="editAsset(-1)">+ Actif</button></span></div>
-   <div class="card"><div class="twrap"><table><thead><tr><th>Actif</th><th>Investi</th><th>PRU</th><th>Qté</th><th>Cours</th><th>Valeur</th><th>+/–</th><th>Statut</th><th></th></tr></thead>
-   <tbody>${rows.map(({a,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.assets[${i}].name)"><div class="t-name">${esc(a.name)} ›</div><div class="t-sub">${esc(a.ticker||'')} · ${esc(a.env||a.type)}${c.divs?' · div. '+eur0(c.divs):''}${liveChg(a)}</div></td>
-     <td>${eur0(c.inv)}</td><td>${c.pru?eur(c.pru):'—'}</td><td>${QTY(c.qty)}</td><td>${a.price?eur(a.price):'—'}</td><td>${eur0(c.value)}</td>
-     <td class="${c.pv>=0?'pos':'neg'}">${c.pv>=0?'+':''}${eur0(c.pv)}</td><td>${statusPill(c.st)}</td><td><span class="del" onclick="editAsset(${i})">✎</span></td></tr>`).join('')}</tbody>
-   <tfoot><tr><td>TOTAL</td><td>${eur0(tI)}</td><td></td><td></td><td></td><td>${eur0(tV)}</td><td class="${tV-tI>=0?'pos':'neg'}">${tV-tI>=0?'+':''}${eur0(tV-tI)}</td><td></td><td></td></tr></tfoot></table></div></div>
-   <div class="sec"><div class="sec-h"><h2>Seuils de revente</h2></div><div class="kpis">
-   ${rows.map(({a,c})=>`<div class="card pad"><div class="spread" style="margin-bottom:8px"><span class="t-name">${esc(a.name)}</span>${statusPill(c.st)}</div>
-     <div class="spread" style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--line)"><span class="muted">Point mort</span><b>${eur(c.pm)}</b></div>
-     <div class="spread" style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--line)"><span class="muted">Frais couverts</span><b>${eur(c.fc)}</b></div>
-     <div class="spread" style="font-size:13px;padding:3px 0"><span class="muted">+${(DB.settings.objNet*100).toFixed(0)}% net</span><b>${eur(c.po)}</b></div></div>`).join('')}</div></div>
-   `;
+  const tI=rows.reduce((s,r)=>s+r.c.inv,0),tV=rows.reduce((s,r)=>s+r.c.value,0),P=peaCalc(),pv=tV-tI;
+  const order=['PEA','Compte-titres'],G={};rows.forEach(r=>{const g=assetGroup(r.a);(G[g]=G[g]||[]).push(r);});
+  const keys=Object.keys(G).sort((x,y)=>{const ix=order.indexOf(x),iy=order.indexOf(y);return (ix<0?9:ix)-(iy<0?9:iy)||x.localeCompare(y);});
+  if((DB.pea&&DB.pea.open)&&!G.PEA){G.PEA=[];keys.unshift('PEA');}
+  const fiche=({a,c})=>`<div class="fiche" onclick="productDetail(DB.assets[${DB.assets.indexOf(a)}].name)">
+     <div class="spread" style="align-items:flex-start;gap:10px"><div style="min-width:0"><div class="t-name">${esc(a.name)}</div><div class="t-sub">${esc(a.ticker||'')}${c.qty?' · '+QTY(c.qty)+' '+esc(unitOf(a)):''}${a.price?' · '+eur(a.price):''}${c.divs?' · div. '+eur0(c.divs):''}</div></div>
+       <div class="fv">${eur0(c.value)}</div></div>
+     <div class="spread" style="margin-top:6px;font-size:12.5px"><span>${dayChgHtml(a)||'<span class="muted">—</span>'}</span>${c.inv?`<span class="${c.pv>=0?'pos':'neg'}"><b>${c.pv>=0?'+':''}${eur0(c.pv)}</b> · ${c.pvp>=0?'+':''}${PCT1(c.pvp)}</span>`:''}</div></div>`;
+  $('#place-body').innerHTML=`
+   <div class="spread" style="margin-top:14px;align-items:flex-end"><div><div class="k-l">Bourse et crypto ${hq('bourse')} <span data-live-badge>${liveBadgeHtml()}</span></div><div class="tot">${eur0(tV)}</div>
+     ${tI?`<div style="font-size:12.5px"><span class="${pv>=0?'pos':'neg'}">${pv>=0?'+':''}${eur0(pv)} · ${pv>=0?'+':''}${PCT1(tI?pv/tI:0)}</span> <span class="muted">depuis l'achat</span></div>`:''}</div>
+     <span class="row" style="gap:6px"><button class="btn sm" onclick="refreshPrices()">↻ Cours</button><button class="btn sm" onclick="priceDetail()" title="Détail de l'actualisation">ⓘ</button><button class="btn sm primary" onclick="editAsset(-1)">+ Actif</button></span></div>
+   ${keys.map(k=>{const L=G[k],sub=L.reduce((t,r)=>t+r.c.value,0);
+     const peaLine=k==='PEA'?`<div class="gsub">${P.versed?eur0(P.versed)+' versés'+(P.real?'':' (estim.)')+' sur '+eur0(P.ceil):'versements à renseigner'}${P.open?(P.mature?' · plus de 5 ans ✓':' · 5 ans le '+pd(P.fiveYears).toLocaleDateString('fr-FR')):''}${P.real&&P.cash?' · '+eur0(P.cash)+' de liquidités':''} · <span class="lnk" onclick="editPea()">fiche PEA</span></div>`:'';
+     return `<div class="grp"><span>${esc(k==='PEA'&&DB.pea&&DB.pea.bank?'PEA · '+DB.pea.bank:k)}${k==='PEA'?' '+hq('peaVers'):''}</span><b>${eur0(sub)}</b></div>${peaLine}${L.map(fiche).join('')}`;}).join('')
+     ||`<div class="card" style="margin-top:12px"><div class="emptybox"><div class="ic">📈</div>Aucun actif. Ajoute une action, un ETF ou une crypto.</div></div>`}
+   ${rows.length?'<div class="note" style="text-align:center">Touche une ligne pour le détail, les seuils de revente et les opérations</div>':''}`;
 }
+function dayChgHtml(a){const h=liveChg(a);return h?h.replace(/^ · /,''):'';}
 // Ligne concrète sous chaque produit : à partir de quand un versement rapporte, et comment les intérêts sont calculés
 function savingWhen(s,c){const t=ymd(today());
   if(QUINZ.has(s.type))return `<div style="margin-top:2px">Versé ce jour : intérêts dès le ${pd(Fin.quinzStart(t)).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} ${hq('quinz')}</div>`;
@@ -1113,11 +1215,24 @@ const HELP={
   rate:['Taux annuel',()=>`<p>Laisse vide pour un livret réglementé : le taux officiel en vigueur est appliqué automatiquement, avec ses changements.</p>
     <p>Pour un produit à taux libre (livret bancaire, portefeuille de plateforme, assurance-vie…), saisis le taux et sa date d'entrée en vigueur. Un nouveau taux s'ajoute à l'historique, sans effacer l'ancien.</p>`],
   solde:['Solde actuel',()=>`<p>Le solde est calculé depuis les opérations. Si tu le modifies ici, l'écart est enregistré comme une opération : dépôt d'ouverture pour un produit sans opération, sinon « Ajustement » daté d'aujourd'hui.</p><p>Le compte courant sert de base au Budget.</p>`],
-  crowd:['Crowdfunding',()=>`<p>Le versement mensuel est calculé depuis le taux annuel : capital × taux ÷ 12.</p>
+  crowdAuto:['Versements reçus automatiquement',()=>`<p>Pour chaque projet « En cours », chaque échéance est comptée reçue à sa date et son montant net est crédité sur le portefeuille lié.</p><p>À l'activation, les échéances passées non cochées sont marquées reçues sans être recréditées : le solde de ton portefeuille les contient déjà.</p><p>Un projet « Retard » ou « Défaut » n'est jamais pointé automatiquement. Un mois différent se corrige en touchant la ligne dans l'échéancier.</p>`],
+  crowdDue:['Échéancier',()=>`<p>Montants nets : intérêts bruts (capital restant × taux ÷ 12) moins le prélèvement à la source (PFU ${fin(r2(taxPFU()*100))} %).</p><p>Touche une échéance pour saisir le montant réellement reçu ou la marquer « pas encore reçue ». Après un remboursement anticipé, les intérêts sont recalculés sur le capital restant à partir de l'échéance suivante ; si la plateforme a payé ce mois-là au prorata, corrige simplement ce versement.</p>`],
+  ref:['Depuis le 1er janvier',()=>{const R=consolidate().ref;return `<p>La valeur au 1er janvier est <b>reconstituée</b> à partir de tes données : soldes d'épargne au 31 décembre, titres détenus à leur cours de clôture de fin d'année (sinon à leur prix de revient), projets en cours, biens à leur estimation, moins le capital restant dû des crédits.</p>
+    <p>La variation se décompose en <b>épargne versée</b> (argent nouveau placé ou versé dans l'année, capital de crédit remboursé) et en <b>gains</b> (le reste : intérêts, plus-values, loyers…).</p>
+    <p>L'argent que tu possédais déjà avant de l'enregistrer (« Reprise d'existant ») n'est compté ni comme épargne ni comme gain.</p>
+    <p>${R.manual?'Une valeur saisie à la main est utilisée (Réglages ▸ Avancé).':'Tu peux imposer une autre valeur dans Réglages ▸ Avancé.'}</p>`;}],
+  reprise:['Argent déjà détenu',()=>`<p>Coche cette case quand tu enregistres un compte qui existait déjà : son solde est une <b>reprise d'existant</b>. Il entre dans ton patrimoine sans être compté comme une épargne nouvelle de l'année, ni comme un gain.</p><p>Décoche-la seulement si tu viens réellement de verser cet argent.</p>`],
+  repart:['Répartition',()=>`<p><b>Brute</b> : part de chaque classe d'actifs dans la valeur totale de tes actifs.</p><p><b>Nette de crédits</b> : l'immobilier est diminué du capital restant dû, pour voir ce qui t'appartient réellement.</p>`],
+  perf:['Performance des placements',()=>`<p>Calculée sur tes <b>placements financiers</b> : bourse, crypto, épargne et crowdfunding. Le compte courant, l'immobilier et les crédits n'en font pas partie.</p>
+    <p><b>Rendement (TRI)</b> : tient compte de la date et du montant de chaque versement. Affiché après 3 mois de recul ; annualisé seulement au-delà d'un an.</p>
+    <p><b>Performance (TWR)</b> : mesure la gestion indépendamment des versements, à partir des relevés de chaque début de mois.</p>`],
+  cryptoVg:['Valeur totale de tes cryptos',()=>`<p>La plus-value imposable d'une vente de crypto se calcule sur l'ensemble de ton portefeuille crypto (article 150 VH bis du CGI, formulaire 2086) : il faut sa valeur totale juste avant la vente, toutes plateformes confondues.</p><p>Laisse vide pour un calcul automatique (quantités détenues × prix de la vente pour la crypto vendue, dernier cours connu pour les autres). Ventes de l'année ≤ ${eur0(param('crypto.seuil.cessions'))} : non imposables.</p>`],
+  seuils:['Seuils de revente',()=>`<p><b>Point mort</b> : ton prix de revient. <b>Frais couverts</b> : prix à partir duquel les frais de vente sont couverts. <b>+${(DB.settings.objNet*100).toFixed(0)} % net</b> : prix de vente pour atteindre ton objectif après frais et impôt (objectif modifiable dans les Réglages).</p>`],
+  crowd:['Crowdfunding',()=>`<p>Le versement mensuel est calculé depuis le taux annuel : capital restant × taux ÷ 12.</p>
     <p>Coche chaque versement reçu. <b>Case rouge</b> : versement échu non encore coché. <b>Pointillés</b> : à venir.</p>
     <p>Un projet en retard ou en défaut reste compté dans ton patrimoine jusqu'à « Capital reçu ».</p>`],
   bourse:['Cours des actions, ETF et cryptos',()=>`<p><b>Crypto</b> : cours en direct (Kraken) tant que l'appli est ouverte, avec la variation sur 24 h.</p>
-    <p><b>Actions et ETF</b> : ↻ actualise les cours via Yahoo (couvre Euronext, le PEA et les ETF Amundi, sans clé), avec un différé d'environ 15 minutes, et affiche la variation du jour.</p><p>ⓘ détaille, ligne par ligne, ce qui a réussi ou échoué.</p>`],
+    <p><b>Actions et ETF</b> : ↻ actualise les cours via Yahoo (couvre Euronext, le PEA et les ETF Amundi, sans clé), avec un différé d'environ 15 minutes, et affiche la variation du jour.</p><p>Les lignes sont regroupées par enveloppe (PEA, compte-titres, plateformes crypto) avec leur sous-total. ⓘ détaille, ligne par ligne, ce qui a réussi ou échoué.</p>`],
   prices:['Détail des cours',()=>`<p>✅ mis à jour · ✋ cours manuel · ⚠️ échec.</p><p>Si un ETF Amundi échoue : ouvre-le ▸ Modifier, règle <b>Source = Yahoo</b> et vérifie le <b>symbole Yahoo</b> (ex. <code>CW8.PA</code>, <code>PE500.PA</code>, <code>PAEEM.PA</code>). Les cours Euronext ne sont pas couverts par le plan gratuit Twelve Data, Yahoo oui.</p>`],
   src:['Source des cours',()=>`<p>ETF Amundi / PEA : laisse <b>Auto</b>. L'appli interroge Yahoo (ex. ticker <code>CW8</code> → <code>CW8.PA</code>), gratuit et sans clé.</p><p>Crypto : en direct via Kraken, CoinGecko en secours (<code>BTC-EUR</code>). Twelve Data (clé) sert de secours pour les actions US.</p><p>Si un ETF ne remonte pas, force <b>Yahoo</b> et saisis le symbole exact (ex. <code>PE500.PA</code>).</p>`],
   live:['Cours crypto en direct',()=>`<p>Seuls les noms des paires (ex. BTC/EUR) sont envoyés à Kraken : aucun montant, aucune donnée personnelle.</p><p>La connexion se coupe dès que l'appli passe en arrière-plan.</p>`],
@@ -1139,17 +1254,19 @@ function hideHelp(){$('#hlp').classList.remove('on');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#hlp').classList.contains('on'))hideHelp();});
 function placeEpargne(){
   const rows=DB.savings.map((s,i)=>({s,c:savingCalc(s),i}));
-  const tCap=rows.reduce((a,r)=>a+(r.s.cap||0),0),tNet=rows.reduce((a,r)=>a+r.c.net,0),tRec=rows.reduce((a,r)=>a+r.c.received,0),Y=today().getFullYear();
+  const tCap=rows.reduce((a,r)=>a+(r.s.cap||0),0),tNet=rows.reduce((a,r)=>a+r.c.net,0),Y=today().getFullYear();
   $('#place-body').innerHTML=`
-   <div class="sec-h" style="margin-top:14px"><h2>Épargne & liquidités ${hq('epargne')}</h2><button class="btn sm primary" onclick="editSaving(-1)">+ Produit</button></div>
-   <div class="card"><div class="twrap"><table><thead><tr><th>Produit</th><th>Solde</th><th>Taux</th><th>Intérêts ${Y} <span style="font-weight:500;text-transform:none">(estim., nets)</span></th><th>Intérêts perçus</th><th></th></tr></thead>
-   <tbody>${rows.map(({s,c,i})=>`<tr><td style="cursor:pointer" onclick="productDetail(DB.savings[${i}].name)"><div class="t-name">${esc(s.name)} ›</div><div class="t-sub">${esc(s.bank||'')}${c.av8?' · AV +8 ans':''}${(()=>{const ci=ceilingInfo(s);return ci?` · <span style="color:${ci.level==='full'?'var(--neg)':ci.level==='near'?'var(--warn)':'var(--ink3)'}">plafond ${Math.round(ci.ratio*100)} %</span>`:'';})()}${savingWhen(s,c)}</div></td>
-     <td>${eur0(s.cap||0)}</td><td>${(c.rate*100).toFixed(2).replace('.',',')} %</td><td>${eur(c.net)}</td>
-     <td>${c.received?eur(c.received):'—'}</td><td><span class="del" onclick="editSaving(${i})">✎</span></td></tr>`).join('')}</tbody>
-   <tfoot><tr><td>TOTAL</td><td>${eur0(tCap)}</td><td></td><td>${eur(tNet)}</td><td>${tRec?eur(tRec):'—'}</td><td></td></tr></tfoot></table></div></div>
+   <div class="spread" style="margin-top:14px;align-items:flex-end"><div><div class="k-l">Épargne et liquidités ${hq('epargne')}</div><div class="tot">${eur0(tCap)}</div>
+     <div style="font-size:12.5px" class="muted">Intérêts ${Y} estimés : <b style="color:var(--ink)">${eur0(tNet)} nets</b></div></div>
+     <button class="btn sm primary" onclick="editSaving(-1)">+ Produit</button></div>
+   <div style="margin-top:12px">${rows.map(({s,c,i})=>{const ci=ceilingInfo(s),col=ci?(ci.level==='full'?'var(--neg)':ci.level==='near'?'var(--warn)':'var(--orange)'):'';
+     return `<div class="fiche" onclick="productDetail(DB.savings[${i}].name)"><div class="spread" style="align-items:flex-start;gap:10px"><div style="min-width:0"><div class="t-name">${esc(s.name)}</div><div class="t-sub">${esc(s.bank||s.type)}${c.av8?' · plus de 8 ans':''}${s.type===WALLET?' · au jour le jour':''}</div></div><div class="fv">${eur0(s.cap||0)}</div></div>
+       <div class="spread" style="margin-top:6px;font-size:12.5px"><span class="muted">${c.rate?fin(r2(c.rate*10000)/100)+' %':'—'}</span><span>Intérêts ${Y} : <b>${c.net?eur0(c.net):'—'}</b></span></div>
+       ${ci?`<div class="progress" style="margin-top:8px"><span style="width:${Math.min(100,ci.ratio*100).toFixed(0)}%;background:${col}"></span></div><div class="t-sub" style="margin-top:4px">plafond ${eur0(ceilFor(s))} · ${Math.round(ci.ratio*100)} %</div>`:''}
+       ${QUINZ.has(s.type)?`<div class="t-sub" style="margin-top:4px" onclick="event.stopPropagation()">Versé ce jour : intérêts dès le ${pd(Fin.quinzStart(ymd(today()))).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} ${hq('quinz')}</div>`:''}</div>`;}).join('')
+     ||`<div class="card"><div class="emptybox"><div class="ic">🏦</div>Aucun produit d'épargne.</div></div>`}</div>
    ${tmi()===0?`<div class="card pad" style="margin-top:14px;background:var(--hero)"><div style="font-weight:650;margin-bottom:6px;color:#fff">Mémo — non imposable (TMI 0 %)</div>
-     <div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">• Option pour le barème (case 2OP) : ${fin(r2(taxBareme()*100))} % au lieu de ${fin(r2(taxPFU()*100))} % (PFU) sur les intérêts et plus-values.<br>• LEP ${fin(r2((param('rate.LEP')||0)*100))} % net, plafond ${eur0(param('ceil.LEP'))} ; Livret A ${fin(r2((param('rate.Livret A')||0)*100))} %, plafond ${eur0(param('ceil.Livret A'))}.<br>• Taux et plafonds à jour dans Réglages ▸ Paramètres réglementaires.</div></div>`:''}
-`;
+     <div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">• Option pour le barème (case 2OP) : ${fin(r2(taxBareme()*100))} % au lieu de ${fin(r2(taxPFU()*100))} % (PFU) sur les intérêts et plus-values.<br>• LEP ${fin(r2((param('rate.LEP')||0)*100))} % net, plafond ${eur0(param('ceil.LEP'))} ; Livret A ${fin(r2((param('rate.Livret A')||0)*100))} %, plafond ${eur0(param('ceil.Livret A'))}.<br>• Taux et plafonds à jour dans Réglages ▸ Paramètres réglementaires.</div></div>`:''}`;
 }
 function nextPayDate(c){const n=crowdCalc(c).next;return n?n.d:null;}
 // ---- Portefeuille de plateforme (ex. Bricks) : les projets y sont payés, les intérêts et le capital y reviennent.
@@ -1163,10 +1280,13 @@ function crowdUnlink(c,k){if(c&&c.id)DB.movements=DB.movements.filter(m=>m.link!
 function crowdUnlinkAll(c){if(c&&c.id)DB.movements=DB.movements.filter(m=>!(m.link&&m.link.startsWith('crowd:'+c.id+':')));}
 function crowdSetLink(c,k,mv){crowdUnlink(c,k);DB.movements.push(Object.assign({q:null,pu:null,f:0,n:''},mv,{link:crowdKey(c,k)}));}
 // Intérêts d'un projet crédités nets du prélèvement à la source (PFU), comme le font les plateformes françaises
-const couponNet=(c)=>r2(crowdCalc(c).monthly*(1-taxPFU()));
+
+// Capital rendu à l'échéance normale (le reste après d'éventuels remboursements anticipés)
 function crowdCap(c){if(c.st!=='Remboursé'){crowdUnlink(c,'cap');return false;}const w=walletFor(c);if(!w||crowdLink(c,'cap'))return false;
-  const e=ymd(addMonths(c.sub,c.dur||0)),t=ymd(today());
-  crowdSetLink(c,'cap',{d:e<t?e:t,p:w.name,t:'Dépôt',m:c.amt,n:'Capital remboursé « '+c.name+' »'});return true;}
+  const e=ymd(addMonths(c.sub,c.dur||0)),t=ymd(today()),d=e<t?e:t,left=Fin.crowdCapitalAt(c,d);if(!(left>0))return false;
+  crowdSetLink(c,'cap',{d,p:w.name,t:'Dépôt',m:left,n:'Capital remboursé « '+c.name+' »'});return true;}
+// Crédite (ou retire) une échéance sur le portefeuille lié
+function crowdCredit(c,p){const w=walletFor(c);if(w)crowdSetLink(c,p.mk,{d:p.ymd,p:w.name,t:'Intérêts',m:crowdNet(c,p),n:'Intérêts projet « '+c.name+' »'});}
 function markRepaid(i){const c=DB.crowd[i];c.st='Remboursé';const back=crowdCap(c);save();renderAll();
   toast(back?'Projet remboursé : '+eur(c.amt)+' recrédités sur « '+c.wallet+' »':'Projet remboursé — pense à enregistrer le dépôt du capital');}
 // Estimation des intérêts du portefeuille depuis le dernier versement de rémunération (opération « Intérêts » saisie à la main)
@@ -1176,6 +1296,80 @@ function walletAccrued(s){const t=ymd(today());const last=DB.movements.filter(m=
 function walletInterest(name){const s=findSaving(name);if(!s)return;const a=walletAccrued(s),net=a.net;
   dupTemplate={d:ymd(today()),p:name,p2:'',t:'Intérêts',q:'',pu:'',m:net>0?net:'',f:'',n:'Rémunération du portefeuille'};editMov(-1);dupTemplate=null;
   toast('Montant estimé : corrige-le avec le montant réel de la plateforme');}
+// ---- Versements automatiques : pour les projets « En cours », chaque échéance échue est comptée reçue
+// (et créditée sur le portefeuille lié), sauf si elle a été marquée « pas encore reçue ».
+// Les échéances antérieures à l'activation sont seulement marquées reçues : le solde saisi du portefeuille les contient déjà.
+function crowdAutoSync(){const A=DB.settings.crowdAuto;if(!A||!A.on)return false;const now=today();let ch=false;
+  DB.crowd.forEach(c=>{if(c.st!=='En cours')return;c.paid=c.paid||[];const hold=new Set(c.hold||[]);
+    crowdSchedule(c).forEach(p=>{if(p.d>now||c.paid.includes(p.mk)||hold.has(p.mk))return;c.paid.push(p.mk);ch=true;
+      if(A.from&&p.ymd>=A.from)crowdCredit(c,p);});});
+  return ch;}
+function crowdAutoToggle(on){const A=DB.settings.crowdAuto||{};
+  if(on){const n=DB.crowd.filter(c=>c.st==='En cours').reduce((a,c)=>a+crowdCalc(c).missing,0);
+    if(n&&!confirm(n+' versement'+(n>1?'s':'')+' passé'+(n>1?'s':'')+' non coché'+(n>1?'s':'')+' sera'+(n>1?'ont':'')+' marqué'+(n>1?'s':'')+' reçu'+(n>1?'s':'')+', sans être crédité'+(n>1?'s':'')+' sur le portefeuille (son solde actuel les contient déjà).\n\nEnsuite, chaque échéance sera comptée reçue à sa date. Activer ?')){$('#crowd_auto').checked=false;return;}
+    DB.settings.crowdAuto={on:true,from:ymd(new Date(today().getTime()+86400000))};crowdAutoSync();DB.settings.crowdAuto.from=ymd(today());}
+  else DB.settings.crowdAuto=Object.assign({},A,{on:false});
+  save();renderAll();toast(on?'Versements automatiques activés':'Versements automatiques désactivés');}
+// Pointer d'un coup toutes les échéances échues (projets « En cours »), créditées sur le portefeuille
+function crowdPointAll(){const L=[];DB.crowd.forEach(c=>{if(c.st!=='En cours')return;const paid=new Set(c.paid||[]);crowdSchedule(c).forEach(p=>{if(p.d<=today()&&!paid.has(p.mk))L.push([c,p]);});});
+  if(!L.length)return;const tot=r2(L.reduce((a,[c,p])=>a+crowdNet(c,p),0));
+  if(!confirm('Pointer '+L.length+' versement'+(L.length>1?'s':'')+' comme reçu'+(L.length>1?'s':'')+' ('+eur(tot)+' nets) ?'))return;
+  L.forEach(([c,p])=>{c.paid=c.paid||[];c.paid.push(p.mk);c.hold=(c.hold||[]).filter(x=>x!==p.mk);crowdCredit(c,p);});save();renderAll();toast(L.length+' versements pointés');}
+// ---- Détail d'un projet : échéancier en liste, montants modifiables, remboursements anticipés
+function crowdDetail(i,all){const c=DB.crowd[i],cc=crowdCalc(c),paid=new Set(c.paid||[]),hold=new Set(c.hold||[]),now=today(),auto=(DB.settings.crowdAuto||{}).on&&c.st==='En cours';
+  const ev=cc.sch.map(p=>({d:p.ymd,p})).concat((c.reps||[]).map(r=>({d:r.d,r}))).sort((a,b)=>a.d<b.d?1:a.d>b.d?-1:(a.r?-1:1));
+  const firstFut=ev.filter(x=>x.p&&x.p.d>now).pop(),shown=ev.filter(x=>!(x.p&&x.p.d>now)||x===firstFut),list=all?shown:shown.slice(0,8);
+  const row=x=>{if(x.r)return `<div class="li hl" onclick="delRep(${i},'${x.r.d}')"><div><div class="d">${pd(x.r.d).toLocaleDateString('fr-FR')} · Remboursement anticipé</div><div class="s">${Fin.crowdCapitalAt(c,x.r.d)<=0?'total':'partiel'}${walletFor(c)?' · crédité sur le portefeuille':''}</div></div><b>${eur(x.r.m)}</b></div>`;
+    const p=x.p,fut=p.d>now,on=paid.has(p.mk),o=crowdRecv(c,p.mk),net=crowdNet(c,p);
+    const tag=fut?'':on?(o?'<span class="chip warn">modifié</span>':'<span class="chip ok">reçu</span>'):'<span class="chip neg">à pointer</span>';
+    const sub=fut?'à venir':on?(o?'prévu '+eur(r2(p.gross*(1-taxPFU())))+' · reçu '+eur(net):(auto&&!hold.has(p.mk)?'automatique':'pointé'))+(p.cap<(+c.amt||0)?' · sur '+eur0(p.cap):''):(hold.has(p.mk)?'marqué pas encore reçu':'échu, non reçu');
+    return `<div class="li" ${fut?'':`onclick="editDue(${i},'${p.mk}')"`}><div><div class="d">${p.d.toLocaleDateString('fr-FR')} ${tag}</div><div class="s">${sub}</div></div><span class="${fut?'muted':''}">${eur(net)}${fut?'':' ›'}</span></div>`;};
+  openSheet(`<div class="spread"><div><h2>${esc(c.name)}</h2><div class="t-sub">${esc(c.plat||'')} · ${fin(r2((c.rate||0)*100))} %/an · ${c.dur} mois · fin ${cc.ech.toLocaleDateString('fr-FR')}</div></div><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   <div class="g2k"><div><div class="k-l">Capital restant</div><b>${eur(cc.capital)}</b><div class="t-sub">sur ${eur0(c.amt)} investis</div></div>
+     <div><div class="k-l">Versement mensuel</div><b>${eur(cc.monthly)} brut</b><div class="t-sub">${eur(r2(cc.monthly*(1-taxPFU())))} net</div></div>
+     <div><div class="k-l">Perçu</div><b>${eur(cc.receivedNet)} nets</b><div class="t-sub">${cc.received}/${cc.total} versements</div></div>
+     <div><div class="k-l">Statut</div><b>${esc(c.st)}</b><div class="t-sub">${auto?'reçus automatiquement':'pointage manuel'}</div></div></div>
+   <div class="row" style="gap:8px;margin-top:12px">${crowdActive(c)?`<button class="btn sm" style="flex:1" onclick="crowdRep(${i})">Remboursement anticipé</button>`:''}<button class="btn sm" style="flex:1" onclick="editCrowd(${i})">✎ Modifier</button></div>
+   ${cc.mature&&crowdActive(c)?`<div class="note" style="color:var(--warn)">Échéance passée : le capital (${eur(cc.capital)}) est à récupérer. <button class="btn sm" onclick="closeSheet();markRepaid(${i})">Capital reçu ✓</button></div>`:''}
+   <div style="margin-top:14px;font-weight:650;font-size:13.5px">Échéancier <span class="muted" style="font-weight:400;font-size:12px">· montants nets ${hq('crowdDue')}</span></div>
+   <div class="lst">${list.map(row).join('')}</div>
+   ${!all&&shown.length>8?`<div class="t-sub" style="margin-top:8px;cursor:pointer" onclick="crowdDetail(${i},true)">Voir les ${shown.length-8} lignes précédentes ›</div>`:''}`);}
+function editDue(i,mk){const c=DB.crowd[i],p=crowdSchedule(c).find(x=>x.mk===mk);if(!p)return;const on=(c.paid||[]).includes(mk),plan=r2(p.gross*(1-taxPFU()));
+  openSheet(`<div class="spread"><h2>Versement du ${p.d.toLocaleDateString('fr-FR')}</h2><button class="btn sm" onclick="crowdDetail(${i})">Retour</button></div>
+   <div class="t-sub">${esc(c.name)} · prévu ${eur(p.gross)} brut, soit ${eur(plan)} net${p.cap<(+c.amt||0)?' (sur '+eur0(p.cap)+')':''}</div>
+   <div class="field" style="margin-top:12px"><label>Statut</label><select id="du_st"><option value="1" ${on?'selected':''}>Reçu</option><option value="0" ${on?'':'selected'}>Pas encore reçu</option></select></div>
+   <div class="field"><label>Montant net reçu (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="du_m" value="${fin(crowdNet(c,p))}"></div>
+   <div class="hint">Si le montant diffère du prévu, seul ce mois est modifié : l'échéancier reste inchangé.</div>
+   <div class="field"><label>Note</label><input id="du_n" value="${esc((crowdRecv(c,mk)||{}).n||'')}" placeholder="ex. intérêts au prorata"></div>
+   <div class="row" style="gap:8px;margin-top:14px"><button class="btn primary" style="flex:1" onclick="saveDue(${i},'${mk}')">Enregistrer</button><button class="btn" onclick="saveDue(${i},'${mk}',true)">Montant prévu</button></div>`);}
+function saveDue(i,mk,reset){const c=DB.crowd[i],p=crowdSchedule(c).find(x=>x.mk===mk);if(!p)return;
+  const on=$('#du_st').value==='1',m=num('du_m'),plan=r2(p.gross*(1-taxPFU()));
+  if(on&&!reset&&!(m>=0)){toast('Montant reçu ?',true);return;}
+  c.recv=(c.recv||[]).filter(r=>r.mk!==mk);c.paid=(c.paid||[]).filter(x=>x!==mk);c.hold=(c.hold||[]).filter(x=>x!==mk);
+  if(on){c.paid.push(mk);if(!reset&&Math.abs(m-plan)>=0.005)c.recv.push({mk,m:r2(m),n:val('du_n')||''});crowdCredit(c,p);}
+  else{crowdUnlink(c,mk);if((DB.settings.crowdAuto||{}).on)c.hold.push(mk);}
+  save();renderAll();crowdDetail(i);toast(on?'Versement enregistré':'Marqué pas encore reçu');}
+function crowdRep(i){const c=DB.crowd[i],t=ymd(today()),left=Fin.crowdCapitalAt(c,t);
+  openSheet(`<div class="spread"><h2>Remboursement anticipé</h2><button class="btn sm" onclick="crowdDetail(${i})">Retour</button></div>
+   <div class="t-sub">${esc(c.name)} · capital restant ${eur(left)}</div>
+   <div class="field" style="margin-top:12px"><label>Type</label><select id="rp_t" onchange="if(this.value==='total')$('#rp_m').value=fin(${left});repPreview(${i})"><option value="partiel">Partiel</option><option value="total">Total</option></select></div>
+   <div class="two"><div class="field"><label>Montant remboursé (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="rp_m" oninput="repPreview(${i})"></div><div class="field"><label>Date</label><input type="date" id="rp_d" value="${t}" onchange="repPreview(${i})"></div></div>
+   <div class="card pad" id="rp_prev" style="background:var(--card2);font-size:12.5px;line-height:1.7;color:var(--ink2)"></div>
+   <div class="hint">En « Total », le projet passe en « Remboursé » à cette date et les échéances suivantes sont supprimées.</div>
+   <button class="btn primary" style="width:100%;margin-top:14px" onclick="saveRep(${i})">Enregistrer</button>`);repPreview(i);}
+function repPreview(i){const c=DB.crowd[i],d=val('rp_d')||ymd(today()),tot=$('#rp_t').value==='total',left=Fin.crowdCapitalAt(c,d),m=tot?left:(num('rp_m')||0),w=walletFor(c);
+  const after=r2(left-m),nx=Fin.crowdDues(Object.assign({},c,{reps:(c.reps||[]).concat([{d,m}])})).find(x=>x.d>d);
+  $('#rp_prev').innerHTML=m>0?`Après ce remboursement :<br>• capital restant : <b style="color:var(--ink)">${eur(Math.max(0,after))}</b>${after>0&&nx?`<br>• versement mensuel : <b style="color:var(--ink)">${eur(nx.gross)} brut</b> dès l'échéance du ${pd(nx.d).toLocaleDateString('fr-FR')}`:''}${w?`<br>• ${eur(m)} crédités sur <b style="color:var(--ink)">${esc(w.name)}</b>`:''}`:'Indique le montant remboursé.';}
+function saveRep(i){const c=DB.crowd[i],d=val('rp_d')||ymd(today()),tot=$('#rp_t').value==='total',left=Fin.crowdCapitalAt(c,d),m=tot?left:num('rp_m');
+  if(!(m>0)){toast('Montant remboursé ?',true);return;}if(m>left+0.005){toast('Plus que le capital restant ('+eur(left)+')',true);return;}
+  c.reps=(c.reps||[]).filter(r=>r.d!==d);c.reps.push({d,m:r2(m)});
+  const w=walletFor(c);if(w)crowdSetLink(c,'rep'+d,{d,p:w.name,t:'Dépôt',m:r2(m),n:'Remboursement anticipé « '+c.name+' »'});
+  // échéances qui n'existent plus (après un remboursement total) : retirées, ainsi que leurs crédits
+  const keep=new Set(crowdSchedule(c).map(p=>p.mk));(c.paid||[]).filter(mk=>!keep.has(mk)).forEach(mk=>crowdUnlink(c,mk));c.paid=(c.paid||[]).filter(mk=>keep.has(mk));
+  if(Fin.crowdCapitalAt(c,'9999-12-31')<=0)c.st='Remboursé';
+  save();renderAll();crowdDetail(i);toast(tot||c.st==='Remboursé'?'Projet remboursé':'Remboursement enregistré');}
+function delRep(i,d){const c=DB.crowd[i];if(!confirm('Supprimer le remboursement anticipé du '+pd(d).toLocaleDateString('fr-FR')+' ?'))return;
+  c.reps=(c.reps||[]).filter(r=>r.d!==d);crowdUnlink(c,'rep'+d);if(c.st==='Remboursé'&&!crowdLink(c,'cap'))c.st='En cours';save();renderAll();crowdDetail(i);}
 function placeImmo(){
   const RE=realEstate(),t=ymd(today());
   const props=(DB.properties||[]).map((p,i)=>({p,c:propertyCalc(p),i})),loans=(DB.loans||[]).map((l,i)=>({l,c:loanCalc(l),i}));
@@ -1200,48 +1394,37 @@ function placeImmo(){
          <div><div class="k-l">Intérêts ${t.slice(0,4)}</div><div style="font-weight:650">${eur(c.interestYear)}</div><div class="t-sub">fin ${pd(c.end).toLocaleDateString('fr-FR',{month:'short',year:'numeric'})}</div></div></div>
        <div class="progress" style="margin-top:10px"><span style="width:${(100*(1-c.crd/(l.capital||1))).toFixed(0)}%;background:var(--orange)"></span></div>
        <button class="btn sm" style="width:100%;margin-top:10px" onclick="loanTable(${i})">Tableau d'amortissement</button></div>`).join('')
-     ||`<div class="card"><div class="emptybox"><div class="ic">🏦</div>Aucun crédit en cours.</div></div>`}
-   <div class="sec-h" style="margin-top:18px"><h2>Crowdfunding (Bricks) ${hq('crowd')}</h2></div>`;
-  const rows=DB.crowd.map((c,i)=>({c,cc:crowdCalc(c),i}));
-  const act=rows.filter(r=>crowdActive(r.c));
-  const capPlace=act.reduce((a,r)=>a+(r.c.amt||0),0);
-  const capRisk=act.filter(r=>r.c.st==='Retard'||r.c.st==='Défaut').reduce((a,r)=>a+(r.c.amt||0),0);
-  const capDue=act.filter(r=>r.cc.mature).reduce((a,r)=>a+(r.c.amt||0),0);
-  const totReceived=r2(rows.reduce((a,r)=>a+r.cc.receivedAmt,0));
-  const tx=crowdTaxRate();
-  const monthlyNet=r2(rows.filter(r=>r.c.st==='En cours'&&!r.cc.mature).reduce((a,r)=>a+r.cc.monthly,0)*(1-tx));
-  $('#place-body').innerHTML=reHtml+`
-   <div class="kpis" style="margin-top:4px">
-     <div class="kpi hero"><div class="k-l">Capital placé</div><div class="k-v" style="font-size:21px">${eur(capPlace)}</div>${capRisk>0?`<div class="k-s" style="color:var(--warn)">dont ${eur(capRisk)} en retard/défaut</div>`:''}</div>
-     <div class="kpi"><div class="k-l">Revenus perçus</div><div class="k-v" style="font-size:19px">${eur(totReceived)}</div><div class="k-s muted">versements pointés</div></div>
-     <div class="kpi"><div class="k-l">Revenus / mois</div><div class="k-v" style="font-size:19px">${eur(monthlyNet)}</div><div class="k-s muted">net (${DB.settings.crowdTax==='bareme'?'barème':'PFU'} ${fin(r2(tx*100))} %)</div></div>
-     ${capDue>0?`<div class="kpi" style="border-color:var(--warn)"><div class="k-l">Capital à récupérer</div><div class="k-v" style="font-size:19px;color:var(--warn)">${eur(capDue)}</div></div>`:''}
-   </div>
+     ||`<div class="card"><div class="emptybox"><div class="ic">🏦</div>Aucun crédit en cours.</div></div>`}`;
+  $('#place-body').innerHTML=reHtml;
+}
+// ---- Crowdfunding : synthèse, portefeuille, versements automatiques, projets en fiches compactes
+function placeCrowd(){
+  const rows=DB.crowd.map((c,i)=>({c,cc:crowdCalc(c),i})),act=rows.filter(r=>crowdActive(r.c));
+  const capPlace=r2(act.reduce((a,r)=>a+r.cc.capital,0));
+  const capRisk=r2(act.filter(r=>r.c.st==='Retard'||r.c.st==='Défaut').reduce((a,r)=>a+r.cc.capital,0));
+  const totNet=r2(rows.reduce((a,r)=>a+r.cc.receivedNet,0));
+  const monthlyNet=r2(rows.filter(r=>r.c.st==='En cours'&&r.cc.next).reduce((a,r)=>a+r.cc.monthly,0)*(1-crowdTaxRate()));
+  const A=DB.settings.crowdAuto||{};
+  $('#place-body').innerHTML=`
+   <div class="sec-h" style="margin-top:14px"><h2>Crowdfunding ${hq('crowd')}</h2><button class="btn sm primary" onclick="editCrowd(-1)">+ Projet</button></div>
+   <div class="kpis k3">
+     <div class="kpi hero"><div class="k-l">Capital placé</div><div class="k-v" style="font-size:19px">${eur0(capPlace)}</div>${capRisk>0?`<div class="k-s" style="color:var(--warn)">dont ${eur0(capRisk)} en retard</div>`:''}</div>
+     <div class="kpi"><div class="k-l">Revenus / mois</div><div class="k-v" style="font-size:17px">${eur(monthlyNet)}</div><div class="k-s muted">nets</div></div>
+     <div class="kpi"><div class="k-l">Perçus</div><div class="k-v" style="font-size:17px">${eur0(totNet)}</div><div class="k-s muted">nets, depuis le début</div></div></div>
    ${walletsHtml()}
-   <div class="sec-h" style="margin-top:18px"><h2>Projets</h2><button class="btn sm primary" onclick="editCrowd(-1)">+ Projet</button></div>
-   ${rows.map(({c,cc,i})=>{
-     const prog=c.dur?Math.min(1,cc.elapsed/c.dur):0;const paid=new Set(c.paid||[]);
+   <div class="card pad" style="margin-top:10px"><div class="spread" style="gap:12px"><div><div class="t-name" style="font-size:13.5px">Versements reçus automatiquement ${hq('crowdAuto')}</div><div class="t-sub">Projets « En cours » : chaque échéance est comptée reçue à sa date${wallets().length?' et créditée sur le portefeuille':''}</div></div>
+     <label class="switch"><input type="checkbox" id="crowd_auto" ${A.on?'checked':''} onchange="crowdAutoToggle(this.checked)"><span></span></label></div></div>
+   <div style="margin-top:12px">${rows.map(({c,cc,i})=>{
      const col=c.st==='Défaut'?'var(--neg)':c.st==='Retard'?'var(--warn)':c.st==='Remboursé'?'var(--ink3)':'var(--orange)';
-     return `<div class="card pad" style="margin-bottom:12px">
-       <div class="spread"><div><div class="t-name" style="font-size:15px">${esc(c.name)}</div><div class="t-sub">${esc(c.plat)} · ${fin(r2((c.rate||0)*100))} %/an · ${c.dur} mois</div></div>
-         <div style="text-align:right"><span class="pill-status" style="background:var(--card2);color:${col}">${esc(c.st)}</span><div class="del" style="margin-top:6px" onclick="editCrowd(${i})">✎ modifier</div></div></div>
-       <div class="kpis" style="margin-top:12px;grid-template-columns:repeat(3,1fr);gap:8px">
-         <div><div class="k-l">Investi</div><div style="font-weight:650;font-family:'Space Grotesk'">${eur(c.amt)}</div></div>
-         <div><div class="k-l">Mensuel</div><div style="font-weight:650;font-family:'Space Grotesk'">${eur(cc.monthly)}</div></div>
-         <div><div class="k-l">Perçu</div><div style="font-weight:650;font-family:'Space Grotesk'">${eur(cc.receivedAmt)}</div></div></div>
-       <div style="margin-top:12px"><div class="spread" style="font-size:12px;color:var(--ink2);margin-bottom:4px"><span>${cc.elapsed}/${c.dur} versements échus</span><span>${cc.received} perçus${cc.missing>0?` · <span style="color:var(--neg)">${cc.missing} à pointer</span>`:''}</span></div>
-         <div class="progress"><span style="width:${(prog*100).toFixed(0)}%;background:${col}"></span></div></div>
-       <div class="spread" style="margin-top:12px;font-size:12.5px">
-         <span class="muted">${cc.next&&crowdActive(c)?'Prochain versement : <b style="color:var(--ink)">'+cc.next.d.toLocaleDateString('fr-FR')+'</b>':'Échéance : <b style="color:var(--ink)">'+cc.ech.toLocaleDateString('fr-FR')+'</b>'}</span>
-         ${cc.mature&&crowdActive(c)?`<button class="btn sm" style="color:var(--warn);border-color:var(--warn)" onclick="markRepaid(${i})">Capital reçu ✓</button>`:''}</div>
-       ${crowdActive(c)&&cc.sch.length?`<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><div class="sub" style="margin-bottom:6px">Échéancier : coche chaque versement reçu (${eur(cc.monthly)} chacun)</div>
-         ${(()=>{const box=p=>{const on=paid.has(p.mk),fut=p.d>today();
-             return `<div style="text-align:center"><div class="chk ${on?'on':(fut?'':'miss')}" style="width:30px;height:30px;${fut&&!on?'border:1.5px dashed var(--ink3)':''}" title="Versement du ${p.d.toLocaleDateString('fr-FR')}${fut?' (à venir)':''}" onclick="togglePaid(${i},'${p.mk}')">${on?'✓':''}</div><div class="sub" style="font-size:9px;margin-top:2px">${p.mk.slice(5)}/${p.mk.slice(2,4)}</div></div>`;};
-           const n=cc.due.length+6,head=cc.sch.slice(0,n),rest=cc.sch.slice(n);
-           return `<div style="display:flex;flex-wrap:wrap;gap:7px">${head.map(box).join('')}</div>${rest.length?`<details style="margin-top:6px"><summary class="sub" style="cursor:pointer">Voir les ${rest.length} versements suivants</summary><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px">${rest.map(box).join('')}</div></details>`:''}`;})()}
-         <div class="sub" style="margin-top:6px">Case rouge : versement échu non coché · case en pointillés : à venir</div></div>`:''}
-     </div>`;}).join('')||`<div class="card"><div class="emptybox"><div class="ic">🏠</div>Aucun projet. Ajoute ton premier investissement Bricks.</div></div>`}
-`;
+     const prog=cc.total?Math.min(1,cc.elapsed/cc.total):0,repd=(c.reps||[]).length&&crowdActive(c);
+     const right=cc.mature&&crowdActive(c)?'<span class="chip warn">capital à récupérer</span>':cc.missing>0&&crowdActive(c)?`<span class="chip warn">${cc.missing} à pointer</span>`:'';
+     return `<div class="fiche" onclick="crowdDetail(${i})"><div class="spread" style="align-items:flex-start"><div><div class="t-name">${esc(c.name)}</div>
+         <div class="t-sub">${repd?eur0(cc.capital)+' restants':eur0(c.amt)} · ${fin(r2((c.rate||0)*100))} %/an${crowdActive(c)&&cc.next?' · '+eur(cc.monthly)+'/mois':''}</div></div>
+         <span class="pill-status" style="background:var(--card2);color:${col}">${esc(c.st)}</span></div>
+       <div class="progress" style="margin-top:9px"><span style="width:${(prog*100).toFixed(0)}%;background:${col}"></span></div>
+       <div class="spread" style="margin-top:6px;font-size:12px;color:var(--ink2)"><span>${cc.elapsed}/${cc.total} versements${cc.next&&crowdActive(c)?' · prochain '+cc.next.d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}):''}</span>${right}</div></div>`;}).join('')
+     ||`<div class="card"><div class="emptybox"><div class="ic">🏠</div>Aucun projet. Ajoute ton premier investissement Bricks.</div></div>`}</div>
+   ${rows.length?'<div class="note" style="text-align:center">Touche un projet pour son échéancier</div>':''}`;
 }
 // Portefeuille(s) de plateforme : argent en attente, rémunéré au jour le jour
 function walletsHtml(){const W=wallets();
@@ -1536,23 +1719,26 @@ function editMov(i){
   const opts=[...assetNames(),...savingNames()],savo=savingNames();
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouvelle'} opération</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="field"><label>Date</label><input type="date" id="f_d" value="${m.d}"></div>
-   <div class="field"><label>Type</label><select id="f_t" onchange="movFields()">${['Achat','Vente','Dividende','Dépôt','Retrait','Transfert','Intérêts','Ajustement'].map(t=>`<option ${m.t===t?'selected':''}>${t}</option>`).join('')}</select></div>
-   <div class="field"><label id="f_pl">Produit / actif</label><input list="pl" id="f_p" value="${esc(m.p||'')}" placeholder="Bitcoin, Livret A…"><datalist id="pl">${opts.map(o=>`<option value="${o}">`).join('')}</datalist><div class="hint" id="f_ph">Doit correspondre à un actif ou un produit existant.</div></div>
+   <div class="field"><label>Type</label><select id="f_t" onchange="movFields()">${['Achat','Vente','Dividende','Dépôt','Retrait','Transfert','Intérêts','Reprise','Ajustement'].map(t=>`<option ${m.t===t?'selected':''}>${t}</option>`).join('')}</select></div>
+   <div class="field"><label id="f_pl">Produit / actif</label><input list="pl" id="f_p" oninput="movFields()" value="${esc(m.p||'')}" placeholder="Bitcoin, Livret A…"><datalist id="pl">${opts.map(o=>`<option value="${o}">`).join('')}</datalist><div class="hint" id="f_ph">Doit correspondre à un actif ou un produit existant.</div></div>
    <div class="field" id="w_dest" style="display:none"><label>Vers (compte destinataire)</label><input list="dl" id="f_p2" value="${esc(m.p2||'')}" placeholder="Compte courant"><datalist id="dl">${savo.map(o=>`<option value="${o}">`).join('')}</datalist></div>
    <div class="two" id="w_qp"><div class="field"><label>Quantité</label><input type="text" inputmode="decimal" autocomplete="off" id="f_q" value="${fin(m.q??'')}"></div><div class="field"><label>Prix unitaire (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="f_pu" value="${fin(m.pu??'')}"></div></div>
    <div class="two"><div class="field"><label>Montant (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="f_m" value="${fin(m.m??'')}"></div><div class="field" id="w_f"><label>Frais (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="f_f" value="${fin(m.f??'')}"></div></div>
+   <div class="field" id="w_vg" style="display:none"><label>Valeur totale de tes cryptos juste avant la vente (€) ${hq('cryptoVg')}</label><input type="text" inputmode="decimal" autocomplete="off" id="f_vg" value="${fin(m.vg??'')}" placeholder="calculée automatiquement"></div>
    <div class="hint" id="f_h2"></div>
    <div class="field"><label>Note</label><input id="f_n" value="${esc(m.n||'')}"></div>
    <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveMov(${i})">Enregistrer</button>${i>=0?`<button class="btn" onclick="dupMov(${i})">Dupliquer</button><button class="btn" onclick="delMov(${i})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);
   movFields();}
 function dupMov(i){dupTemplate=Object.assign({},DB.movements[i],{d:ymd(today())});delete dupTemplate.link;editMov(-1);dupTemplate=null;}
 function movFields(){const t=$('#f_t').value,tr=(t==='Transfert');
+  {const a=DB.assets.find(x=>x.name===val('f_p'));$('#w_vg').style.display=(t==='Vente'&&a&&a.type==='Crypto')?'block':'none';}
   $('#w_dest').style.display=tr?'block':'none';$('#w_qp').style.display=(t==='Achat'||t==='Vente')?'grid':'none';
   $('#w_f').style.display=(t==='Achat'||t==='Vente')?'block':'none';$('#f_pl').textContent=tr?'Depuis (compte source)':'Produit / actif';
   $('#f_ph').style.display=tr?'none':'block';
   $('#f_h2').textContent=tr?'Transfert interne : soldes et intérêts se mettent à jour automatiquement.'
     :t==='Intérêts'?'Intérêts crédités sur le compte (ex. Livret A au 1er janvier) : augmentent le solde sans compter comme un versement.'
     :t==='Ajustement'?'Corrige le solde : montant positif ou négatif (ex. -12,50).'
+    :t==='Reprise'?'Argent que tu possédais déjà avant de l\'enregistrer ici : compté dans ton patrimoine, mais ni comme une épargne nouvelle ni comme un gain.'
     :t==='Dividende'?'Dividende reçu sur cette ligne : montant net crédité. Sans effet sur le prix de revient ; imposable seulement hors PEA.'
     :'Achat crypto : 2 champs sur 3 (Qté, Prix, Montant). Dépôt/retrait : juste le Montant.';}
 function saveMov(i){const t=$('#f_t').value,p=val('f_p');if(!p){toast('Indique un produit',true);return;}
@@ -1560,7 +1746,8 @@ function saveMov(i){const t=$('#f_t').value,p=val('f_p');if(!p){toast('Indique u
   if(t==='Transfert'){const p2=val('f_p2'),amt=num('f_m');if(!p2){toast('Compte destinataire ?',true);return;}if(p2===p){toast('Source = destination',true);return;}if(!amt){toast('Montant ?',true);return;}
     o={d:val('f_d')||ymd(today()),p,p2,t:'Transfert',q:null,pu:null,m:amt,f:0,n:val('f_n')||''};}
   else{if(t==='Dividende'&&(!DB.assets.some(a=>a.name===p)||!(num('f_m')>0))){toast('Dividende : choisis une ligne de bourse et un montant',true);return;}
-    o={d:val('f_d')||ymd(today()),p,t,q:t==='Dividende'?null:num('f_q'),pu:t==='Dividende'?null:num('f_pu'),m:num('f_m'),f:t==='Dividende'?0:(num('f_f')||0),n:val('f_n')||''};}
+    o={d:val('f_d')||ymd(today()),p,t,q:t==='Dividende'?null:num('f_q'),pu:t==='Dividende'?null:num('f_pu'),m:num('f_m'),f:t==='Dividende'?0:(num('f_f')||0),n:val('f_n')||''};
+    if(t==='Vente'&&$('#w_vg').style.display!=='none'){const vg=num('f_vg');if(vg!=null)o.vg=vg;}}
   if(old&&old.link)o.link=old.link; // opération créée par un projet : le lien est conservé
   if(i>=0)DB.movements[i]=o;else DB.movements.push(o);
   save();closeSheet();renderAll();toast(t==='Transfert'?'Transfert enregistré':'Opération enregistrée');}
@@ -1599,6 +1786,7 @@ function editSaving(i,wallet){const s=i>=0?DB.savings[i]:(wallet?{name:'Portefeu
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouveau'} produit</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="two"><div class="field"><label>Nom</label><input id="s_name" value="${esc(s.name)}"></div><div class="field"><label>Type</label><select id="s_type">${types.map(t=>`<option ${s.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
    <div class="two"><div class="field"><label>Établissement</label><input id="s_bank" value="${esc(s.bank||'')}"></div><div class="field"><label>Solde actuel (€) ${hq('solde')}</label><input type="text" inputmode="decimal" autocomplete="off" id="s_cap" value="${fin(s.cap??'')}"></div></div>
+   ${i<0||!DB.movements.some(m=>m.p===s.name||m.p2===s.name)?`<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);margin:-4px 0 10px"><input type="checkbox" id="s_held" checked> Argent déjà détenu (pas un nouveau versement) ${hq('reprise')}</label>`:''}
    <div class="two"><div class="field"><label>Date d'ouverture</label><input type="date" id="s_open" value="${s.open||''}"></div><div class="field"><label>Taux annuel (%) ${hq('rate')}</label><input type="text" inputmode="decimal" autocomplete="off" id="s_rate" value="${fin(rateShown(s)==null?'':r2(rateShown(s)*10000)/100)}" placeholder="auto"></div></div>
    <div class="two"><div class="field"><label>Taux en vigueur depuis le</label><input type="date" id="s_rated" value="${ymd(today())}"></div><div class="field"><label>Historique des taux</label><div style="font-size:12.5px;line-height:1.7">${(s.rates||[]).length?(s.rates||[]).slice().sort((a,b)=>a.from<b.from?1:-1).map(x=>`<div class="spread"><span>${fin(r2(x.rate*10000)/100)} % depuis le ${pd(x.from).toLocaleDateString('fr-FR')}</span>${i>=0&&s.rates.length>1?`<span class="del" onclick="delSavingRate(${i},'${x.from}')">✕</span>`:''}</div>`).join(''):'<span class="muted">—</span>'}</div></div></div>
    <div class="two"><div class="field"><label>Fiscalité</label><select id="s_tax">${taxes.map(t=>`<option ${s.tax===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="field"><label>Plafond de versements (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="s_ceil" value="${fin(s.ceil??'')}" placeholder="${param('ceil.'+(s.type||'Livret A'))!=null?'réglementaire : '+fin(param('ceil.'+(s.type||'Livret A'))):'aucun'}"></div></div>
@@ -1621,7 +1809,7 @@ function saveSaving(i){const name=$('#s_name').value.trim();if(!name){toast('Nom
   if(capIn!=null){const diff=r2(capIn-savingBalance(o)),hasOps=DB.movements.some(m=>m.p===name||m.p2===name);
     if(Math.abs(diff)>=0.005)DB.movements.push(hasOps
       ?{d:ymd(today()),p:name,t:'Ajustement',q:null,pu:null,m:diff,f:0,n:'Correction du solde'}
-      :{d:o.open||ymd(today()),p:name,t:'Dépôt',q:null,pu:null,m:diff,f:0,n:'Solde à l\'ouverture'});}
+      :{d:o.open||ymd(today()),p:name,t:($('#s_held')&&!$('#s_held').checked)?'Dépôt':'Reprise',q:null,pu:null,m:diff,f:0,n:'Solde à l\'ouverture'});}
   save();closeSheet();renderAll();toast('Produit enregistré');}
 function delSavingRate(i,from){const s=DB.savings[i];s.rates=(s.rates||[]).filter(x=>x.from!==from);s.rate=s.rates.length?Fin.rateOn(s.rates,ymd(today())):null;save();editSaving(i);}
 // Taux affiché dans la fiche : taux en vigueur (historique) ou taux manuel
@@ -1713,7 +1901,7 @@ function saveCrowd(i){const name=$('#c_name').value.trim();if(!name){toast('Nom 
   if(day!=null&&!(Number.isInteger(day)&&day>=1&&day<=31)){toast('Jour de versement entre 1 et 31',true);return;}
   const old=i>=0?DB.crowd[i]:null;
   const o={id:old&&old.id?old.id:'c'+Date.now().toString(36),name,plat:$('#c_plat').value.trim(),amt:r2(amt),rate:Math.round(rate*1e4)/1e6,sub:val('c_sub')||ymd(today()),dur:dur||12,day:day||8,st:$('#c_st').value,
-    wallet:$('#c_wallet')?$('#c_wallet').value:(old&&old.wallet)||'',paid:(old?old.paid:[])||[]};
+    wallet:$('#c_wallet')?$('#c_wallet').value:(old&&old.wallet)||'',paid:(old?old.paid:[])||[],reps:(old&&old.reps)||[],recv:(old&&old.recv)||[],hold:(old&&old.hold)||[]};
   if(i>=0)DB.crowd[i]=o;else DB.crowd.push(o);
   const w=walletFor(o);let warn='';
   if(!w)crowdUnlinkAll(o); // plus de portefeuille lié : les opérations automatiques sont retirées
@@ -1726,18 +1914,18 @@ function saveCrowd(i){const name=$('#c_name').value.trim();if(!name){toast('Nom 
     // On n'en crée JAMAIS rétroactivement (le solde saisi du portefeuille les contient déjà) : seuls les prochains pointages créditent.
     const changed=old&&(old.amt!==o.amt||old.rate!==o.rate);
     (o.paid||[]).forEach(mk=>{const m=crowdLink(o,mk),p=crowdSchedule(o).find(q=>q.mk===mk);if(!m)return;
-      if(p)crowdSetLink(o,mk,{d:ymd(p.d),p:w.name,t:'Intérêts',m:changed?couponNet(o):m.m,n:'Intérêts projet « '+name+' »'});else crowdUnlink(o,mk);});
+      if(p){if(changed)crowdSetLink(o,mk,{d:p.ymd,p:w.name,t:'Intérêts',m:crowdNet(o,p),n:'Intérêts projet « '+name+' »'});else crowdSetLink(o,mk,{d:p.ymd,p:w.name,t:'Intérêts',m:m.m,n:'Intérêts projet « '+name+' »'});}else crowdUnlink(o,mk);});
     const cap=crowdLink(o,'cap');if(cap){cap.p=w.name;cap.m=o.amt;}
   }
   if(o.st!=='Remboursé')crowdUnlink(o,'cap');else if(!old||old.st!=='Remboursé')crowdCap(o); // capital recrédité seulement au passage à « Remboursé »
-  save();closeSheet();renderAll();nav('placements');setPlace('immo');toast('Projet enregistré'+warn,!!warn);}
+  save();closeSheet();renderAll();nav('placements');setPlace('crowd');toast('Projet enregistré'+warn,!!warn);}
 function delCrowd(i){const c=DB.crowd[i],n=DB.movements.filter(m=>m.link&&c.id&&m.link.startsWith('crowd:'+c.id+':')).length;
   if(n&&!confirm('Supprimer « '+c.name+' » et les '+n+' opération'+(n>1?'s':'')+' créée'+(n>1?'s':'')+' sur le portefeuille (paiement, intérêts, capital) ?'))return;
   crowdUnlinkAll(c);DB.crowd.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 function togglePaid(i,mk){const c=DB.crowd[i];c.paid=c.paid||[];const x=c.paid.indexOf(mk);
   if(x>=0){c.paid.splice(x,1);crowdUnlink(c,mk);}
   else{c.paid.push(mk);const w=walletFor(c),p=crowdSchedule(c).find(q=>q.mk===mk);
-    if(w&&p)crowdSetLink(c,mk,{d:ymd(p.d),p:w.name,t:'Intérêts',m:couponNet(c),n:'Intérêts projet « '+c.name+' »'});}
+    if(w&&p)crowdCredit(c,p);c.hold=(c.hold||[]).filter(x=>x!==mk);}
   save();renderAll();}
 
 function editExpense(i){const e=i>=0?DB.expenses[i]:{d:ymd(today()),label:'',amt:'',cat:'Courses'};
@@ -1785,7 +1973,6 @@ function delResale(i){DB.resale.splice(i,1);save();closeSheet();renderAll();toas
 
 function openSettings(){const s=DB.settings,y=today().getFullYear();
   openSheet(`<div class="spread"><h2>Réglages</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
-   <div class="field"><label>Valeur du patrimoine au 1ᵉʳ janvier ${y} (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_snap" value="${fin(s.snapshots[y]??'')}"><button class="btn sm" style="width:100%;margin-top:8px" onclick="useCurrentAsRef()">Utiliser la valeur actuelle</button></div>
    <div class="field"><label>Thème</label><select id="set_theme"><option value="dark" ${s.theme==='dark'?'selected':''}>Sombre</option><option value="light" ${s.theme==='light'?'selected':''}>Clair</option></select></div>
    <div class="field"><button class="btn" style="width:100%" onclick="enableNotif()">${s.notif?'🔔 Rappels activés':'🔕 Activer les rappels'}</button><div class="hint">Ce qui déclenche une alerte ${hq('notif')}</div></div>
    <div class="field"><button class="btn" style="width:100%" onclick="closeSheet();openGuide()">📖 Guide : synchronisation Google Drive</button></div>
@@ -1811,6 +1998,7 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
    <details class="field" style="border-top:1px solid var(--line);padding-top:12px"><summary style="cursor:pointer;color:var(--ink2);font-size:13px">Avancé : sources des cours et indices</summary>
      <div class="field"><label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:13.5px"><input type="checkbox" id="set_live" ${s.liveCrypto!==false?'checked':''}> Cours crypto en direct (Kraken) ${hq('live')}</label>
        </div>
+     <div class="field"><label>Valeur au 1ᵉʳ janvier ${y} (€) ${hq('ref')}</label><input type="text" inputmode="decimal" autocomplete="off" id="set_snap" value="${fin((s.refManual||{})[y]??'')}" placeholder="automatique : ${fin(Math.round(yearRef(y).auto))}"><div class="hint">Laisse vide pour le calcul automatique.</div></div>
      <div class="field"><label>Clé API Twelve Data (secours pour les actions US)</label><input id="set_key" value="${esc(s.stockKey||'')}" placeholder="facultatif"></div>
      <div class="two"><div class="field"><label>Symbole MSCI World</label><input id="set_bmsci" value="${esc((s.benchSym||{}).MSCI||'URTH')}"></div><div class="field"><label>Symbole CAC 40</label><input id="set_bcac" value="${esc((s.benchSym||{}).CAC||'CAC')}"></div></div>
    </details>
@@ -1839,13 +2027,12 @@ function addParam(i){const k=Fin.paramKeys()[i],from=val('pf_'+i),v=num('pv_'+i)
   const ref=Fin.paramHistory(k,[])[0];DB.params=(DB.params||[]).filter(p=>!(p.key===k&&p.from===from));
   DB.params.push({key:k,from,value:ref.unit==='%'?v/100:v,unit:ref.unit,label:ref.label,src:'Ajouté par toi'});save();renderAll();openParams();toast('Valeur ajoutée');}
 function delParam(k,from){DB.params=(DB.params||[]).filter(p=>!(p.key===k&&p.from===from));save();renderAll();openParams();toast('Valeur retirée');}
-function useCurrentAsRef(){$('#set_snap').value=Math.round(consolidate().net);toast('Renseigné — Enregistre pour valider');}
 function archiveYear(){const y=today().getFullYear();DB.settings.snapshots[y]=Math.round(consolidate().net);save();renderAll();toast('Référence '+y+' figée');}
 function dismissYear(y){DB.settings.dismissY=DB.settings.dismissY||{};DB.settings.dismissY[y]=true;save();renderAll();}
 function saveSettings(doSync){const y=today().getFullYear(),s=DB.settings;
   // On lit et valide tous les nombres AVANT de modifier quoi que ce soit
   const snap=num('set_snap'),vObj=num('set_obj');
-  s.snapshots[y]=snap==null?undefined:snap;
+  s.refManual=s.refManual||{};if(snap==null)delete s.refManual[y];else s.refManual[y]=snap;
   s.theme=$('#set_theme').value;s.stockKey=$('#set_key').value.trim();s.objNet=(vObj||0)/100;
   s.tmi=+$('#set_tmi').value;s.cryptoRegime=$('#set_crypto').value;s.crowdTax=$('#set_crowdtax').value;s.resaleRegime=$('#set_resale').value;
   s.gdriveClientId=($('#set_gid')?$('#set_gid').value.trim():s.gdriveClientId)||'';
@@ -1884,6 +2071,16 @@ async function quoteVia(sym){
     if(r.ok){const d=await r.json();if(d&&d.price!=null)return {price:+d.price,prev:d.prev!=null?+d.prev:null,cur:d.cur||'EUR'};}}catch(e){}
   return await yahooQuote(sym);
 }
+// Cours de clôture juste avant une date (fin d'année pour la valeur au 1er janvier) : fonction Netlify uniquement
+async function quoteAt(sym,d){try{const r=await fetch('/.netlify/functions/quote?s='+encodeURIComponent(sym)+'&d='+d);
+  if(r.ok){const j=await r.json();if(j&&j.price!=null&&isFinite(+j.price)&&+j.price>0)return {price:+j.price,cur:j.cur||'EUR'};}}catch(e){}return null;}
+const refSym=(a)=>a.type==='Crypto'?((a.ticker||'').includes('-')?a.ticker.trim().toUpperCase():(a.ticker||'').trim().toUpperCase()+'-EUR'):yahooSym(a);
+// Récupère (une fois par an) les cours de fin d'année des titres détenus au 1er janvier
+async function fetchRefPrices(y){const R=y+'-01-01';DB.refPrices=DB.refPrices||[];let n=0;
+  for(const a of DB.assets){if(qtyAt(a,R)<=1e-12||refPrice(a,y)!=null||(a.src||'auto')==='manuel')continue;const sym=refSym(a);if(!sym)continue;
+    const q=await quoteAt(sym,R);if(!q)continue;const fx=DB.settings.eurusd||0.92;const px=+toEUR(q.price,q.cur,fx).toFixed(4);
+    if(px>0){DB.refPrices.push({y,name:a.name,px,src:'Yahoo '+sym});n++;}}
+  return n;}
 function toEUR(px,cur,fx){const c=(cur||'EUR').toUpperCase();
   if(c==='EUR')return px; if(c==='USD')return px*fx;
   if(c==='GBP')return px; if(c==='GBX'||c==='GBP5'||c==='GBp')return px/100; return px;}
@@ -1926,6 +2123,7 @@ async function refreshPrices(){
     }
   }
   DB.settings.eurusd=fx;DB.settings.lastPriceReport={t:Date.now(),rep};
+  try{await fetchRefPrices(today().getFullYear());}catch(e){}
   save();renderAll();
   const okn=rep.filter(x=>x[1]===1).length,bad=rep.filter(x=>x[1]===0).length;
   if(okn)toast(okn+' cours à jour'+(bad?' · '+bad+' en échec (détail ⓘ)':''));
@@ -2036,11 +2234,12 @@ function checkAlerts(){if(!DB.settings.notif||!('Notification'in window)||Notifi
 function toggleTheme(){DB.settings.theme=(DB.settings.theme==='dark')?'light':'dark';applyTheme();save();renderAll();}
 function nav(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));$('#v-'+v).classList.add('on');
   document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));window.scrollTo(0,0);
-  if(v==='dash'){dashAnimated=false;renderDash();}}
+  if(v==='dash'){dashAnimated=false;renderDash();}
+  if(v==='analyse'){document.querySelector('.nav a[data-v="dash"]').classList.add('on');renderAnalyse();}}
 function autoSnapshot(){const now=today();const mk=ymKey(now);const last=DB.settings.lastSnapMonth;
-  if(last&&last!==mk){DB.settings.snapshots[last]=DB.settings.snapshots[last]??Math.round(consolidate().net);}
+  if(last&&last!==mk){DB.settings.snapshots[last]=DB.settings.snapshots[last]??Math.round(consolidate().net);DB.settings.snapFin=DB.settings.snapFin||{};DB.settings.snapFin[last]=DB.settings.snapFin[last]??Math.round(finValue());}
   DB.settings.lastSnapMonth=mk;}
-function renderAll(){renderDash();renderPlacements();renderBudget();renderRevente();try{liveSync();}catch(e){}}
+function renderAll(){if(crowdAutoSync())save();renderDash();renderPlacements();renderBudget();renderRevente();if($('#v-analyse').classList.contains('on'))renderAnalyse();try{liveSync();}catch(e){}}
 function hideSplash(){setTimeout(()=>{const s=$('#splash');if(s){s.style.opacity='0';setTimeout(()=>s.remove(),400);}},550);}
 function boot(){try{load();applyTheme();runRecurring();autoSnapshot();save();
   $('#asof').textContent='mis à jour le '+today().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});

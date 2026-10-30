@@ -126,9 +126,9 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     <div class="row"><span class="n">04</span><span class="t">Importer vos relevés</span><span class="d">Banques et plateformes crypto</span><span class="p">8</span></div>
     <div class="row"><span class="n">05</span><span class="t">Budget</span><span class="d">Catégories, récurrences, prévu / réel</span><span class="p">10</span></div>
     <div class="row"><span class="n">06</span><span class="t">Immobilier et crowdfunding</span><span class="d">Biens, crédits, projets, portefeuille</span><span class="p">11</span></div>
-    <div class="row"><span class="n">07</span><span class="t">Pilotage et sécurité</span><span class="d">Cash-flow, objectifs, verrouillage, sauvegardes</span><span class="p">13</span></div>
-    <div class="row"><span class="n">08</span><span class="t">Questions fréquentes</span><span class="d">Confidentialité, appareils, code oublié</span><span class="p">15</span></div>
-    <div class="row"><span class="n">09</span><span class="t">Informations importantes</span><span class="d">Avertissements et limites</span><span class="p">16</span></div>
+    <div class="row"><span class="n">07</span><span class="t">Pilotage et sécurité</span><span class="d">Accueil, analyse, verrouillage, sauvegardes</span><span class="p">14</span></div>
+    <div class="row"><span class="n">08</span><span class="t">Questions fréquentes</span><span class="d">Confidentialité, appareils, code oublié</span><span class="p">17</span></div>
+    <div class="row"><span class="n">09</span><span class="t">Informations importantes</span><span class="d">Avertissements et limites</span><span class="p">18</span></div>
   </div>
   <div class="rule"></div>
   <h3 style="margin-top:0">Invest.co en un coup d'œil</h3>
@@ -202,21 +202,16 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
       <ol class="steps">
         <li>Ouvrez <span class="path">Placements › Épargne › + Produit</span>.</li>
         <li>Choisissez le type (Livret A, LDDS, LEP, PEL, assurance-vie, compte courant…), l'établissement et la date d'ouverture.</li>
-        <li>Saisissez le <b>solde actuel</b>. Pour les livrets réglementés, laissez le taux vide : il est appliqué automatiquement.</li>
+        <li>Saisissez le <b>solde actuel</b> et laissez cochée la case <b>Argent déjà détenu</b> : ce solde existant n'est compté ni comme une épargne nouvelle ni comme un gain. Pour les livrets réglementés, laissez le taux vide : il est appliqué automatiquement.</li>
       </ol>
-      <p>Les versements et retraits suivants se saisissent comme des <b>opérations</b> : touchez le nom du produit, puis <b>+ Opération</b>. Le solde est toujours recalculé à partir de l'historique, et les intérêts suivent la règle officielle des quinzaines.</p>
+      <p>Les versements et retraits suivants se saisissent comme des <b>opérations</b> : touchez la fiche du produit, puis <b>+ Opération</b>. Le solde est toujours recalculé à partir de l'historique, et les intérêts suivent la règle officielle des quinzaines.</p>
       <div class="note tip"><b class="t">Plafonds surveillés</b>Invest.co vous prévient lorsqu'un livret approche de son plafond de versements, ainsi que pour le PEA.</div>
-      <h3>Lire le tableau</h3>
-      <table>
-        <tr><th>Colonne</th><th>Contenu</th></tr>
-        <tr><td>Solde</td><td>Ce qui se trouve sur le produit aujourd'hui.</td></tr>
-        <tr><td>Intérêts de l'année</td><td>Estimation nette d'impôt pour l'année en cours.</td></tr>
-        <tr><td>Intérêts perçus</td><td>Total des intérêts enregistrés sur le produit.</td></tr>
-      </table>
+      <h3>Lire une fiche</h3>
+      <p>Chaque produit affiche son <b>solde</b>, son <b>taux</b>, les <b>intérêts de l'année</b> (estimation nette d'impôt) et, pour un livret, la jauge de son plafond. Touchez la fiche pour le détail : montant versé, intérêts perçus et opérations.</p>
       <h3>Comptes à taux libre</h3>
       <p>Pour une assurance-vie, un livret bancaire ou un portefeuille de plateforme, indiquez le taux et sa <b>date d'entrée en vigueur</b>. Lorsqu'il change, saisissez le nouveau taux à sa date : l'ancien reste appliqué aux jours passés.</p>
     </div>
-    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/epargne.png"></div><figcaption><b>Figure 3</b> — Épargne et liquidités</figcaption></figure>
+    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/epargne.png"></div><figcaption><b>Figure 3</b> — Épargne en fiches</figcaption></figure>
   </div>
   <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>5</span></div>
 </section>
@@ -251,7 +246,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     <div>
       <h3 style="margin-top:0">Bourse et crypto</h3>
       <p>Dans <span class="path">Placements › Bourse &amp; crypto › + Actif</span>, indiquez le nom, le symbole et l'enveloppe (PEA, CTO, plateforme crypto). Pour un ETF coté à Paris, le code Euronext suffit (par exemple <span class="k">CW8</span>) ; pour le bitcoin, utilisez <span class="k">BTC-EUR</span>. Le <b>code ISIN</b> (12 caractères, par exemple <span class="k">LU1681043599</span>) est facultatif ; il est vérifié à la saisie.</p>
-      <p>Saisissez ensuite vos achats et ventes. Invest.co calcule votre <b>prix de revient unitaire</b>, votre plus-value latente et réalisée.</p>
+      <p>Saisissez ensuite vos achats et ventes. Vos lignes s'affichent en <b>fiches regroupées par enveloppe</b> (PEA, compte-titres, plateforme crypto) avec leur sous-total : valeur, gain ou perte depuis l'achat et variation du jour. Touchez une fiche pour son détail : prix de revient, quantité, <b>seuils de revente</b> et opérations.</p>
       <p><b>Crypto en direct :</b> tant que l'application est ouverte, le cours de vos cryptomonnaies se met à jour en continu, avec la variation sur 24 heures (badge <span class="k">● direct</span>). Pour les actions et les ETF, le bouton <span class="k">↻ Cours</span> actualise les cotations et affiche la <b>variation du jour</b>, par rapport à la clôture de la séance précédente.</p>
       <h3>La fiche PEA</h3>
       <p>Touchez <b>fiche PEA</b> pour renseigner la date d'ouverture, l'établissement et vos <b>versements</b> d'argent sur le plan. Invest.co affiche alors :</p>
@@ -378,21 +373,37 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
       <div class="note tip"><b class="t">Vérifiez avec votre banque</b>Comparez le capital restant dû affiché avec le tableau d'amortissement remis par votre établissement : les deux doivent concorder au centime près.</div>
       <h3>Valeur estimée</h3>
       <p>Ajoutez une nouvelle estimation datée lorsque vous en obtenez une (agence, notaire, données de ventes). Les estimations précédentes sont conservées et la plus récente est utilisée pour votre patrimoine.</p>
-      <h3>Crowdfunding immobilier</h3>
-      <p>Pour chaque projet (montant, taux annuel, durée, date de souscription), l'échéancier mensuel s'affiche : cochez chaque versement reçu. Un versement échu non coché apparaît en rouge et dans vos alertes ; un projet en retard reste compté dans votre patrimoine jusqu'au remboursement.</p>
-      <h3>Le portefeuille de la plateforme</h3>
-      <p>L'argent non investi sur Bricks reste sur votre portefeuille, rémunéré à son propre taux et <b>calculé au jour le jour</b>. Créez-le depuis la rubrique Crowdfunding avec son solde actuel :</p>
-      <ul class="dots">
-        <li>un nouveau projet est <b>payé depuis le portefeuille</b> ;</li>
-        <li>chaque versement coché y est <b>crédité</b>, net du prélèvement à la source ;</li>
-        <li>le <b>capital</b> y revient au remboursement ;</li>
-        <li><b>+ Intérêts reçus</b> enregistre la rémunération du portefeuille.</li>
-      </ul>
-      <div class="note info"><b class="t">Aucun double comptage</b>Rien n'est ajouté pour le passé : le solde que vous saisissez contient déjà vos opérations antérieures.</div>
+      <h3>Crowdfunding</h3>
+      <p>Vos projets ont leur propre onglet, <span class="path">Placements › Crowdfunding</span> : capital placé, revenus mensuels nets, portefeuille de la plateforme, puis une fiche compacte par projet avec sa progression et le prochain versement.</p>
+      <p>Une pastille signale ce qui demande votre attention : versements <b>à pointer</b> ou <b>capital à récupérer</b> à l'échéance.</p>
     </div>
-    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/bricks.png"></div><figcaption><b>Figure 9</b> — Portefeuille et projets</figcaption></figure>
+    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/bricks.png"></div><figcaption><b>Figure 9</b> — Onglet Crowdfunding</figcaption></figure>
   </div>
   <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>12</span></div>
+</section>
+
+<!-- ======================= 06 ter CROWDFUNDING : ÉCHÉANCIER ======================= -->
+<section class="page">
+  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>06 · Immobilier et crowdfunding</span></div>
+  <div class="two">
+    <div>
+      <h3 style="margin-top:0">L'échéancier d'un projet</h3>
+      <p>Touchez un projet : son échéancier s'affiche en liste, du plus récent au plus ancien, avec le <b>montant net</b> de chaque versement (intérêts bruts moins le prélèvement à la source).</p>
+      <h3>Versements reçus automatiquement</h3>
+      <p>Activez l'option dans l'onglet Crowdfunding : chaque échéance d'un projet « En cours » est comptée reçue à sa date et créditée sur le portefeuille. À l'activation, les échéances passées sont marquées reçues sans être recréditées. Un projet « Retard » ou « Défaut » reste à pointer à la main ; sinon, <b>Tout pointer</b> règle tous les versements en un geste.</p>
+      <h3>Un mois différent</h3>
+      <p>Touchez la ligne du mois pour saisir le <b>montant réellement reçu</b> ou indiquer qu'il n'est <b>pas encore reçu</b>. Seul ce mois change ; l'échéancier reste intact.</p>
+      <h3>Remboursement anticipé</h3>
+      <ul class="dots">
+        <li><b>Partiel</b> : le capital remboursé est crédité sur le portefeuille et les intérêts sont recalculés sur le capital restant dès l'échéance suivante.</li>
+        <li><b>Total</b> : le projet passe en « Remboursé » à cette date et les échéances suivantes disparaissent.</li>
+      </ul>
+      <h3>Le portefeuille de la plateforme</h3>
+      <p>L'argent non investi reste sur votre portefeuille, rémunéré <b>au jour le jour</b>. Les nouveaux projets y sont payés, les versements et le capital y reviennent ; <b>+ Intérêts reçus</b> enregistre sa rémunération. Rien n'est ajouté pour le passé : le solde saisi contient déjà vos opérations antérieures.</p>
+    </div>
+    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/bricks_detail.png"></div><figcaption><b>Figure 10</b> — Échéancier d'un projet</figcaption></figure>
+  </div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>13</span></div>
 </section>
 
 <!-- ======================= 07 PILOTAGE ======================= -->
@@ -401,24 +412,39 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
   <div class="chap"><span class="n">07</span><div><span class="kick">Au quotidien</span><h2>Pilotage et sécurité</h2></div></div>
   <div class="two">
     <div>
-      <h3 style="margin-top:0">Cash-flow et taux d'épargne</h3>
-      <p>Le tableau de bord présente le <b>cash-flow du mois</b>, établi à partir de votre compte courant :</p>
+      <h3 style="margin-top:0">L'accueil</h3>
+      <p>Votre <b>patrimoine net</b>, expliqué en une phrase : la variation depuis le 1<sup>er</sup> janvier, dont ce que vous avez épargné et ce que vos placements ont rapporté. Puis trois chiffres :</p>
       <table>
-        <tr><th>Indicateur</th><th>Calcul</th></tr>
-        <tr><td>Revenus</td><td>Les dépôts sur votre compte courant (salaire, remboursements…).</td></tr>
-        <tr><td>Dépenses</td><td>Vos dépenses courantes, hors catégorie Investissement.</td></tr>
-        <tr><td>Épargne</td><td>Revenus moins dépenses : ce qui reste, y compris ce que vous avez investi.</td></tr>
-        <tr><td>Taux d'épargne</td><td>Épargne divisée par les revenus.</td></tr>
+        <tr><th>Chiffre</th><th>Contenu</th></tr>
+        <tr><td>Disponible</td><td>Livrets et comptes hors assurance-vie, avec le nombre de mois de dépenses couverts.</td></tr>
+        <tr><td>Revenus passifs</td><td>Intérêts, versements de crowdfunding et dividendes, par mois.</td></tr>
+        <tr><td>Épargné du mois</td><td>Revenus moins dépenses courantes, comparé à votre moyenne.</td></tr>
       </table>
-      <p>Le mois en cours est comparé au mois précédent et à la moyenne des 12 derniers mois ; le graphique retrace leur évolution.</p>
-      <h3>Objectifs</h3>
-      <p><b>+ Objectif</b> : un montant, une échéance et les comptes concernés (épargne de précaution, apport immobilier…). Invest.co indique la progression et l'<b>effort mensuel</b> nécessaire.</p>
-      <h3>Alertes</h3>
-      <p>Le bloc <b>À surveiller</b> rassemble ce qui demande votre attention : plafond d'un livret ou du PEA, budget dépassé, versement à pointer, objectif en retard, seuil de déclaration d'une plateforme de vente.</p>
+      <p>Le bloc <b>À surveiller</b> affiche au plus trois alertes, chacune avec son action (Voir, Pointer, Tout pointer). Vos <b>objectifs</b> suivent, avec l'effort mensuel nécessaire.</p>
+      <h3>L'écran Analyse</h3>
+      <p>Depuis l'accueil, <b>Analyse</b> regroupe le bilan de l'année, l'évolution du patrimoine, la répartition (brute ou nette de crédits), la performance de vos placements, le cash-flow sur douze mois et le récapitulatif fiscal.</p>
     </div>
-    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/cashflow.png"></div><figcaption><b>Figure 10</b> — Cash-flow et alertes</figcaption></figure>
+    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/tableau.png"></div><figcaption><b>Figure 11</b> — Accueil</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>13</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>14</span></div>
+</section>
+
+<!-- ======================= 07 · COMPRENDRE VOS CHIFFRES ======================= -->
+<section class="page">
+  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>07 · Pilotage et sécurité</span></div>
+  <div class="two">
+    <div>
+      <h3 style="margin-top:0">Comprendre vos chiffres</h3>
+      <p><b>Valeur au 1<sup>er</sup> janvier.</b> Elle est reconstituée automatiquement : soldes d'épargne au 31 décembre, titres détenus à leur cours de clôture de fin d'année (récupéré avec <span class="k">↻ Cours</span>), projets en cours, biens à leur estimation, moins le capital restant dû. Vous pouvez imposer une autre valeur dans <span class="path">Réglages › Avancé</span>.</p>
+      <p><b>Épargne versée et gains.</b> Vos revenus et versements de l'année moins vos dépenses, l'apport personnel d'un achat immobilier et le capital de crédit déjà remboursé constituent l'épargne versée ; le reste de la variation est un gain ou une perte. Un compte que vous possédiez déjà et que vous enregistrez est une <b>reprise d'existant</b> : ni épargne ni gain.</p>
+      <p><b>Performance.</b> Elle porte sur vos placements financiers (bourse, crypto, épargne, crowdfunding), sans le compte courant ni l'immobilier. Le rendement s'affiche après trois mois de recul et n'est annualisé qu'au-delà d'un an.</p>
+      <p><b>Plus-values crypto.</b> Elles suivent la règle fiscale française : chaque vente est comparée à la valeur de l'ensemble de votre portefeuille crypto (formulaire 2086). Lors d'une vente, Invest.co vous demande cette valeur, préremplie. Si vos ventes de l'année ne dépassent pas 305 €, la plus-value n'est pas imposable.</p>
+      <h3>Cash-flow</h3>
+      <p>Revenus (dépôts sur votre compte courant), dépenses courantes hors catégorie Investissement, et montant épargné, mois par mois sur un an, dans l'écran Analyse.</p>
+    </div>
+    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/cashflow.png"></div><figcaption><b>Figure 12</b> — Analyse : cash-flow</figcaption></figure>
+  </div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>15</span></div>
 </section>
 
 <!-- ======================= 07 bis SÉCURITÉ / SAUVEGARDES ======================= -->
@@ -444,9 +470,9 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
       </table>
       <div class="note tip"><b class="t">Changer d'appareil</b>Exportez vos données sur l'ancien appareil, puis utilisez <b>Importer</b> sur le nouveau (ou activez la synchronisation Google Drive sur les deux).</div>
     </div>
-    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/verrou.png"></div><figcaption><b>Figure 11</b> — Écran de verrouillage</figcaption></figure>
+    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/verrou.png"></div><figcaption><b>Figure 13</b> — Écran de verrouillage</figcaption></figure>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>14</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>16</span></div>
 </section>
 
 <!-- ======================= 08 FAQ ======================= -->
@@ -468,7 +494,7 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
       <div class="qa"><h4>Que faire si je perds mon téléphone ?</h4><p>Vos données ne sont récupérables que depuis une sauvegarde exportée ou la synchronisation Google Drive. Nous vous recommandons de sauvegarder régulièrement.</p></div>
     </div>
   </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>15</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>17</span></div>
 </section>
 
 <!-- ======================= 09 INFORMATIONS IMPORTANTES ======================= -->
@@ -481,6 +507,6 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
   <div class="card" style="margin-bottom:4mm"><h4 style="margin-top:0">Confidentialité et sécurité</h4><p>Vos données financières sont conservées localement sur votre appareil et ne sont pas collectées par Invest.co. Les seules destinations réseau autorisées sont les sources de cours, les bibliothèques techniques et votre Google Drive. Protégez l'accès à votre appareil (code, biométrie) et conservez vos sauvegardes exportées dans un endroit sûr : elles contiennent l'ensemble de vos informations financières en clair.</p></div>
   <div class="card"><h4 style="margin-top:0">Marques</h4><p>Les noms de banques, de plateformes et de services cités dans ce guide (notamment Bitstack, Google Drive, Chrome, Safari) sont des marques de leurs propriétaires respectifs. Leur mention a un caractère uniquement informatif et n'implique aucun partenariat.</p></div>
   <p class="small" style="margin-top:6mm">Guide utilisateur Invest.co — édition {{EDITION}}, correspondant à la version {{VERSION}} de l'application. Les écrans présentés utilisent des données fictives et peuvent différer légèrement selon votre appareil et la version installée.</p>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>16</span></div>
+  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>18</span></div>
 </section>
 </body></html>

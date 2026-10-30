@@ -107,9 +107,10 @@ const typeIn = async (page, sel, txt) => { await page.fill(sel, ''); await page.
   log('Nom avec guillemets/chevrons conservé à la réédition', nm === 'Résidence "Le Lez" <B>', { relu: nm });
   await page.evaluate(() => closeSheet());
 
-  // 10) Écran : grille de pointage pour un projet en retard, sans erreur
-  const html = await page.evaluate(() => { DB.crowd = [{ name: 'R', plat: 'Bricks', amt: 600, rate: 0.1, sub: '2026-03-08', dur: 12, day: 8, st: 'Retard', paid: [] }]; renderAll(); placeImmo(); return document.querySelector('#place-body').innerHTML; });
-  log('Projet « Retard » : échéancier complet affiché (12 cases, 7 échues en rouge)', html.includes('Échéancier') && (html.match(/togglePaid\(/g) || []).length === 12 && (html.match(/chk miss/g) || []).length === 7, {});
+  // 10) Écran : fiche compacte « 7 à pointer » puis échéancier en liste (v21), sans erreur
+  const html = await page.evaluate(() => { DB.crowd = [{ id: 'cr', name: 'R', plat: 'Bricks', amt: 600, rate: 0.1, sub: '2026-03-08', dur: 12, day: 8, st: 'Retard', paid: [] }]; renderAll(); placeCrowd(); const card = document.querySelector('#place-body').innerHTML; crowdDetail(0); return { card, det: document.querySelector('#sheet').innerHTML }; });
+  log('Projet « Retard » : fiche « 7 à pointer », échéancier avec 7 échéances à pointer et la suivante à venir', html.card.includes('7 à pointer') && html.det.includes('Échéancier') && (html.det.match(/chip neg/g) || []).length === 7 && (html.det.match(/à venir/g) || []).length === 1, {});
+  await page.evaluate(() => closeSheet());
 
   // 11) Migration des cases pointées en v16 (décalées d'un mois)
   const mig = await page.evaluate(() => {

@@ -13,7 +13,11 @@ const sheetOpen = (page) => page.evaluate(() => document.querySelector('#ov').cl
   page.on('dialog', d => d.accept());
   await page.evaluate(() => { document.querySelector('#splash')?.remove(); closeSheet(); });
   const click = async (sel) => { await page.locator(sel).first().click(); await page.waitForTimeout(150); };
-  const cellOf = async (name) => page.evaluate((n) => { const tr = [...document.querySelectorAll('#place-body tr')].find(r => r.textContent.includes(n)); return tr ? [...tr.children].map(td => td.textContent.replace(/[\u202f\u00a0]/g, ' ').trim()) : null; }, name);
+  // v21 : l'épargne s'affiche en fiches (nom, solde, taux, intérêts de l'année) ; intérêts perçus dans le détail
+  const cellOf = async (name) => page.evaluate((n) => { const f = [...document.querySelectorAll('#place-body .fiche')].find((x) => x.querySelector('.t-name').textContent.trim() === n); if (!f) return null;
+    const N = (t) => t.replace(/[\u202f\u00a0]/g, ' ').trim(), sp = [...f.querySelectorAll(':scope > .spread')[1].children].map((x) => N(x.textContent)), sv = DB.savings.find((x) => x.name === n);
+    return [N(f.querySelector('.t-name').textContent), N(f.querySelector('.fv').textContent), sp[0], sp[1].replace(/^Intérêts \d{4} : /, ''), sv && savingCalc(sv).received ? 'perçus' : '—']; }, name);
+  const openEdit = async (name) => { await page.locator('#place-body .fiche', { hasText: name }).first().click(); await page.waitForTimeout(150); await page.locator('#sheet button', { hasText: 'Modifier le produit' }).click(); await page.waitForTimeout(150); };
 
   // ===== 1. Livret A : supprimer toutes ses opérations, au doigt =====
   await click('.nav a[data-v="placements"]');
@@ -21,7 +25,7 @@ const sheetOpen = (page) => page.evaluate(() => document.querySelector('#ov').cl
   log('Données d\'exemple : Livret A à 14 520 € (inchangé par la migration)', (await cellOf('Livret A'))?.[1] === '14 520 €', await cellOf('Livret A'));
   for (let k = 0; k < 10; k++) {
     await page.evaluate(() => setPlace('epargne'));
-    await page.locator('#place-body tr', { hasText: 'Livret A' }).locator('.t-name').first().click(); await page.waitForTimeout(150);
+    await page.locator('#place-body .fiche', { hasText: 'Livret A' }).first().click(); await page.waitForTimeout(150);
     const edit = page.locator('#sheet .del');
     if (await edit.count() === 0) { await page.evaluate(() => closeSheet()); break; }
     await edit.first().click(); await page.waitForTimeout(150);
@@ -30,26 +34,26 @@ const sheetOpen = (page) => page.evaluate(() => document.querySelector('#ov').cl
   await page.evaluate(() => setPlace('epargne'));
   const la = await cellOf('Livret A');
   log('Livret A sans aucune opération : solde 0 €, aucun intérêt perçu', la && la[1] === '0 €' && la[4] === '—', la);
-  log('Livret A sans opération : intérêts 0 €', la && /^0,00 €$/.test(la[3]), la && la[3]);
+  log('Livret A sans opération : intérêts 0 €', la && /^(0,00 €|—)$/.test(la[3]), la && la[3]);
 
   // ===== 2. Saisir un solde dans le formulaire du produit → opération « Ajustement » =====
-  await page.locator('#place-body tr', { hasText: 'Livret A' }).locator('.del').first().click(); await page.waitForTimeout(150);
+  await openEdit('Livret A');
   await typeIn(page, '#s_cap', '1 000,50'); await page.locator('#sheet button', { hasText: 'Enregistrer' }).click(); await page.waitForTimeout(150);
   await page.evaluate(() => setPlace('epargne'));
   log('Solde saisi « 1 000,50 » → Livret A à 1 001 €', (await cellOf('Livret A'))?.[1] === '1 001 €', await cellOf('Livret A'));
   const adj = await page.evaluate(() => DB.movements.filter(m => m.p === 'Livret A').map(m => [m.t, m.m]));
-  log('… enregistré comme un dépôt d\'ouverture de 1 000,50 € (versé, pas des gains)', JSON.stringify(adj) === '[["Dépôt",1000.5]]' && (await cellOf('Livret A'))[1] === '1 001 €', adj);
+  log('… enregistré comme argent déjà détenu (reprise de 1 000,50 €, ni versement ni gain)', JSON.stringify(adj) === '[["Reprise",1000.5]]' && (await cellOf('Livret A'))[1] === '1 001 €', adj);
   // Correction ultérieure du solde → « Ajustement »
-  await page.locator('#place-body tr', { hasText: 'Livret A' }).locator('.del').first().click(); await page.waitForTimeout(150);
+  await openEdit('Livret A');
   await typeIn(page, '#s_cap', '1 010,50'); await page.locator('#sheet button', { hasText: 'Enregistrer' }).click(); await page.waitForTimeout(150);
   await page.evaluate(() => setPlace('epargne'));
   const adj2 = await page.evaluate(() => DB.movements.filter(m => m.p === 'Livret A').map(m => [m.t, m.m]));
-  log('Correction du solde à 1 010,50 € → « Ajustement » de +10 €', JSON.stringify(adj2) === '[["Dépôt",1000.5],["Ajustement",10]]' && (await cellOf('Livret A'))[1] === '1 011 €', adj2);
-  await page.locator('#place-body tr', { hasText: 'Livret A' }).locator('.del').first().click(); await page.waitForTimeout(150);
+  log('Correction du solde à 1 010,50 € → « Ajustement » de +10 €', JSON.stringify(adj2) === '[["Reprise",1000.5],["Ajustement",10]]' && (await cellOf('Livret A'))[1] === '1 011 €', adj2);
+  await openEdit('Livret A');
   await typeIn(page, '#s_cap', '1 000,50'); await page.locator('#sheet button', { hasText: 'Enregistrer' }).click(); await page.waitForTimeout(150);
 
   // ===== 3. Renommer le livret : son solde suit =====
-  await page.locator('#place-body tr', { hasText: 'Livret A' }).locator('.del').first().click(); await page.waitForTimeout(150);
+  await openEdit('Livret A');
   await page.fill('#s_name', 'Livret A Boursorama'); await page.locator('#sheet button', { hasText: 'Enregistrer' }).click(); await page.waitForTimeout(150);
   await page.evaluate(() => setPlace('epargne'));
   log('Renommage : « Livret A Boursorama » garde ses 1 001 €', (await cellOf('Livret A Boursorama'))?.[1] === '1 001 €', await cellOf('Livret A Boursorama'));
@@ -82,14 +86,16 @@ const sheetOpen = (page) => page.evaluate(() => document.querySelector('#ov').cl
   await page.fill('#c_name', 'lalala'); await typeIn(page, '#c_amt', '100'); await typeIn(page, '#c_rate', '10');
   await page.fill('#c_sub', '2026-10-08'); await typeIn(page, '#c_dur', '24'); await typeIn(page, '#c_day', '8');
   await page.locator('#sheet button', { hasText: 'Enregistrer' }).click(); await page.waitForTimeout(250);
-  const card = page.locator('#place-body .card', { hasText: 'lalala' });
-  const boxes = card.locator('.chk');
-  log('Nouveau projet « lalala » : l\'échéancier affiche 24 cases', await boxes.count() === 24, await boxes.count());
-  await boxes.first().click(); await page.waitForTimeout(150);
-  const percu = await card.textContent();
-  log('Cocher le 1er versement → Perçu 0,83 €', /Perçu\s*0,83\s*€/.test(percu.replace(/ | /g, ' ')), percu.match(/Perçu[^A-Za-z]*/)?.[0]);
-  await page.locator('#place-body .card', { hasText: 'lalala' }).locator('.chk').first().click(); await page.waitForTimeout(150);
-  log('Décocher → Perçu 0 €', /Perçu\s*0\s*€|Perçu\s*0,00\s*€/.test((await page.locator('#place-body .card', { hasText: 'lalala' }).textContent()).replace(/ | /g, ' ')));
+  // v21 : fiche compacte, échéancier en liste dans le détail du projet
+  await page.locator('#place-body .fiche', { hasText: 'lalala' }).first().click(); await page.waitForTimeout(200);
+  const det = (await page.textContent('#sheet')).replace(/[\u202f\u00a0]/g, ' ');
+  log('Nouveau projet « lalala » : 24 échéances, la première à venir le 08/11/2026', /0\/24 versements/.test(det) && det.includes('08/11/2026') && det.includes('à venir'), det.slice(0, 300));
+  const li = await page.evaluate(() => DB.crowd.findIndex((c) => c.name === 'lalala'));
+  await page.evaluate((i) => { togglePaid(i, crowdSchedule(DB.crowd[i])[0].mk); crowdDetail(i); }, li); await page.waitForTimeout(150);
+  log('Cocher le 1er versement → Perçu 0,57 € nets (0,83 € brut − PFU)', /Perçu\s*0,57\s*€ nets/.test((await page.textContent('#sheet')).replace(/[\u202f\u00a0]/g, ' ')));
+  await page.evaluate((i) => { togglePaid(i, crowdSchedule(DB.crowd[i])[0].mk); crowdDetail(i); }, li); await page.waitForTimeout(150);
+  log('Décocher → Perçu 0 €', /Perçu\s*0,00\s*€ nets/.test((await page.textContent('#sheet')).replace(/[\u202f\u00a0]/g, ' ')));
+  await page.evaluate(() => closeSheet());
 
   // ===== 7. Migration d'une base v16.1 réelle (livret vidé à −480 €, écarts hérités) =====
   const mig = await page.evaluate(() => {

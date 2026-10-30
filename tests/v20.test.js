@@ -28,25 +28,25 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     return { schema: DB.meta.schema, ids: DB.crowd.every((c) => /^c/.test(c.id)), uniq: new Set(DB.crowd.map((c) => c.id)).size === DB.crowd.length, av: av.rates, la: la.rates, laRate: savingCalc(la).rate };
   });
   log('Migration : identifiant unique sur chaque projet, taux manuel de l\'assurance-vie conservé en historique daté, Livret A toujours au taux officiel',
-    mig.schema === 7 && mig.ids && mig.uniq && JSON.stringify(mig.av) === '[{"from":"2020-09-05","rate":0.025}]' && mig.la.length === 0 && mig.laRate === 0.017, mig);
+    mig.schema >= 7 && mig.ids && mig.uniq && JSON.stringify(mig.av) === '[{"from":"2020-09-05","rate":0.025}]' && mig.la.length === 0 && mig.laRate === 0.017, mig);
 
   await sleep(1500); await page.evaluate(() => closeSheet()); // fenêtre « Nouveautés » affichée après la migration
   // ===== 1. Tableau Épargne =====
   await page.evaluate(() => { nav('placements'); setPlace('epargne'); });
-  const head = await page.evaluate(() => [...document.querySelectorAll('#place-body thead th')].map((t) => t.textContent.trim()));
-  log('Colonnes : Produit · Solde · Taux · Intérêts 2026 (estim., nets) · Intérêts perçus ; plus de « Versé net » ni de « Gains »',
-    JSON.stringify(head.slice(0, 5)) === JSON.stringify(['Produit', 'Solde', 'Taux', 'Intérêts 2026 (estim., nets)', 'Intérêts perçus']), head);
+  // v21 : fiches (solde, taux, intérêts de l'année) ; versé net et intérêts perçus dans le détail du produit
+  const fi = N(await page.evaluate(() => [...document.querySelectorAll('#place-body .fiche')].find((f) => f.textContent.includes('Livret A')).textContent));
+  log('Fiche épargne : solde, taux, « Intérêts 2026 », plus de « Versé net » ni de « Gains » sur la page', fi.includes('14 520 €') && fi.includes('1,7 %') && fi.includes('Intérêts 2026') && !N(await page.textContent('#place-body')).includes('Versé net') && !N(await page.textContent('#place-body')).includes('Gains'), fi);
   await page.evaluate(() => { DB.movements.push({ d: '2025-12-31', p: 'LDDS', t: 'Intérêts', q: null, pu: null, m: 85.4, f: 0, n: '' }, { d: '2026-02-01', p: 'LDDS', t: 'Ajustement', q: null, pu: null, m: 50, f: 0, n: '' }); save(); renderAll(); nav('placements'); setPlace('epargne'); });
-  const ldds = await page.evaluate(() => { const tr = [...document.querySelectorAll('#place-body tbody tr')].find((r) => r.textContent.includes('LDDS')); return [...tr.children].map((td) => td.textContent.replace(/[  ]/g, ' ').trim()); });
-  log('Intérêts perçus = opérations « Intérêts » seulement (85,40 €), l\'ajustement de 50 € n\'en fait pas partie', ldds[4] === '85,40 €', ldds);
+  const ldds = N(await page.evaluate(() => { productDetail('LDDS'); return document.querySelector('#sheet').textContent; }));
+  log('Intérêts perçus = opérations « Intérêts » seulement (85 €), l\'ajustement de 50 € n\'en fait pas partie', /Intérêts perçus\s*85 €/.test(ldds), ldds.slice(0, 300));
   log('Le montant versé net reste dans la fiche du produit', N(await page.evaluate(() => { productDetail('LDDS'); return document.querySelector('#sheet').textContent; })).includes('Versé net'));
   await page.evaluate(() => closeSheet());
 
   // ===== 2. Quinzaines =====
-  const la = N(await page.evaluate(() => [...document.querySelectorAll('#place-body tbody tr')].find((r) => r.textContent.includes('Livret A')).textContent));
+  const la = N(await page.evaluate(() => [...document.querySelectorAll('#place-body .fiche')].find((r) => r.textContent.includes('Livret A')).textContent));
   log('Livret A : « Versé ce jour : intérêts dès le 1 nov. » (aujourd\'hui 29/10)', la.includes('Versé ce jour : intérêts dès le 1 nov.'), la);
   log('Ancienne note technique sur les quinzaines retirée de la page', !N(await page.textContent('#place-body')).includes('1er/16 suivant'));
-  await page.locator('#place-body tbody tr', { hasText: 'Livret A' }).first().locator('.hq').click(); await sleep(150);
+  await page.locator('#place-body .fiche', { hasText: 'Livret A' }).first().locator('.hq').click(); await sleep(150);
   const hq = N(await page.textContent('#hlp'));
   log('« ? » du Livret A : explication avec exemples (versé le 10 mars → dès le 16 mars ; retiré le 20 mars → plus depuis le 16 mars ; 31 décembre)',
     await page.evaluate(() => document.querySelector('#hlp').classList.contains('on')) && hq.includes('Versé le 10 mars → intérêts dès le 16 mars') && hq.includes('Retiré le 20 mars → plus d\'intérêts depuis le 16 mars') && hq.includes('31 décembre'), hq.slice(0, 300));
@@ -54,7 +54,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   log('« Compris » ferme l\'aide', !(await page.evaluate(() => document.querySelector('#hlp').classList.contains('on'))));
 
   // ===== 3. Création du portefeuille Bricks depuis le crowdfunding =====
-  await page.evaluate(() => setPlace('immo'));
+  await page.evaluate(() => setPlace('crowd'));
   log('Crowdfunding sans portefeuille : carte « Portefeuille de la plateforme » avec « + Créer »', N(await page.textContent('#place-body')).includes('Portefeuille de la plateforme'));
   await page.locator('#place-body button', { hasText: '+ Créer' }).click(); await sleep(200);
   const pre = await page.evaluate(() => ({ n: $('#s_name').value, t: $('#s_type').value, r: $('#s_rate').value, tax: $('#s_tax').value }));
@@ -64,7 +64,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   log('Portefeuille créé : solde 1 000 €, taux daté 2,4 % depuis aujourd\'hui', w && w.cap === 1000 && JSON.stringify(w.rates) === '[{"from":"2026-10-29","rate":0.024}]', w);
   const est = await page.evaluate(() => { const s = DB.savings.find((x) => x.type === 'Portefeuille plateforme'); return { y: savingYearInterest(s), net: r2(savingCalc(s).net) }; });
   log('Intérêts au jour le jour : 1 000 € × 2,4 % × 64 j / 365 = 4,21 € brut, 2,89 € net (PFU 31,4 %)', est.y === 4.21 && est.net === 2.89, est);
-  await page.evaluate(() => { nav('placements'); setPlace('immo'); });
+  await page.evaluate(() => { nav('placements'); setPlace('crowd'); });
   const card = N(await page.textContent('#place-body'));
   log('Carte du portefeuille : solde disponible, intérêts 2026, courus, boutons', card.includes('Portefeuille Bricks') && card.includes('Solde disponible') && card.includes('1 000,00 €') && card.includes('+ Intérêts reçus'), card.slice(card.indexOf('Portefeuille Bricks'), card.indexOf('Portefeuille Bricks') + 260));
 
@@ -120,14 +120,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   log('Suppression du projet : ses opérations automatiques disparaissent du portefeuille', !w.ops.some((o) => o[2].includes(':sub') && o[1] === 400) && !(await page.evaluate(() => DB.crowd.some((c) => c.name === 'Résidence Nantes'))), w);
 
   // ===== 9. Rémunération du portefeuille =====
-  await page.evaluate(() => { nav('placements'); setPlace('immo'); });
+  await page.evaluate(() => { nav('placements'); setPlace('crowd'); });
   await page.locator('#place-body button', { hasText: '+ Intérêts reçus' }).click(); await sleep(200);
   const f = await page.evaluate(() => ({ t: $('#f_t').value, p: $('#f_p').value, m: $('#f_m').value }));
   log('« + Intérêts reçus » : opération Intérêts préremplie (montant estimé, à corriger)', f.t === 'Intérêts' && f.p === 'Portefeuille Bricks' && f.m !== '', f);
   await typeIn(page, '#f_m', '0,45'); await btn('Enregistrer');
   const acc = await page.evaluate(() => walletAccrued(DB.savings.find((s) => s.type === 'Portefeuille plateforme')));
   log('Après saisie : intérêts courus repartent de demain (0 €)', acc.amt === 0 && acc.from === '2026-10-30', acc);
-  log('Intérêts perçus du portefeuille dans le tableau Épargne', await page.evaluate(() => { nav('placements'); setPlace('epargne'); const tr = [...document.querySelectorAll('#place-body tbody tr')].find((r) => r.textContent.includes('Portefeuille Bricks')); return !!tr && tr.children[4].textContent.trim() !== '—'; }));
+  log('Intérêts perçus du portefeuille dans le tableau Épargne', await page.evaluate(() => { nav('placements'); setPlace('epargne'); const w = DB.savings.find((x) => x.type === 'Portefeuille plateforme'); productDetail(w.name); const t = document.querySelector('#sheet').textContent; closeSheet(); return savingCalc(w).received >= 0.45 && t.includes('Intérêts perçus'); }));
 
   // ===== 10. Changement de taux daté =====
   const wi = await page.evaluate(() => DB.savings.findIndex((s) => s.type === 'Portefeuille plateforme'));
@@ -152,9 +152,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const used = [...new Set([...src.matchAll(/hq\('([a-zA-Z]+)'\)/g)].map((m) => m[1]))];
   const missing = await page.evaluate((u) => u.filter((k) => !HELP[k]), used);
   log('Chaque « ? » de l\'appli a son explication', missing.length === 0, missing);
-  const views = await page.evaluate(() => { const r = {}; for (const [v, t] of [['dash'], ['budget'], ['revente'], ['placements', 'bourse'], ['placements', 'epargne'], ['placements', 'immo']]) { nav(v); if (t) setPlace(t); const el = document.querySelector('#v-' + v); r[v + (t || '')] = el.querySelectorAll('.hq').length; } return r; });
-  log('« ? » présents sur les écrans (budget, revente, bourse, épargne, immo)', views.budget > 0 && views.revente > 0 && views.placementsbourse > 0 && views.placementsepargne > 0 && views.placementsimmo > 0, views);
-  const txt = await page.evaluate(() => { let t = ''; for (const v of ['dash', 'budget', 'revente']) { nav(v); t += document.querySelector('#v-' + v).textContent; } for (const x of ['bourse', 'epargne', 'immo']) { nav('placements'); setPlace(x); t += document.querySelector('#v-placements').textContent; } return t; });
+  const views = await page.evaluate(() => { const r = {}; for (const [v, t] of [['dash'], ['budget'], ['revente'], ['placements', 'bourse'], ['placements', 'epargne'], ['placements', 'crowd']]) { nav(v); if (t) setPlace(t); const el = document.querySelector('#v-' + v); r[v + (t || '')] = el.querySelectorAll('.hq').length; } return r; });
+  log('« ? » présents sur les écrans (budget, revente, bourse, épargne, immo)', views.budget > 0 && views.revente > 0 && views.placementsbourse > 0 && views.placementsepargne > 0 && views.placementscrowd > 0, views);
+  const txt = await page.evaluate(() => { let t = ''; for (const v of ['dash', 'budget', 'revente']) { nav(v); t += document.querySelector('#v-' + v).textContent; } for (const x of ['bourse', 'epargne', 'immo', 'crowd']) { nav('placements'); setPlace(x); t += document.querySelector('#v-placements').textContent; } return t; });
   log('Pages allégées : les longues explications ne sont plus affichées en clair', !/Touche ✎ pour modifier|Les récurrentes se déduisent automatiquement|Le versement mensuel est calculé depuis le taux annuel|Coût = prix d'achat \+ frais/.test(txt));
   log('Aucun « NaN », « undefined » ou « Infinity » affiché', !/NaN|undefined|Infinity/.test(txt), (txt.match(/.{30}(NaN|undefined|Infinity).{30}/) || [])[0]);
   log('Aucune violation de la politique de sécurité', (await page.evaluate(() => window.__csp.length)) === 0, await page.evaluate(() => window.__csp));

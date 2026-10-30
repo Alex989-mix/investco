@@ -2,6 +2,45 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "21.0",
+      "date": "2026-10-30",
+      "title": "Des chiffres fiables, un accueil clair, des placements en fiches",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Nouvel accueil : votre patrimoine net expliqué en une phrase (variation depuis le 1er janvier, dont épargne versée et gains), trois chiffres utiles — disponible, revenus passifs, montant épargné du mois — et trois alertes au plus. Graphiques, performance et fiscalité sont regroupés dans le nouvel écran Analyse."
+        },
+        {
+          "type": "improved",
+          "text": "Fiabilité : la valeur au 1er janvier est reconstituée automatiquement (cours de clôture de fin d'année compris), l'argent déjà détenu est enregistré comme « reprise d'existant », et la performance ne porte plus que sur vos placements financiers."
+        },
+        {
+          "type": "improved",
+          "text": "Plus-values crypto calculées selon la règle fiscale française, sur l'ensemble du portefeuille (formulaire 2086), avec l'exonération des ventes annuelles n'excédant pas 305 €."
+        },
+        {
+          "type": "new",
+          "text": "Placements en fiches lisibles sur téléphone, regroupées par enveloppe avec sous-totaux ; le détail de chaque ligne présente le prix de revient et les seuils de revente. Le crowdfunding dispose de son propre onglet."
+        },
+        {
+          "type": "new",
+          "text": "Crowdfunding : versements reçus automatiquement (option), montant d'un mois modifiable, remboursements anticipés partiels ou totaux avec recalcul des intérêts, « Tout pointer » en un geste."
+        },
+        {
+          "type": "fixed",
+          "text": "Le gain de l'année et la performance ne sont plus faussés par l'ajout d'un compte ou d'un bien déjà détenu ; seul le capital de crédit déjà remboursé est compté comme épargne."
+        }
+      ],
+      "migration": "Vos soldes saisis à l'ouverture d'un compte deviennent des reprises d'existant. La valeur au 1er janvier saisie auparavant n'est plus utilisée : elle est désormais calculée (modifiable dans Réglages › Avancé). Touchez ↻ Cours une fois pour récupérer les cours de fin d'année. Le gain de l'année et la performance affichés vont baisser : ce sont les chiffres corrects.",
+      "guide": true,
+      "guideChanges": [
+        "03 · Épargne et bourse en fiches",
+        "06 · Crowdfunding : onglet, échéancier, versements automatiques, remboursements anticipés (nouvelle page)",
+        "07 · Accueil et Analyse",
+        "07 · Comprendre vos chiffres (nouvelle page)"
+      ]
+    },
+    {
       "version": "20.0",
       "date": "2026-10-29",
       "title": "Épargne plus lisible, portefeuille Bricks et aide intégrée",

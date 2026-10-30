@@ -132,6 +132,24 @@ console.log(out.every(Boolean) ? '\n✓ finance.js : tout est bon' : '\n✗ fina
   log('Solde négatif ou période vide : aucun intérêt', F.dailyInterest(-500, [], R, '2026-01-01', '2026-12-31') === 0 && F.dailyInterest(1000, [], R, '2026-02-01', '2026-01-01') === 0);
   log('Quinzaines : versement le 10/03 → intérêts dès le 16/03 ; le 20/03 → dès le 01/04 ; le 31/12 → dès le 01/01', F.quinzStart('2026-03-10') === '2026-03-16' && F.quinzStart('2026-03-20') === '2026-04-01' && F.quinzStart('2026-12-31') === '2027-01-01' && F.quinzStart('2026-03-15') === '2026-03-16');
   log('Quinzaines : retrait le 20/03 → plus d\'intérêts depuis le 16/03 ; le 10/03 → depuis le 01/03 ; le 16/03 → depuis le 16/03', F.quinzStop('2026-03-20') === '2026-03-16' && F.quinzStop('2026-03-10') === '2026-03-01' && F.quinzStop('2026-03-16') === '2026-03-16');
+  // ===== v21 : crowdfunding (remboursements anticipés) et plus-values crypto =====
+  const CF = { amt: 500, rate: 0.10, sub: '2025-09-08', dur: 24, day: 8 };
+  const d0 = F.crowdDues(CF);
+  log('Échéancier : 24 échéances de 4,17 € (500 € × 10 % ÷ 12), la 1re le 08/10/2025, la dernière le 08/09/2027', d0.length === 24 && d0[0].d === '2025-10-08' && d0[23].d === '2027-09-08' && d0.every((x) => x.gross === 4.17 && x.cap === 500));
+  const d1 = F.crowdDues(Object.assign({}, CF, { reps: [{ d: '2026-06-15', m: 200 }] }));
+  log('Remboursement partiel de 200 € le 15/06/2026 : échéance du 08/06 sur 500 € (4,17 €), dès le 08/07 sur 300 € (2,50 €)', d1.find((x) => x.mk === '2026-06').gross === 4.17 && d1.find((x) => x.mk === '2026-07').gross === 2.5 && d1.find((x) => x.mk === '2026-07').cap === 300 && d1.length === 24);
+  const d2 = F.crowdDues(Object.assign({}, CF, { reps: [{ d: '2026-06-15', m: 200 }, { d: '2026-08-20', m: 300 }] }));
+  log('Remboursement du solde le 20/08/2026 : dernière échéance le 08/08/2026, plus rien ensuite', d2[d2.length - 1].d === '2026-08-08' && d2.length === 11);
+  log('Capital placé : 500 € → 300 € après le 15/06 → 0 € après le 20/08', F.crowdCapitalAt(CF, '2026-01-01') === 500 && F.crowdCapitalAt(Object.assign({}, CF, { reps: [{ d: '2026-06-15', m: 200 }] }), '2026-06-15') === 300 && F.crowdCapitalAt(Object.assign({}, CF, { reps: [{ d: '2026-06-15', m: 200 }, { d: '2026-08-20', m: 300 }] }), '2026-09-01') === 0);
+  log('Fin de mois : souscription le 31/01, versement le 31 → 28/02, 31/03, 30/04', JSON.stringify(F.crowdDues({ amt: 100, rate: 0.12, sub: '2026-01-31', dur: 3, day: 31 }).map((x) => x.d)) === '["2026-02-28","2026-03-31","2026-04-30"]');
+  // Exemple chiffré : achats 1 000 € puis 500 € ; vente de 600 € (frais 6 €) quand le portefeuille vaut 2 000 €
+  const CT = F.cryptoTax([{ d: '2025-03-01', t: 'Achat', cost: 1000 }, { d: '2026-02-01', t: 'Achat', cost: 500 }, { d: '2026-05-10', t: 'Vente', price: 600, fees: 6, vg: 2000 }], 2026, 305);
+  log('Crypto (150 VH bis) : PTA 1 500 €, fraction 1 500 × 600 / 2 000 = 450 €, plus-value 600 − 6 − 450 = 144 €', CT.lines.length === 1 && CT.lines[0].pta === 1500 && CT.lines[0].frac === 450 && CT.lines[0].pv === 144 && CT.taxable === 144 && !CT.exempt);
+  const CT2 = F.cryptoTax([{ d: '2025-03-01', t: 'Achat', cost: 1000 }, { d: '2026-02-01', t: 'Achat', cost: 500 }, { d: '2026-05-10', t: 'Vente', price: 600, fees: 6, vg: 2000 }, { d: '2026-09-01', t: 'Vente', price: 1000, fees: 0, vg: 2500 }], 2026, 305);
+  log('Deuxième cession : PTA réduit à 1 050 €, fraction 1 050 × 1 000 / 2 500 = 420 €, plus-value 580 € ; total 724 €', CT2.lines[1].pta === 1050 && CT2.lines[1].frac === 420 && CT2.lines[1].pv === 580 && CT2.total === 724);
+  const CT3 = F.cryptoTax([{ d: '2026-01-01', t: 'Achat', cost: 100 }, { d: '2026-03-01', t: 'Vente', price: 300, fees: 0, vg: 400 }], 2026, 305);
+  log('Cessions de l\'année ≤ 305 € : plus-value exonérée (225 € non imposables)', CT3.exempt && CT3.taxable === 0 && CT3.total === 225);
+  log('Cessions d\'une autre année ignorées pour l\'année demandée, mais elles réduisent le PTA', F.cryptoTax([{ d: '2025-01-01', t: 'Achat', cost: 1000 }, { d: '2025-06-01', t: 'Vente', price: 500, fees: 0, vg: 1000 }, { d: '2026-06-01', t: 'Vente', price: 500, fees: 0, vg: 500 }], 2026, 305).lines[0].pta === 500);
   console.log(out.every(Boolean) ? '✓ hachage OK' : '✗ erreurs');
   process.exitCode = out.every(Boolean) ? 0 : 1;
 })();

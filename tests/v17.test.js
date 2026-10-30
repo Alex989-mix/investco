@@ -123,7 +123,7 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   const al = N(await page.evaluate(() => { nav('dash'); return document.querySelector('#v-dash').textContent; }));
   log('Livret A à 22 950 € versés → alerte « plafond de versements atteint »', al.includes('Livret A : plafond de versements atteint (22 950 €)'));
   const ep = N(await page.evaluate(() => { nav('placements'); setPlace('epargne'); return document.querySelector('#place-body').textContent; }));
-  log('Épargne : badges « plafond 100 % » (Livret A) et « plafond 42 % » (LDDS)', ep.includes('plafond 100 %') && ep.includes('plafond 42 %'));
+  log('Épargne : jauges « plafond 22 950 € · 100 % » (Livret A) et « 43 % » (LDDS, solde repris compté comme versé)', ep.includes('plafond 22 950 € · 100 %') && ep.includes('plafond 12 000 € · 43 %'), ep.slice(0, 400));
 
   // ===== 9. Migration d'une vraie base v16.2 (euros, anciens réglages fiscaux) =====
   const v162 = { movements: [{ d: '2024-01-01', p: 'Livret A', t: 'Dépôt', q: null, pu: null, m: 1000.5, f: 0, n: '' }, { d: '2024-02-01', p: 'BTC', t: 'Achat', q: 0.01, pu: 40000, m: null, f: 1.5, n: '' }],

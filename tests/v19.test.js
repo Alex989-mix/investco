@@ -133,7 +133,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await page.evaluate(async () => { nav('placements'); setPlace('bourse'); await refreshPrices(); });
   await sleep(300);
   v = N(await view());
-  log('↻ Cours : variation du jour affichée pour l\'ETF (-0,96 % jour) et l\'action (+0,88 % jour)', /CW8 · PEA[^]{0,40}[-−]0,96 % jour/.test(v) && /AAPL · CTO[^]{0,40}\+0,88 % jour/.test(v), (v.match(/CW8 · PEA[^]{0,60}/) || [])[0]);
+  log('↻ Cours : variation du jour affichée pour l\'ETF (-0,96 % jour) et l\'action (+0,88 % jour)', /CW8[^]{0,80}[-−]0,96 % jour/.test(v) && /AAPL[^]{0,80}\+0,88 % jour/.test(v), (v.match(/CW8[^]{0,90}/) || [])[0]);
   log('Cours de l\'ETF mis à jour (706,12 €) et variation conservée après enregistrement', /706,12.€/.test(v) && (await page.evaluate(() => { const d = Fin.deserialize(JSON.parse(localStorage.getItem('investco_v1'))); return d.assets.find((a) => a.ticker === 'CW8').chg; })) === -0.96);
   Q = { 'CW8.PA': { price: 707, cur: 'EUR' }, AAPL: { price: 230, prev: 'n/a', cur: 'USD' }, 'EURUSD=X': { price: 1.08, cur: 'USD' } };
   await page.evaluate(async () => { await refreshPrices(); }); await sleep(300);

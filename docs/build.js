@@ -77,8 +77,10 @@ async function shots(browser) {
   await page.evaluate(() => { closeSheet(); nav('placements'); setPlace('epargne'); document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = 'hidden'; }); }); await shot('epargne', '#v-placements');
   await page.evaluate(() => document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = ''; }));
   await page.evaluate(() => { nav('budget'); window.scrollTo(0, 0); }); await shot('budget', null, top);
-  await page.evaluate(() => { nav('placements'); setPlace('immo'); const h = [...document.querySelectorAll('#place-body h2')].find((x) => x.textContent.includes('Crowdfunding')); if (h) window.scrollTo(0, h.getBoundingClientRect().top + window.scrollY - 70); });
-  await shot('bricks', null, top);
+  // v21 : onglet Crowdfunding (fiches compactes) puis détail d'un projet (échéancier en liste)
+  await page.evaluate(() => { nav('placements'); setPlace('crowd'); window.scrollTo(0, 0); }); await shot('bricks', null, top);
+  await page.evaluate(() => { crowdDetail(0); }); await shot('bricks_detail', '#sheet');
+  await page.evaluate(() => closeSheet());
   // v18 : bien immobilier détaillé, fiche PEA, cash-flow, écran de verrouillage
   await page.evaluate(() => { nav('placements'); setPlace('immo'); window.scrollTo(0, 0); }); await shot('immo', null, top);
   await page.evaluate(() => {
@@ -87,7 +89,9 @@ async function shots(browser) {
     save(); renderAll(); nav('placements'); setPlace('bourse'); window.scrollTo(0, 0);
   });
   await shot('pea', null, top);
-  await page.evaluate(() => { if (window.Chart && Chart.defaults) Chart.defaults.animation = false; nav('dash'); drawCashflow(); const c = document.querySelector('#cfchart'); const card = c && c.closest('.card'); if (card) window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - 70); });
+  await page.evaluate(() => productDetail(DB.assets.find((a) => a.type === 'Crypto').name)); await shot('ligne', '#sheet');
+  await page.evaluate(() => closeSheet());
+  await page.evaluate(() => { if (window.Chart && Chart.defaults) Chart.defaults.animation = false; nav('analyse'); drawCashflow(); const c = document.querySelector('#cfchart'); const card = c && c.closest('.card'); if (card) window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - 70); });
   await page.waitForTimeout(800); await shot('cashflow', null, top);
   await page.evaluate(() => { DB.settings.lock = { enabled: true, len: 4, delay: 0, bio: true, salt: '00', hash: '00', iter: 1 }; lockNow(); lockBuf = '12'; lockDraw(''); });
   await shot('verrou', null, top);

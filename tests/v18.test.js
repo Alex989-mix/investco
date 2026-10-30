@@ -21,10 +21,10 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
       { d: '2026-10-05', p: 'Compte courant', p2: 'Livret A', t: 'Transfert', q: null, pu: null, m: 300, f: 0, n: '' });
     DB.expenses = DB.expenses.filter((e) => !e.d.startsWith('2026-10'));
     DB.expenses.push({ d: '2026-10-03', label: 'Loyer', amt: 600, cat: 'Logement' }, { d: '2026-10-09', label: 'Courses', amt: 250, cat: 'Courses' }, { d: '2026-10-08', label: 'PRLV BITSTACK', amt: 100, cat: 'Investissement' });
-    save(); renderAll(); nav('dash');
+    save(); renderAll(); nav('analyse'); // v21 : le cash-flow détaillé est dans « Analyse »
   });
   await page.waitForTimeout(300);
-  const dash = N(await page.locator('#v-dash').textContent());
+  const dash = N(await page.locator('#v-analyse').textContent());
   log('Tableau de bord : carte « Cash-flow d\'octobre » (revenus 2 000 €, dépenses 850 €, épargne +1 150 €, taux 57,5 %)',
     /Cash-flow d.octobre/.test(dash) && /Revenus2 000 €/.test(dash.replace(/\s+/g, '').replace(/€/g, ' €')) || (dash.includes('2 000 €') && dash.includes('850 €') && dash.includes('+1 150 €') && dash.includes('57,5 %')), dash.match(/Cash-flow.{0,200}/)?.[0]);
   log('… « dont 100 € investis », graphique 12 mois affiché', dash.includes('dont 100 € investis') && await page.locator('#cfchart').count() === 1);
@@ -32,8 +32,8 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   // ===== 2. PEA : fiche, versements, dividende, ISIN =====
   await page.evaluate(() => { nav('placements'); setPlace('bourse'); });
   const peaCard = N(await page.locator('#place-body').textContent());
-  log('Bourse : carte PEA affichée (versements estimés, date d\'ouverture à renseigner)', peaCard.includes('PEA') && peaCard.includes('(estim.)') && peaCard.includes('date d\'ouverture à renseigner'), peaCard.slice(0, 200));
-  await page.locator('#place-body .del', { hasText: 'fiche PEA' }).click(); await page.waitForTimeout(150);
+  log('Bourse : groupe PEA avec ses versements estimés et l\'accès à la fiche PEA', peaCard.includes('PEA') && peaCard.includes('(estim.)') && peaCard.includes('fiche PEA'), peaCard.slice(0, 200));
+  await page.locator('#place-body .lnk', { hasText: 'fiche PEA' }).click(); await page.waitForTimeout(150);
   await page.fill('#pe_open', '2021-11-15'); await page.fill('#pe_bank', 'Boursorama'); await page.fill('#pe_vd', '2021-11-15'); await typeIn(page, '#pe_vm', '3 000');
   await btn('Enregistrer');
   await page.fill('#pe_vd', '2023-01-10'); await typeIn(page, '#pe_vm', '500'); await btn('Enregistrer');
@@ -42,7 +42,7 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   // Exemple : PEA = 5 parts CW8 achetées 400 € (2 000 €) → liquidités 3 500 − 2 000 = 1 500
   log('PEA : 3 500 € versés (réels), liquidités 1 500 €, 5 ans le 15/11/2026', P.real && P.versed === 3500 && P.cash === 1500 && P.fiveYears === '2026-11-15' && !P.mature, P);
   const bourse = N(await page.locator('#place-body').textContent());
-  log('… carte : « ouvert le 15/11/2021 », « 5 ans le 15/11/2026 », liquidités 1 500,00 €', bourse.includes('ouvert le 15/11/2021') && bourse.includes('5 ans le 15/11/2026') && bourse.includes('1 500,00 €'), bourse.slice(0, 400));
+  log('… groupe PEA : « Boursorama », « 5 ans le 15/11/2026 », « 1 500 € de liquidités »', bourse.includes('Boursorama') && bourse.includes('5 ans le 15/11/2026') && bourse.includes('1 500 € de liquidités'), bourse.slice(0, 400));
   // Dividende au doigt
   await page.locator('.nav a[data-v="add"]').click(); await page.waitForTimeout(100); await btn('Opération');
   await page.selectOption('#f_t', 'Dividende'); await page.fill('#f_p', 'Amundi MSCI World (CW8)'); await typeIn(page, '#f_m', '12,40');

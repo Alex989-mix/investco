@@ -15,7 +15,7 @@
 
   // Champs monétaires de chaque collection : convertis en centimes au stockage (localStorage, export, Drive)
   const MONEY_FIELDS = {
-    movements: ['pu', 'm', 'f'],
+    movements: ['pu', 'm', 'f', 'vg'],
     assets: ['price'],
     savings: ['cap', 'ceil'],
     crowd: ['amt'],
@@ -25,11 +25,12 @@
     loans: ['capital', 'insurance'],
     properties: ['price', 'rent', 'charges', 'notary', 'works', 'copro', 'taxFonciere', 'pno', 'maintenance'],
     goals: ['target'],
+    refPrices: ['px'],
   };
   // Champs monétaires dans des sous-listes : properties[].values[].v
-  const NESTED_MONEY = { properties: { values: ['v'] } };
+  const NESTED_MONEY = { properties: { values: ['v'] }, crowd: { reps: ['m'], recv: ['m'] } };
   const SETTINGS_MONEY = ['goal'];
-  const SETTINGS_MONEY_MAPS = ['snapshots', 'catBudgets'];
+  const SETTINGS_MONEY_MAPS = ['snapshots', 'catBudgets', 'snapFin', 'refManual'];
 
   function mapMoney(db, fn) {
     const out = JSON.parse(JSON.stringify(db));
@@ -101,6 +102,7 @@
     P('revente.microbic.abattement', '2018-01-01', 0.71, '%', 'Abattement micro-BIC (vente de marchandises)', 'CGI art. 50-0'),
     P('revente.dac7.ventes', '2023-01-01', 30, '', 'Seuil DAC7 : nombre de ventes par plateforme et par an', 'Directive (UE) 2021/514 (DAC7)'),
     P('revente.dac7.montant', '2023-01-01', 2000, '€', 'Seuil DAC7 : montant des ventes par plateforme et par an', 'Directive (UE) 2021/514 (DAC7)'),
+    P('crypto.seuil.cessions', '2019-01-01', 305, '€', 'Crypto : exonération si le total des cessions de l\'année ne dépasse pas ce montant', 'Article 150 VH bis du CGI'),
   ];
 
   // Valeur d'un paramètre à une date (AAAA-MM-JJ) : la plus récente dont « from » ≤ date.
@@ -378,6 +380,55 @@
     return v;
   }
 
+  // ---------- Crowdfunding : échéancier avec remboursements anticipés ----------
+  // c = {amt, rate (annuel), sub (AAAA-MM-JJ), dur (mois), day (jour de versement), reps:[{d, m}]}
+  // Échéance n°k : k mois après la souscription, au jour de versement (ramené à la fin du mois si besoin).
+  // Intérêts d'une échéance = capital restant × taux ÷ 12, le capital restant tenant compte des remboursements
+  // anticipés faits AVANT la date de l'échéance (« à partir de l'échéance suivante »).
+  // L'échéancier s'arrête après la dernière échéance qui précède (ou suit le jour même) un remboursement total.
+  function crowdDues(c) {
+    const out = [], amt = +c.amt || 0, rate = +c.rate || 0, reps = (c.reps || []).filter((r) => r && r.d && +r.m > 0).slice().sort((a, b) => (a.d < b.d ? -1 : 1));
+    const { y, m, d } = parseYmd(c.sub); const day = +c.day || d;
+    const capBefore = (date) => round2(amt - reps.filter((r) => r.d < date).reduce((a, r) => a + (+r.m || 0), 0));
+    for (let k = 1; k <= (+c.dur || 0); k++) {
+      const t = (y * 12 + (m - 1)) + k, ny = Math.floor(t / 12), nm = (t % 12) + 1;
+      const date = fmtYmd(ny, nm, Math.min(day, lastDay(ny, nm)));
+      const cap = capBefore(date);
+      if (cap <= 0.004) break; // capital entièrement remboursé avant cette échéance
+      out.push({ k, d: date, mk: date.slice(0, 7), cap, gross: round2(cap * rate / 12) });
+    }
+    return out;
+  }
+  // Capital encore placé à une date (montant investi moins les remboursements anticipés jusqu'à cette date incluse)
+  function crowdCapitalAt(c, date) { return Math.max(0, round2((+c.amt || 0) - (c.reps || []).filter((r) => r && r.d <= date).reduce((a, r) => a + (+r.m || 0), 0))); }
+
+  // ---------- Crypto : plus-values selon l'article 150 VH bis du CGI (formulaire 2086) ----------
+  // ops : opérations crypto en euros, toutes années confondues, triées ou non :
+  //   {d, t:'Achat', cost}            acquisition (prix payé, frais inclus ; 0 pour un parrainage)
+  //   {d, t:'Vente', price, fees, vg} cession contre euros : prix de cession, frais, valeur globale du portefeuille crypto
+  //                                   juste avant la cession.
+  // Pour chaque cession : plus-value = (prix − frais) − PTA × prix ÷ VG, PTA = prix total d'acquisition net des
+  // fractions déjà imputées sur les cessions précédentes. Exonération si le total des cessions de l'année ≤ seuil.
+  function cryptoTax(ops, year, threshold) {
+    const L = (ops || []).slice().sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : (a.t === 'Achat' ? -1 : 1)));
+    let pta = 0; const lines = [];
+    for (const o of L) {
+      if (o.t === 'Achat') { pta = round2(pta + (+o.cost || 0)); continue; }
+      if (o.t !== 'Vente') continue;
+      const price = +o.price || 0, fees = +o.fees || 0, vg = +o.vg || 0;
+      if (!(price > 0)) continue;
+      const base = vg >= price ? vg : price; // la valeur globale inclut au moins ce qui est vendu
+      const frac = round2(pta * price / base);
+      const pv = round2(price - fees - frac);
+      if (String(o.d).slice(0, 4) === String(year)) lines.push({ d: o.d, price, fees, vg: base, pta, frac, pv });
+      pta = round2(pta - frac);
+    }
+    const cessions = round2(lines.reduce((a, l) => a + l.price, 0));
+    const total = round2(lines.reduce((a, l) => a + l.pv, 0));
+    const exempt = lines.length > 0 && cessions <= (+threshold || 0);
+    return { lines, cessions, total, exempt, taxable: exempt ? 0 : Math.max(0, total) };
+  }
+
   // ---------- Épargne : taux datés, intérêts au jour le jour, quinzaines ----------
   // Taux en vigueur à une date d'après un historique [{from:'AAAA-MM-JJ', rate}] (jamais écrasé).
   // Avant la première date connue, on applique le premier taux (estimation prudente plutôt que zéro).
@@ -420,7 +471,7 @@
 
   const api = { round2, budgetVsActual, detectRecurring, sameExpense, toCents, fromCents, MONEY_FIELDS, serialize, deserialize, PARAM_DEFAULTS, getParam, paramHistory, paramKeys,
     addMonthsYmd, monthsDiff, loanPayment, amortization, loanStatus, propertyValue, propertyStats, resaleItem, resaleYear,
-    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange, rateOn, dailyInterest, quinzStart, quinzStop };
+    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange, rateOn, dailyInterest, quinzStart, quinzStop, crowdDues, crowdCapitalAt, cryptoTax };
   root.Fin = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);
