@@ -170,7 +170,7 @@
     const P = Array.from({ length: cols }, (_, j) => profile(data.slice(0, 300), j));
     const hs = Array.from({ length: cols }, (_, j) => strip(header ? header[j] : ''));
     const pick = (test, score) => { let b = -1, bs = -Infinity; for (let j = 0; j < cols; j++) if (test(j)) { const sc = score(j); if (sc > bs) { bs = sc; b = j; } } return b; };
-    const map = { date: -1, label: -1, details: [], amount: -1, debit: -1, credit: -1, sens: -1, fee: -1, state: -1, currency: -1 };
+    const map = { date: -1, label: -1, details: [], amount: -1, debit: -1, credit: -1, sens: -1, fee: -1, state: -1, currency: -1, balance: -1 };
     // Date : titre « date » (pas « valeur ») et contenu de dates ; sinon la colonne la plus « dates »
     map.date = pick((j) => P[j].dateRatio > 0.6 && has(hs[j], H.date) && !has(hs[j], H.dateLow), (j) => P[j].dateRatio + (has(hs[j], ['operation', 'op', 'completed', 'comptab', 'booking']) ? 1 : 0) - j * 0.01);
     if (map.date < 0) map.date = pick((j) => P[j].dateRatio > 0.6, (j) => P[j].dateRatio - (has(hs[j], H.dateLow) ? 0.5 : 0) - j * 0.01);
@@ -195,6 +195,7 @@
       }
     }
     map.fee = pick((j) => !used(j) && has(hs[j], H.fee) && P[j].numRatio > 0.5, (j) => -j);
+    map.balance = pick((j) => !used(j) && has(hs[j], ['solde', 'balance']) && P[j].numRatio > 0.5, (j) => -j); // solde après opération (facultatif)
     map.state = pick((j) => !used(j) && has(hs[j], H.state), (j) => -j);
     map.currency = pick((j) => !used(j) && has(hs[j], H.currency) && !has(hs[j], H.amount) && P[j].numRatio < 0.2, (j) => -j);
     // Libellé : titre de libellé et le plus de texte ; à défaut, la colonne la plus textuelle
@@ -233,7 +234,8 @@
       if (!date || amount == null || amount === 0) { skipped++; return; }
       const parts = [m.label >= 0 ? r[m.label] : ''].concat(m.details.map((j) => r[j])).map((x) => String(x || '').replace(/\s+/g, ' ').trim()).filter(Boolean);
       const label = [...new Set(parts)].join(' · ') || 'Opération';
-      out.push({ date, label, amount: Math.round(amount * 100) / 100, currency: m.currency >= 0 ? String(r[m.currency] || '').toUpperCase() : 'EUR' });
+      const bal = m.balance >= 0 ? parseAmount(r[m.balance], decOf(m.balance)) : null;
+      out.push({ date, label, amount: Math.round(amount * 100) / 100, currency: m.currency >= 0 ? String(r[m.currency] || '').toUpperCase() : 'EUR', balance: bal == null ? null : Math.round(bal * 100) / 100 });
     });
     const unsigned = out.length > 2 && m.debit < 0 && m.credit < 0 && m.sens < 0 && out.every((x) => x.amount > 0);
     return { rows: out, skipped, delim, headerRow: h, header, map: m, unsigned, columns: header || (data[0] || []).map((_, j) => 'Colonne ' + (j + 1)) };
@@ -321,7 +323,38 @@
     return false;
   }
 
-  const api = { decode, parseCSV, detectDelim, parseAmount, parseDate, dateOrder, findHeader, mapBank, readBank, readCrypto, cryptoKind, looksCrypto };
+  // ---------- Relevé d'un compte d'épargne (Livret A, LDDS…) ----------
+  const strip2 = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  // Nature d'une ligne vue depuis le livret : intérêts, virement avec le compte courant, versement ou retrait
+  function savingKind(label, amount) {
+    const l = strip2(label);
+    if (/interet|remuneration|capitalisation|interets crediteurs/.test(l)) return 'Intérêts';
+    if (/\bvir\b|virement|vir\.|\bvrt\b|transfert/.test(l)) return 'Transfert';
+    return amount >= 0 ? 'Dépôt' : 'Retrait';
+  }
+  // Relevé d'épargne ? (titre du relevé ou majorité de virements / intérêts)
+  function looksSaving(text) {
+    // seulement l'en-tête du relevé (lignes AVANT la ligne de titres des colonnes), jamais les libellés des opérations
+    const t = String(text || ''), h = findHeader(parseCSV(t, detectDelim(t)));
+    if (h <= 0) return false;
+    const head = strip2(t.split(/\r?\n/).slice(0, Math.min(h, 3)).join(' '));
+    if (/livret|ldds|\blep\b|compte sur livret|epargne|\bpel\b|\bcel\b/.test(head) && !/compte (courant|de depot|cheque)/.test(head)) return true;
+    return false;
+  }
+  // Soldes du relevé : ordre chronologique cohérent avec la colonne « Solde », solde de départ et solde final
+  function balanceInfo(rows) {
+    const R = (rows || []).filter((r) => r && r.balance != null);
+    if (R.length < 1 || R.length !== rows.length) return null;
+    const score = (L) => { let ok = 0; for (let i = 1; i < L.length; i++) if (Math.abs(L[i - 1].balance + L[i].amount - L[i].balance) < 0.011) ok++; return ok; };
+    const asc = rows.slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    const cands = [rows.slice(), rows.slice().reverse(), asc].filter((L) => L[0].date <= L[L.length - 1].date);
+    let best = null, bs = -1; cands.forEach((L) => { const sc = score(L); if (sc > bs) { bs = sc; best = L; } });
+    if (!best || (best.length > 1 && bs < (best.length - 1) * 0.8)) return null;
+    const round = (x) => Math.round(x * 100) / 100;
+    return { opening: round(best[0].balance - best[0].amount), closing: best[best.length - 1].balance, from: best[0].date, to: best[best.length - 1].date };
+  }
+
+  const api = { savingKind, looksSaving, balanceInfo, decode, parseCSV, detectDelim, parseAmount, parseDate, dateOrder, findHeader, mapBank, readBank, readCrypto, cryptoKind, looksCrypto };
   root.CsvImp = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

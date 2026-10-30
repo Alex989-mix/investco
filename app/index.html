@@ -1243,7 +1243,8 @@ const HELP={
   resale:['Achat-revente',()=>`<p><b>Coût</b> = prix d'achat + frais d'achat. <b>Marge brute</b> = vente − coût. <b>Marge nette</b> = marge brute − frais de plateforme et d'envoi.</p><p>Le régime fiscal se choisit dans Réglages ▸ Ma situation fiscale.</p>`],
   resaleRegime:['Régime de l\'achat-revente',()=>`<p>Acheter pour revendre avec profit est une activité commerciale (micro-BIC : imposition sur le chiffre d'affaires après abattement).</p><p>Revendre ses propres affaires d'occasion n'est pas imposable, sauf objet vendu plus de 5 000 € et bijoux / objets d'art.</p>`],
   rules:['Règles de catégories',()=>`<p>Si le libellé d'une dépense contient le mot-clé, elle reçoit la catégorie choisie, à l'import de relevé comme à la saisie.</p><p>Tes règles passent avant les règles intégrées.</p>`],
-  import:['Importer un relevé',()=>`<p>Tout relevé CSV de banque (ligne de titres, colonnes et format reconnus automatiquement) ou export de plateforme crypto (Bitstack, Coinbase…).</p><p>Les opérations déjà importées sont ignorées.</p>`],
+  impSaving:['Relevé d\'un compte d\'épargne',()=>`<p>Les opérations du relevé sont rattachées au compte choisi : versements, retraits, intérêts, et virements avec ton compte courant (comptés une seule fois, même si tu importes aussi le relevé du compte courant).</p><p>Le <b>solde au début du relevé</b> aligne l'historique : un ajustement daté de la veille est ajouté, rien n'est effacé. À la fin, l'appli compare son solde avec le dernier solde du relevé.</p><p>Pour un livret réglementé, les intérêts de l'année sont ensuite recalculés quinzaine par quinzaine sur tes vrais mouvements.</p>`],
+  import:['Importer un relevé',()=>`<p>Tout relevé CSV de banque (ligne de titres, colonnes et format reconnus automatiquement), relevé d'un compte d'épargne (onglet Épargne) ou export de plateforme crypto (Bitstack, Coinbase…).</p><p>Les opérations déjà importées sont ignorées.</p>`],
   impTypes:['Types de ligne',()=>`<p><b>Achat</b> : ajouté à ton prix de revient.</p><p><b>Gratuit</b> (parrainage, bonus) : crypto reçue à coût nul.</p><p><b>Ignorer</b> : retrait vers ton portefeuille ou dépôt d'euros, qui ne sont ni des achats ni des ventes.</p>`],
   notif:['Rappels',()=>`<p>Alerte à l'ouverture : budget dépassé, versement Bricks à pointer, plafond d'épargne proche, objectif en retard, seuil de déclaration DAC7.</p>`],
   params:['Paramètres réglementaires',()=>`<p>Taux, plafonds et seuils utilisés par les calculs, avec leur date d'entrée en vigueur.</p><p>Quand une règle change, ajoute la nouvelle valeur à sa date : l'ancienne reste utilisée pour les périodes passées.</p>`],
@@ -1600,15 +1601,17 @@ function impAnalyze(){
   const delim=CsvImp.detectDelim(txt),rows=CsvImp.parseCSV(txt,delim);
   const tabular=rows.filter(r=>r.length>=2).length>=Math.max(1,rows.length*0.6);
   impBankMap=null;impCryptoMap=null;impCsv=null;impCrypto=null;
-  if(tabular){impMode=CsvImp.looksCrypto(txt)?'ops':'bank';}else{impMode='bank';}
+  impSav=null;
+  if(tabular){impMode=CsvImp.looksCrypto(txt)?'ops':(CsvImp.looksSaving(txt)?'saving':'bank');}else{impMode='bank';}
   impTabular=tabular;impRender();}
 let impTabular=false;
 function impRender(){
-  const tabs=`<div class="subtabs" style="margin:14px 0 10px"><div class="subtab ${impMode==='bank'?'on':''}" onclick="setImpMode('bank')">💳 Relevé bancaire</div><div class="subtab ${impMode==='ops'?'on':''}" onclick="setImpMode('ops')">📈 Plateforme (achats)</div></div>`;
+  const tabs=`<div class="subtabs" style="margin:14px 0 10px"><div class="subtab ${impMode==='bank'?'on':''}" onclick="setImpMode('bank')">💳 Relevé bancaire</div><div class="subtab ${impMode==='saving'?'on':''}" onclick="setImpMode('saving')">🏦 Épargne</div><div class="subtab ${impMode==='ops'?'on':''}" onclick="setImpMode('ops')">📈 Plateforme</div></div>`;
   $('#imp_result').innerHTML=tabs+'<div id="imp_body"></div>';impBuild();}
 function setImpMode(m){impMode=m;impRender();}
 function impBuild(){
   if(impMode==='ops')return impBuildOps();
+  if(impMode==='saving')return impSavingUI();
   return impBankUI();}
 function impBankUI(){
   let ui='';
@@ -1659,7 +1662,8 @@ function renderReview(){
     </div>`).join('')+`</div>`;}
 function setAllKind(k){impReview.forEach(r=>{r.kind=k;if(k==='Dépense'&&!r.cat)r.cat=autoCat(r.label);});renderReview();}
 function impDoBank(){const cc=compteCourant();let n=0,dup=0,firstExp=null;
-  const isDupMov=(o)=>DB.movements.some(m=>m.d===o.d&&m.t===o.t&&m.p===o.p&&(m.p2||'')===(o.p2||'')&&Math.round(m.m*100)===Math.round(o.m*100));
+  // un virement entre deux comptes apparaît sur les deux relevés, parfois à un ou deux jours d'écart : tolérance de 3 jours
+  const isDupMov=(o)=>DB.movements.some(m=>m.t===o.t&&m.p===o.p&&(m.p2||'')===(o.p2||'')&&Math.round(m.m*100)===Math.round(o.m*100)&&(m.d===o.d||(o.t==='Transfert'&&Math.abs(pd(m.d)-pd(o.d))<=3*86400000)));
   impReview.forEach(r=>{if(r.kind==='Ignorer')return;const amt=Math.abs(r.amount);
     if(r.kind==='Dépense'&&DB.expenses.some(e=>Fin.sameExpense(e,{d:r.date,amt,label:r.label}))){dup++;return;} // déjà importée
     if(r.kind!=='Dépense'&&isDupMov({d:r.date,t:r.kind==='Revenu'?'Dépôt':r.kind,p:r.kind==='Transfert'?(r.amount>=0?(r.acc||''):cc&&cc.name):(r.acc||(cc&&cc.name)),p2:r.kind==='Transfert'?(r.amount>=0?cc&&cc.name:r.acc):'',m:amt})){dup++;return;}
@@ -1670,6 +1674,83 @@ function impDoBank(){const cc=compteCourant();let n=0,dup=0,firstExp=null;
     else if(r.kind==='Dépôt'||r.kind==='Retrait'){DB.movements.push({d:r.date,p:r.acc||(cc&&cc.name),t:r.kind,m:amt,n:'import'});n++;}});
   if(firstExp){const d=new Date(firstExp);budMonth=Math.min(0,(d.getFullYear()-today().getFullYear())*12+(d.getMonth()-today().getMonth()));}
   save();closeSheet();renderAll();if(firstExp)nav('budget');toast(n+' opération'+(n>1?'s':'')+' importée'+(n>1?'s':'')+(dup?' · '+dup+' doublon'+(dup>1?'s':'')+' ignoré'+(dup>1?'s':''):''),n===0&&!dup);}
+// ---- Relevé d'un compte d'épargne (Livret A, LDDS…) : les opérations sont rattachées à ce compte.
+// Virements ↔ compte courant en transferts (dédoublonnés avec un relevé du compte courant), intérêts reconnus,
+// solde de départ aligné par un ajustement daté de la veille (rien n'est écrasé), contrôle du solde final.
+let impSav=null;
+const IS_KINDS=[['Dépôt','Versement'],['Retrait','Retrait'],['Transfert','Virement compte courant'],['Intérêts','Intérêts'],['Ignorer','Ignorer']];
+function impSavingUI(){
+  if(!impTabular){$('#imp_body').innerHTML='<div class="hint">Le relevé d\'un compte d\'épargne doit être au format CSV.</div>';return;}
+  const S=DB.savings.filter(x=>x.type!=='Compte courant');
+  if(!S.length){$('#imp_body').innerHTML=`<div class="note">Crée d'abord ton compte d'épargne (Placements ▸ Épargne ▸ + Produit).</div>`;return;}
+  const txt=$('#imp_txt').value;impCsv=CsvImp.readBank(txt,{map:impBankMap||undefined});impBankMap=impCsv.map;
+  if(!impSav||impSav.src!==txt){const head=txt.split(/\r?\n/).slice(0,3).join(' ').toLowerCase();
+    const acc=(S.find(x=>head.includes(x.name.toLowerCase()))||S.find(x=>head.includes(x.type.toLowerCase()))||S.find(x=>x.type==='Livret A')||S[0]).name;
+    impSav={src:txt,acc,rows:impCsv.rows.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).map(r=>Object.assign({},r,{kind:CsvImp.savingKind(r.label,r.amount)})),bi:CsvImp.balanceInfo(impCsv.rows)};}
+  const m=impCsv.map,cols=impCsv.columns,bi=impSav.bi,first=impSav.rows[0];
+  const opts=(k)=>'<option value="-1">—</option>'+cols.map((h,i)=>`<option value="${i}" ${m[k]===i?'selected':''}>${esc(h||('Colonne '+(i+1)))}</option>`).join('');
+  const sel=(k,l)=>`<div class="field"><label>${l}</label><select onchange="impBankMap.${k}=+this.value;impSav=null;impSavingUI()">${opts(k)}</select></div>`;
+  $('#imp_body').innerHTML=`
+    <div class="field"><label>Compte concerné ${hq('impSaving')}</label><select id="is_acc" onchange="impSav.acc=this.value;impSavingSum()">${S.map(x=>`<option ${x.name===impSav.acc?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
+    <details class="field"><summary class="sub" style="cursor:pointer">Colonnes reconnues (${impCsv.rows.length} lignes)</summary>
+      <div class="two">${sel('date','Date')}${sel('label','Libellé')}</div><div class="two">${sel('amount','Montant (signé)')}${sel('balance','Solde')}</div><div class="two">${sel('debit','ou Débit')}${sel('credit','ou Crédit')}</div></details>
+    <div class="field"><label>Solde au début du relevé${first?' (veille du '+pd(first.date).toLocaleDateString('fr-FR')+')':''} (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="is_open" value="${bi?fin(bi.opening):''}" placeholder="ex. 14 000" oninput="impSavingSum()">
+      <div class="hint">${bi?'Déduit de la colonne Solde du relevé.':'Indique-le pour éviter tout double comptage (il figure en tête de ton relevé).'}</div></div>
+    <div id="is_rev"></div><div id="is_sum" class="card pad" style="margin-top:10px;background:var(--card2);font-size:12.5px;line-height:1.7"></div>
+    <button class="btn primary" style="width:100%;margin-top:10px" onclick="impDoSaving()">Importer sur ce compte</button>`;
+  impSavingRev();}
+function impSavingRev(){const R=impSav.rows;
+  $('#is_rev').innerHTML=!R.length?'<div class="emptybox"><div class="ic">🧐</div>Aucune opération détectée. Vérifie les colonnes.</div>':`<div class="sub" style="margin-bottom:6px">${R.length} opérations — vérifie puis importe</div>
+    <div style="max-height:300px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:0 10px">`+R.map((r,i)=>`<div class="row" style="gap:6px;padding:8px 2px;border-bottom:1px solid var(--line)">
+      <div style="flex:1;min-width:0"><div class="t-name" style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.label)}</div>
+        <div class="t-sub">${pd(r.date).toLocaleDateString('fr-FR')} · <span class="${r.amount<0?'neg':'pos'}">${r.amount<0?'−':'+'}${eur(Math.abs(r.amount))}</span>${r.kind==='Transfert'?(r.amount>=0?' · depuis le compte courant':' · vers le compte courant'):''}</div></div>
+      <select onchange="impSav.rows[${i}].kind=this.value;impSavingRev()" style="width:auto;padding:5px;font-size:11px">${IS_KINDS.map(([k,l])=>`<option value="${k}" ${r.kind===k?'selected':''}>${l}</option>`).join('')}</select></div>`).join('')+'</div>';
+  impSavingSum();}
+// Opérations à créer pour une ligne du relevé (signe = vu du compte d'épargne)
+function impSavOp(r,acc,cc){const amt=r2(Math.abs(r.amount)),base={d:r.date,q:null,pu:null,f:0,n:r.label.slice(0,80)};
+  if(r.kind==='Transfert'&&cc)return Object.assign(base,r.amount>=0?{p:cc.name,p2:acc.name,t:'Transfert',m:amt}:{p:acc.name,p2:cc.name,t:'Transfert',m:amt});
+  if(r.kind==='Intérêts'&&r.amount>0)return Object.assign(base,{p:acc.name,t:'Intérêts',m:amt});
+  return Object.assign(base,{p:acc.name,t:r.amount>=0?'Dépôt':'Retrait',m:amt});}
+function impSavDup(o){const t0=pd(o.d).getTime();
+  return DB.movements.some(m=>m.t===o.t&&m.p===o.p&&(m.p2||'')===(o.p2||'')&&Math.round((+m.m||0)*100)===Math.round(o.m*100)&&Math.abs(pd(m.d).getTime()-t0)<=3*86400000);}
+function impSavingSum(){const acc=findSaving(impSav.acc),cc=compteCourant(),L=impSav.rows.filter(r=>r.kind!=='Ignorer');if(!acc||!$('#is_sum'))return;
+  const ops=L.map(r=>impSavOp(r,acc,cc)),fresh=ops.filter(o=>!impSavDup(o)),open=num('is_open'),bi=impSav.bi;
+  const last=L.length?L[L.length-1].date:null;
+  $('#is_sum').innerHTML=`${fresh.length} opération${fresh.length>1?'s':''} à ajouter${ops.length-fresh.length?' · '+(ops.length-fresh.length)+' déjà présente'+(ops.length-fresh.length>1?'s':''):''}${ops.some(o=>o.t==='Intérêts')?' · dont intérêts':''}.<br>
+    ${open!=null?`Solde de départ : <b>${eur(open)}</b>`:'<span style="color:var(--warn)">Solde de départ non renseigné : le solde actuel du compte est conservé tel quel.</span>'}${bi&&bi.closing!=null?`<br>Solde final du relevé : <b>${eur(bi.closing)}</b> au ${pd(bi.to).toLocaleDateString('fr-FR')}`:''}`;}
+function impDoSaving(){const acc=findSaving(impSav.acc),cc=compteCourant();if(!acc)return;
+  const L=impSav.rows.filter(r=>r.kind!=='Ignorer');if(!L.length){toast('Rien à importer',true);return;}
+  const open=num('is_open'),d0=L[0].date,last=L[L.length-1].date,bi=impSav.bi;
+  backupLocal('Avant import du relevé « '+acc.name+' »');
+  // solde de départ : ajustement daté de la veille de la première opération (l'historique n'est jamais réécrit)
+  if(open!=null){const before=r2(DB.movements.reduce((a,m)=>a+(String(m.d)<d0?movEffect(m,acc.name):0),0)),diff=r2(open-before);
+    if(Math.abs(diff)>=0.005)DB.movements.push({d:ymd(new Date(pd(d0).getTime()-86400000)),p:acc.name,t:'Ajustement',q:null,pu:null,m:diff,f:0,n:'Solde au début du relevé'});}
+  let n=0,dup=0;L.forEach(r=>{const o=impSavOp(r,acc,cc);if(impSavDup(o)){dup++;return;}o.n='import · '+o.n;DB.movements.push(o);n++;});
+  save();renderAll();
+  // contrôle : solde de l'appli à la date du dernier mouvement du relevé
+  // saisies manuelles du solde (reprise, ajustement) faites après le début du relevé : elles font doublon avec ses opérations
+  const isManual=(m)=>m.p===acc.name&&!m.link&&(m.t==='Reprise'||m.t==='Ajustement')&&String(m.d)>=d0&&m.n!=='Solde au début du relevé';
+  const manual=DB.movements.filter(isManual),target=bi&&bi.closing!=null?bi.closing:null;
+  const appEnd=r2(DB.movements.reduce((a,m)=>a+(String(m.d)<=last?movEffect(m,acc.name):0),0));
+  // solde attendu aujourd'hui = solde final du relevé + mouvements postérieurs (hors saisies manuelles)
+  const after=r2(DB.movements.reduce((a,m)=>a+(String(m.d)>last&&!isManual(m)?movEffect(m,acc.name):0),0));
+  const gap=target!=null?r2(target+after-(+acc.cap||0)):(manual.length?-r2(manual.reduce((a,m)=>a+movEffect(m,acc.name),0)):null);
+  const sc=savingCalc(acc);
+  openSheet(`<div class="spread"><h2>Relevé importé</h2><button class="btn sm" onclick="closeSheet();nav('placements');setPlace('epargne')">Fermer</button></div>
+    <div class="note" style="margin-top:0">${n} opération${n>1?'s':''} ajoutée${n>1?'s':''} sur <b>${esc(acc.name)}</b>${dup?' · '+dup+' doublon'+(dup>1?'s':'')+' ignoré'+(dup>1?'s':''):''}.</div>
+    <div class="g2k"><div><div class="k-l">Solde dans l'appli au ${pd(last).toLocaleDateString('fr-FR')}</div><b>${eur(appEnd)}</b></div>
+      <div><div class="k-l">${target!=null?'Solde du relevé':'Solde du relevé'}</div><b>${target!=null?eur(target):'non fourni'}</b></div>
+      <div><div class="k-l">Solde actuel</div><b>${eur(acc.cap||0)}</b></div><div><div class="k-l">Intérêts ${today().getFullYear()} estimés</div><b>${eur(sc.net)}</b><div class="t-sub">quinzaine par quinzaine</div></div></div>
+    ${gap==null||(target==null&&!manual.length)?`<div class="note">Compare le solde de l'appli avec celui de ta banque. En cas d'écart, corrige-le depuis la fiche du compte.</div>`
+      :Math.abs(gap)<0.01?`<div class="note" style="color:var(--pos)">✓ Les soldes concordent.</div>`
+      :`<div class="note" style="color:var(--warn)">${target!=null?'Écart de '+eur(gap)+' avec le relevé.':'Attention : double comptage probable.'}${manual.length?' Il vient sans doute de saisies manuelles du solde faites après le début du relevé :':''}</div>
+        ${manual.map(m=>`<div class="li" style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-top:1px solid var(--line)"><span>${pd(m.d).toLocaleDateString('fr-FR')} · ${esc(m.t)} ${m.n?'· '+esc(m.n):''}</span><b>${eur(m.m)}</b></div>`).join('')}
+        <div class="row" style="gap:8px;margin-top:10px">${manual.length?`<button class="btn sm" style="flex:1" onclick="impSavFix('${esc(acc.name).replace(/'/g,"\\'")}','${d0}','drop')">Retirer ces saisies</button>`:''}<button class="btn sm" style="flex:1" onclick="impSavFix('${esc(acc.name).replace(/'/g,"\\'")}','${last}','adj',${gap})">Ajuster de ${eur(gap)}</button></div>`}`);}
+function impSavFix(name,d,how,gap){
+  if(how==='drop'){if(!confirm('Retirer les saisies manuelles du solde postérieures au début du relevé ? (une sauvegarde a été faite)'))return;
+    DB.movements=DB.movements.filter(m=>!(m.p===name&&!m.link&&(m.t==='Reprise'||m.t==='Ajustement')&&String(m.d)>=d&&m.n!=='Solde au début du relevé'));}
+  else DB.movements.push({d,p:name,t:'Ajustement',q:null,pu:null,m:r2(gap),f:0,n:'Écart avec le relevé'});
+  save();renderAll();closeSheet();nav('placements');setPlace('epargne');toast('Solde mis à jour');}
 let impOps=[];
 function cryptoAssetFor(sym){const s=(sym||'').toUpperCase();
   return DB.assets.find(a=>a.type==='Crypto'&&s&&((a.ticker||'').toUpperCase().startsWith(s)||a.name.toUpperCase()===s))

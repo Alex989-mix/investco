@@ -71,5 +71,18 @@ log('Relevé bancaire qui mentionne Bitstack / Coinbase : reste un relevé banca
   && !C.looksCrypto('15/10/2026;-10,00;Prélèvement;;PRLV BITSTACK;0\n'));
 log('Export crypto sans titres (quantités à 8 décimales) reconnu', C.looksCrypto('14/10/2026;Achat;10,00;0,00016234\n13/10/2026;Arrondi;0,37;0,00000601\n'));
 
+// ===== v21.1 : relevé d'un compte d'épargne =====
+const LA = 'Livret A n° 12345678901\nRelevé du 01/01/2026 au 30/10/2026\nDate;Libellé;Débit;Crédit;Solde\n31/12/2025;INTERETS 2025;;245,60;14 245,60\n15/03/2026;VIR DEPUIS COMPTE CHEQUE;;500,00;14 745,60\n20/06/2026;RETRAIT GUICHET;300,00;;14 445,60\n10/09/2026;VERSEMENT ESPECES;;200,00;14 645,60\n';
+const rl = C.readBank(LA);
+log('Relevé Livret A : 4 opérations, colonne Solde reconnue', rl.rows.length === 4 && rl.map.balance === 4 && rl.rows[0].balance === 14245.6, rl.map);
+log('Relevé Livret A reconnu comme relevé d\'épargne (titre)', C.looksSaving(LA) && !C.looksSaving('Compte courant n° 1\nDate;Libellé;Montant\n01/10/2026;VIR LIVRET A;-200,00\n') && !C.looksSaving('Date;Libellé;Montant\n14/03/2026;VIR LIVRET A;-500,00\n'));
+log('Nature des lignes : intérêts, virement, retrait, versement', JSON.stringify(rl.rows.map((r) => C.savingKind(r.label, r.amount))) === '["Intérêts","Transfert","Retrait","Dépôt"]');
+const bi = C.balanceInfo(rl.rows);
+log('Soldes : départ 14 000 € (avant les intérêts du 31/12), fin 14 645,60 €', bi && bi.opening === 14000 && bi.closing === 14645.6 && bi.from === '2025-12-31', bi);
+const rev = C.readBank('Date;Libellé;Montant;Solde\n10/09/2026;VERSEMENT;200,00;14 645,60\n20/06/2026;RETRAIT;-300,00;14 445,60\n15/03/2026;VIR RECU;500,00;14 745,60\n');
+const bi2 = C.balanceInfo(rev.rows);
+log('Relevé du plus récent au plus ancien : soldes retrouvés (départ 14 245,60 €)', bi2 && bi2.opening === 14245.6 && bi2.closing === 14645.6, bi2);
+log('Sans colonne Solde : pas de solde déduit', C.balanceInfo(C.readBank('Date;Libellé;Montant\n10/09/2026;VERSEMENT;200,00\n').rows) === null);
+
 console.log(out.every(Boolean) ? `\n✓ csvimport.js : ${out.length} tests OK` : '\n✗ csvimport.js : erreurs');
 process.exitCode = out.every(Boolean) ? 0 : 1;

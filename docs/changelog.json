@@ -2,6 +2,33 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "21.1",
+      "date": "2026-10-30",
+      "title": "Import des relevés de livrets",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Import du relevé CSV d'un compte d'épargne (Livret A, LDDS, LEP…) : versements, retraits, intérêts et virements avec le compte courant sont rattachés au bon compte, chaque ligne restant modifiable avant validation."
+        },
+        {
+          "type": "improved",
+          "text": "Aucun double comptage : le solde au début du relevé aligne l'historique sans rien effacer, les opérations déjà présentes sont ignorées, et un virement n'est compté qu'une fois même si les relevés des deux comptes sont importés."
+        },
+        {
+          "type": "improved",
+          "text": "Contrôle du solde final avec celui du relevé, et correction proposée en un geste si un solde avait été saisi à la main."
+        },
+        {
+          "type": "improved",
+          "text": "Les intérêts de l'année des livrets sont recalculés quinzaine par quinzaine sur les mouvements réels."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "04 · Importer vos relevés : relevé d'un livret ou d'un compte d'épargne"
+      ]
+    },
+    {
       "version": "21.0",
       "date": "2026-10-30",
       "title": "Des chiffres fiables, un accueil clair, des placements en fiches",
