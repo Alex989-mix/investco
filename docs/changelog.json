@@ -2,6 +2,25 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "21.2",
+      "date": "2026-10-30",
+      "title": "Un code demandé une seule fois",
+      "highlights": [
+        {
+          "type": "improved",
+          "text": "Verrouillage : le code n'est demandé qu'à l'ouverture de l'application. Actualiser, installer une mise à jour ou choisir un fichier ne le redemandent plus."
+        },
+        {
+          "type": "improved",
+          "text": "Nouveau réglage par défaut « À l'ouverture de l'appli » ; le code peut toujours être redemandé après 1, 5 ou 15 minutes hors de l'application. Par sécurité, il l'est après 4 heures en arrière-plan."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "07 · Verrouiller l'application : délai de reverrouillage"
+      ]
+    },
+    {
       "version": "21.1",
       "date": "2026-10-30",
       "title": "Import des relevés de livrets",

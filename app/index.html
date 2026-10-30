@@ -1248,7 +1248,7 @@ const HELP={
   impTypes:['Types de ligne',()=>`<p><b>Achat</b> : ajouté à ton prix de revient.</p><p><b>Gratuit</b> (parrainage, bonus) : crypto reçue à coût nul.</p><p><b>Ignorer</b> : retrait vers ton portefeuille ou dépôt d'euros, qui ne sont ni des achats ni des ventes.</p>`],
   notif:['Rappels',()=>`<p>Alerte à l'ouverture : budget dépassé, versement Bricks à pointer, plafond d'épargne proche, objectif en retard, seuil de déclaration DAC7.</p>`],
   params:['Paramètres réglementaires',()=>`<p>Taux, plafonds et seuils utilisés par les calculs, avec leur date d'entrée en vigueur.</p><p>Quand une règle change, ajoute la nouvelle valeur à sa date : l'ancienne reste utilisée pour les périodes passées.</p>`],
-  lock:['Verrouillage',()=>`<p>Le code est demandé à l'ouverture et au retour dans l'appli.</p><p>C'est un écran de protection : tes données ne sont pas chiffrées.</p>`],
+  lock:['Verrouillage',()=>`<p>Le code est demandé quand tu ouvres l'appli, puis plus jusqu'à ce que tu la fermes : actualiser, installer une mise à jour ou choisir un fichier ne le redemandent pas.</p><p>Tu peux aussi le faire redemander après 1, 5 ou 15 minutes passées hors de l'appli. Avec « À l'ouverture de l'appli », il est redemandé si l'appli reste plus de 4 heures en arrière-plan.</p><p>C'est un écran de protection : tes données ne sont pas chiffrées.</p>`],
 };
 function showHelp(k){const h=HELP[k];if(!h)return;$('#hlp-t').textContent=h[0];$('#hlp-b').innerHTML=h[1]();$('#hlp').classList.add('on');}
 function hideHelp(){$('#hlp').classList.remove('on');}
@@ -2328,11 +2328,20 @@ function boot(){try{load();applyTheme();runRecurring();autoSnapshot();save();
 }
 // ---- Verrouillage : code haché (PBKDF2) + empreinte / visage (WebAuthn), écran de protection (pas de chiffrement)
 const LOCK_ITER=150000;let lockBuf='',lockHiddenAt=0;
+// Session déverrouillée : mémorisée dans le sessionStorage de l'onglet (effacé à la fermeture de l'appli),
+// pour ne pas redemander le code à chaque rechargement, mise à jour ou passage par le sélecteur de fichiers.
+const LOCK_SES='investco_unlocked',LOCK_HID='investco_hidden_at',LOCK_GRACE=10000,LOCK_OPEN_MAX=4*3600*1000;
+// Délai de reverrouillage en secondes ; -1 = seulement à l'ouverture de l'appli (0, ancien « Immédiat », vaut -1)
+const lockDelay=()=>{const d=lk().delay;return (d==null||d===0)?-1:+d;};
+function lockIdleMax(){const d=lockDelay();return d<0?LOCK_OPEN_MAX:Math.max(d*1000,LOCK_GRACE);}
+function lockSessionOk(){try{if(!sessionStorage.getItem(LOCK_SES))return false;const h=+sessionStorage.getItem(LOCK_HID)||0;
+  return !h||Date.now()-h<lockIdleMax();}catch(e){return false;}}
+function lockSessionSet(on){try{if(on){sessionStorage.setItem(LOCK_SES,String(Date.now()));sessionStorage.removeItem(LOCK_HID);}else{sessionStorage.removeItem(LOCK_SES);sessionStorage.removeItem(LOCK_HID);}}catch(e){}}
 const lk=()=>DB.settings.lock||{enabled:false};
 const b64=(buf)=>btoa(String.fromCharCode(...new Uint8Array(buf))),unb64=(s)=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const randHex=(n)=>[...crypto.getRandomValues(new Uint8Array(n))].map(b=>b.toString(16).padStart(2,'0')).join('');
 function lockIsOn(){return $('#lock').classList.contains('on');}
-function lockNow(){if(!lk().enabled)return;lockBuf='';$('#lock').classList.add('on');lockDraw();
+function lockNow(){if(!lk().enabled)return;lockSessionSet(false);lockBuf='';$('#lock').classList.add('on');lockDraw();
   const L=lk();$('#lk-bio').style.display=L.bio?'inline':'none';if(L.bio)setTimeout(()=>{if(lockIsOn())lockBio();},350);}
 function lockDraw(msg){const n=lk().len||4;$('#lk-dots').innerHTML=Array.from({length:n},(_,k)=>`<i class="${k<lockBuf.length?'f':''}"></i>`).join('');
   if(msg!=null)$('#lk-msg').textContent=msg;
@@ -2346,7 +2355,7 @@ async function lockKey(k){const w=lockWait();if(w){lockDraw('Trop d\'essais : r�
       $('#lock').classList.remove('shake');void $('#lock').offsetWidth;$('#lock').classList.add('shake');
       if(f>=5){localStorage.setItem('investco_lock_until',Date.now()+30000);localStorage.setItem('investco_lock_fails',0);lockDraw('Trop d\'essais : réessaie dans 30 s');}
       else lockDraw('Code incorrect');}}}
-function unlock(){$('#lock').classList.remove('on');lockBuf='';}
+function unlock(){$('#lock').classList.remove('on');lockBuf='';lockSessionSet(true);}
 async function lockBio(){const L=lk();if(!L.bio||!window.PublicKeyCredential)return;
   try{await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:'public-key',id:unb64(L.bio)}],userVerification:'required',timeout:60000}});unlock();}
   catch(e){lockDraw('Empreinte non reconnue : utilise ton code');}}
@@ -2354,13 +2363,14 @@ function lockForgot(){if(!confirm('Sans le code, la seule solution est d\'efface
   if(!confirm('Dernière confirmation : effacer toutes les données Invest.co de cet appareil ?'))return;
   ['investco_v1','patrimoine_v1',BAK_KEY,'investco_lock_fails','investco_lock_until'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});location.reload();}
 document.addEventListener('keydown',e=>{if(!lockIsOn())return;if(/^\d$/.test(e.key))lockKey(e.key);else if(e.key==='Backspace')lockKey('<');});
+// Retour dans l'appli : reverrouillage seulement après le délai choisi (jamais pour un simple aller-retour de quelques secondes)
 document.addEventListener('visibilitychange',()=>{if(!lk().enabled)return;
-  if(document.visibilityState==='hidden')lockHiddenAt=Date.now();
-  else if(lockHiddenAt&&!lockIsOn()&&Date.now()-lockHiddenAt>=(lk().delay||0)*1000)lockNow();});
+  if(document.visibilityState==='hidden'){lockHiddenAt=Date.now();try{if(!lockIsOn())sessionStorage.setItem(LOCK_HID,String(lockHiddenAt));}catch(e){}}
+  else{if(lockHiddenAt&&!lockIsOn()&&Date.now()-lockHiddenAt>=lockIdleMax())lockNow();else{try{sessionStorage.removeItem(LOCK_HID);}catch(e){}}lockHiddenAt=0;}});
 // Réglages du verrouillage
 function lockSettingsHtml(){const L=lk();
   return `<div class="field" style="border-top:1px solid var(--line);padding-top:14px"><label>🔒 Verrouillage ${hq('lock')}</label>
-    ${L.enabled?`<div class="row" style="gap:8px;flex-wrap:wrap"><select id="lk_delay" onchange="DB.settings.lock.delay=+this.value;save();toast('Délai enregistré')" style="flex:1;min-width:140px">${[[0,'Immédiat'],[60,'Après 1 min'],[300,'Après 5 min'],[900,'Après 15 min']].map(([v,l])=>`<option value="${v}" ${(L.delay||0)===v?'selected':''}>${l}</option>`).join('')}</select>
+    ${L.enabled?`<div class="row" style="gap:8px;flex-wrap:wrap"><select id="lk_delay" onchange="DB.settings.lock.delay=+this.value;save();toast('Délai enregistré')" style="flex:1;min-width:140px">${[[-1,'À l\'ouverture de l\'appli'],[60,'Après 1 min hors de l\'appli'],[300,'Après 5 min hors de l\'appli'],[900,'Après 15 min hors de l\'appli']].map(([v,l])=>`<option value="${v}" ${lockDelay()===v?'selected':''}>${l}</option>`).join('')}</select>
       <button class="btn sm" onclick="lockBioToggle()">${L.bio?'Désactiver l\'empreinte':'👆 Activer l\'empreinte'}</button><button class="btn sm" onclick="lockSetup(true)">Changer le code</button><button class="btn sm" style="color:var(--neg)" onclick="lockDisable()">Désactiver</button></div>
       `
     :`<button class="btn" style="width:100%" onclick="lockSetup(false)">Activer le verrouillage par code</button><div class="hint">Code à 4 à 6 chiffres, et empreinte ou visage si ton téléphone le permet.</div>`}</div>`;}
@@ -2376,7 +2386,7 @@ async function lockSave(change){const a=$('#lk_new').value,b=$('#lk_new2').value
   if(!/^\d{4,6}$/.test(a)){toast('Le code doit comporter 4 à 6 chiffres',true);return;}
   if(a!==b){toast('Les deux codes ne correspondent pas',true);return;}
   const salt=randHex(16),hash=await Fin.hashPin(a,salt,LOCK_ITER),old=lk();
-  DB.settings.lock={enabled:true,salt,hash,iter:LOCK_ITER,len:a.length,delay:old.delay||0,bio:old.bio||null};save();closeSheet();openSettings();toast('Verrouillage activé');}
+  DB.settings.lock={enabled:true,salt,hash,iter:LOCK_ITER,len:a.length,delay:old.delay||-1,bio:old.bio||null};lockSessionSet(true);save();closeSheet();openSettings();toast('Verrouillage activé');}
 async function lockDisable(){const pin=prompt('Code actuel pour désactiver le verrouillage :');if(pin==null)return;
   if(!(await lockCheck(pin))){toast('Code incorrect',true);return;}DB.settings.lock={enabled:false};save();closeSheet();openSettings();toast('Verrouillage désactivé');}
 async function lockBioToggle(){const L=lk();
@@ -2422,7 +2432,7 @@ if('serviceWorker' in navigator){
   });
 }
 try{boot();}catch(e){console.error(e);toast('Erreur au démarrage : '+e.message,true);}
-try{lockNow();}catch(e){}
+try{if(!lockSessionOk())lockNow();}catch(e){}
 setTimeout(()=>{try{whatsNew(false);}catch(e){}},900);
 </script>
 </body>

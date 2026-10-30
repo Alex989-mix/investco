@@ -91,6 +91,8 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   const L = await page.evaluate(() => DB.settings.lock);
   log('Codes différents refusés ; code 2468 enregistré haché (jamais en clair)', !mism.en && /ne correspondent pas/.test(mism.t) && L.enabled && L.hash.length === 64 && !JSON.stringify(L).includes('2468') && L.len === 4, { mism, L: { ...L, hash: L.hash && L.hash.slice(0, 8) } });
   // Rechargement : l'écran de verrouillage s'affiche, rien n'est lisible derrière
+  // v21.2 : le code vient d'être créé, la session reste ouverte ; nouvelle ouverture de l'appli = session effacée
+  await page.evaluate(() => sessionStorage.clear());
   await page.reload(); await page.waitForTimeout(1200);
   const locked = await page.evaluate(() => ({ on: document.querySelector('#lock').classList.contains('on'), top: document.elementFromPoint(195, 400)?.closest('#lock') != null }));
   log('À l\'ouverture : écran de verrouillage par-dessus tout le contenu', locked.on && locked.top, locked);
@@ -101,10 +103,18 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   for (const d of '2468') await page.locator('#lk-pad button', { hasText: d }).first().click();
   await page.waitForTimeout(600);
   log('Bon code : appli déverrouillée', !(await page.evaluate(() => document.querySelector('#lock').classList.contains('on'))));
-  // Retour dans l'appli : verrouillage immédiat (délai 0)
-  await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }); document.dispatchEvent(new Event('visibilitychange'));
-    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
-  log('Retour dans l\'appli : reverrouillée', await page.evaluate(() => document.querySelector('#lock').classList.contains('on')));
+  // v21.2 : rechargement (actualisation, mise à jour) dans la même session → pas de code
+  await page.reload(); await page.waitForTimeout(1200);
+  log('Rechargement de l\'appli dans la même session : pas de code redemandé', !(await page.evaluate(() => document.querySelector('#lock').classList.contains('on'))));
+  const vis = (v) => page.evaluate((v) => { Object.defineProperty(document, 'visibilityState', { value: v, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); }, v);
+  // Aller-retour de quelques secondes (sélecteur de fichier) : pas de code ; réglage par défaut « À l'ouverture de l'appli »
+  await vis('hidden'); await page.clock.setFixedTime(new Date('2026-10-22T14:02:00+02:00')); await vis('visible');
+  log('Réglage par défaut « À l\'ouverture de l\'appli » : retour après 2 min hors de l\'appli sans code', !(await page.evaluate(() => document.querySelector('#lock').classList.contains('on'))) && await page.evaluate(() => lockDelay() === -1));
+  // Délai « Après 1 min » : retour après 2 min → reverrouillée
+  await page.evaluate(() => { DB.settings.lock.delay = 60; save(); });
+  await vis('hidden'); await page.clock.setFixedTime(new Date('2026-10-22T14:04:00+02:00')); await vis('visible');
+  log('Délai « Après 1 min » : retour après 2 min → reverrouillée', await page.evaluate(() => document.querySelector('#lock').classList.contains('on')));
+  await page.clock.setFixedTime(new Date('2026-10-22T14:00:00+02:00'));
   // 5 erreurs → attente 30 s
   for (let k = 0; k < 5; k++) for (const d of '9999') await page.locator('#lk-pad button', { hasText: d }).first().click().then(() => page.waitForTimeout(40));
   await page.waitForTimeout(500);
