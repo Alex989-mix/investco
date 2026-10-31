@@ -2,6 +2,38 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "22.1",
+      "date": "2026-10-31",
+      "title": "Le nouveau design partout",
+      "highlights": [
+        {
+          "type": "improved",
+          "text": "Analyse s'ouvre sur une carte « Gains de l'année » (valeur au 1er janvier, épargne versée, patrimoine d'aujourd'hui), suivie de sections titrées ; le choix Brute / Nette de crédits devient un sélecteur."
+        },
+        {
+          "type": "improved",
+          "text": "Achat-revente : carte de synthèse avec le choix de l'année (marge nette, chiffre d'affaires, stock, imposable) et articles en lignes, sans tableau à faire défiler."
+        },
+        {
+          "type": "improved",
+          "text": "Réglages, « Ajouter » et import de relevés : icônes au trait à la place des emojis, sections plus lisibles, boutons d'au moins 40 px."
+        },
+        {
+          "type": "fixed",
+          "text": "Récap fiscal : le taux des prélèvements sociaux s'affiche à la française (18,6 %)."
+        },
+        {
+          "type": "fixed",
+          "text": "Choix du code de verrouillage : les deux dernières phrases qui tutoyaient vous vouvoient désormais."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "01 · Navigation : l'espace s'appelle Accueil",
+        "06 · L'écran Analyse et Achat-revente"
+      ]
+    },
+    {
       "version": "22.0",
       "date": "2026-10-31",
       "title": "Un nouveau design, plus clair",

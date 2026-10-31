@@ -18,6 +18,7 @@ for (const [name, args] of [
   ['Nouveautés v21 (fiabilité, accueil, fiches, Bricks)', [path.join(__dirname, 'v21.test.js'), APP]],
   ['Relevé d\'un compte d\'épargne (v21.1)', [path.join(__dirname, 'v21_1.test.js'), APP]],
   ['Nouveau design et vouvoiement (v22)', [path.join(__dirname, 'v22.test.js'), APP]],
+  ['Design des écrans restants, sans emoji (v22.1)', [path.join(__dirname, 'v221.test.js'), APP]],
   ['Import de relevés', [path.join(__dirname, 'import.test.js'), APP]],
   ['Mises à jour', [path.join(__dirname, 'update.test.js'), path.join(__dirname, 'fixtures', 'v16'), APP, path.join(tmp, 'serve')]],
 ]) {

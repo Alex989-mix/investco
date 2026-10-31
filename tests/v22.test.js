@@ -6,7 +6,7 @@ const log = (t, ok, d) => { out.push(ok); console.log((ok ? 'OK  ' : 'BUG ') + t
 const N = (s) => String(s || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Tutoiement : pronoms et impératifs de la 2e personne du singulier
-const TU = /(?<!\p{L})(tu|ton|ta|tes|toi|t'as|t'a|t'ont|Ajoute|Touche|Coche|Saisis|Laisse|Choisis|Vérifie|Entre ton|Appuie|Fixe un|Indique|Corrige|Colle|Ouvre|Reviens|Suis)(?!\p{L})/u;
+const TU = /(?<!\p{L})(tu|ton|ta|tes|toi|t'as|t'a|t'ont|Ajoute|Touche|Coche|Saisis|Laisse|Choisis|Vérifie|Entre ton|Appuie|Fixe un|Indique|Corrige|Colle|Ouvre|Reviens|Suis|Confirme|Retiens)(?!\p{L})/u;
 
 (async () => {
   const browser = await chromium.launch();

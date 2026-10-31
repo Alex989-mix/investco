@@ -91,7 +91,7 @@ async function shots(browser) {
   await shot('pea', null, top);
   await page.evaluate(() => productDetail(DB.assets.find((a) => a.type === 'Crypto').name)); await shot('ligne', '#sheet');
   await page.evaluate(() => closeSheet());
-  await page.evaluate(() => { if (window.Chart && Chart.defaults) Chart.defaults.animation = false; nav('analyse'); drawCashflow(); const c = document.querySelector('#cfchart'); const card = c && c.closest('.card'); if (card) window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - 70); });
+  await page.evaluate(() => { if (window.Chart && Chart.defaults) Chart.defaults.animation = false; nav('analyse'); drawCashflow(); const c = document.querySelector('#cfchart'); const card = c && c.closest('.card'); const t = card && (card.previousElementSibling && card.previousElementSibling.classList.contains('grp') ? card.previousElementSibling : card); if (t) window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY - 80); });
   await page.waitForTimeout(800); await shot('cashflow', null, top);
   await page.evaluate(() => { DB.settings.lock = { enabled: true, len: 4, delay: 0, bio: true, salt: '00', hash: '00', iter: 1 }; lockNow(); lockBuf = '12'; lockDraw(''); });
   await shot('verrou', null, top);
