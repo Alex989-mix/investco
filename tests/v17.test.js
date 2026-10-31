@@ -88,7 +88,7 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   await typeIn(page, '#cb_Courses', '50'); await btn('Enregistrer');
   await page.evaluate(() => { ['2026-07-14', '2026-08-14', '2026-09-14', '2026-10-14'].forEach(d => DB.expenses.push({ d, label: 'Netflix', amt: 13.49, cat: 'Abonnements' })); DB.expenses.push({ d: '2026-10-03', label: 'Carrefour', amt: 62, cat: 'Courses' }); save(); renderBudget(); });
   const bud = N(await page.evaluate(() => document.querySelector('#v-budget').textContent));
-  log('Budget : « Prévu vs réel » avec Courses 50 € / 62 € (+12 €)', bud.includes('Prévu vs réel') && /Courses50 €62 €\+12 €/.test(bud.replace(/\s/g, '').replace(/€/g, ' €').replace(/ /g, '')) || /Courses\s*50 €\s*62 €\s*\+12 €/.test(bud), bud.match(/Courses.{0,40}/)?.[0]);
+  log('Budget : « Prévu vs réel » avec Courses 50 € / 62 € (+12 €)', bud.includes('Prévu vs réel') && /Courses\s*50 € prévus · dépassé de 12 €\s*62 €/.test(bud), bud.match(/Courses.{0,40}/)?.[0]);
   log('Abonnement repéré : Netflix 13,49 € le 14', bud.includes('Netflix · 13,49 € le 14'));
   await page.locator('#v-budget button', { hasText: 'Ajouter' }).first().click(); await page.waitForTimeout(150);
   const rec = await page.evaluate(() => DB.recurring.find(r => r.label === 'Netflix'));

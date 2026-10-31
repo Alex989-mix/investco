@@ -74,8 +74,8 @@ async function shots(browser) {
   await page.evaluate((t) => { closeSheet(); openImport(); document.querySelector('#imp_txt').value = t; impAnalyze(); document.querySelector('#imp_result').scrollIntoView({ block: 'start' }); }, CRYPTO);
   await shot('import_bitstack', '#sheet');
   // capture de l'élément entier : la barre de navigation fixe est masquée le temps de la capture
-  await page.evaluate(() => { closeSheet(); nav('placements'); setPlace('epargne'); document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = 'hidden'; }); }); await shot('epargne', '#v-placements');
-  await page.evaluate(() => document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = ''; }));
+  await page.evaluate(() => { closeSheet(); nav('placements'); setPlace('epargne'); document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = 'hidden'; }); document.querySelector('.top').style.position = 'static'; window.scrollTo(0, 0); }); await shot('epargne', '#v-placements');
+  await page.evaluate(() => { document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = ''; }); document.querySelector('.top').style.position = ''; });
   await page.evaluate(() => { nav('budget'); window.scrollTo(0, 0); }); await shot('budget', null, top);
   // v21 : onglet Crowdfunding (fiches compactes) puis détail d'un projet (échéancier en liste)
   await page.evaluate(() => { nav('placements'); setPlace('crowd'); window.scrollTo(0, 0); }); await shot('bricks', null, top);

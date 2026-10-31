@@ -41,7 +41,7 @@ const BITSTACK = 'Date;Type;Montant (EUR);Quantité (BTC);Prix du BTC (EUR);Frai
   await page.locator('#imp_body button', { hasText: 'Importer' }).last().click(); await page.waitForTimeout(300);
   const bi = await page.evaluate(() => { nav('budget'); budMonth = 0; renderBudget(); return { cc: compteCourant().cap, txt: document.querySelector('#v-budget').textContent }; });
   log('Compte courant : −10 € −20 € +150 € ; budget « dont 10 € investis · … de dépenses courantes »', Math.abs(bi.cc - cc1 - 120) < 0.001 && /dont 10 € investis/.test(N(bi.txt)), { delta: bi.cc - cc1, extrait: (N(bi.txt).match(/dont.{0,60}/) || [])[0] });
-  log('Catégorie « Investissement » visible dans « Prévu vs réel »', /Investissement\s*—\s*10 €/.test(N(bi.txt)), (N(bi.txt).match(/Investissement.{0,30}/) || [])[0]);
+  log('Catégorie « Investissement » visible dans « Prévu vs réel »', /Investissement\s*sans budget\s*10 €/.test(N(bi.txt)), (N(bi.txt).match(/Investissement.{0,30}/) || [])[0]);
   const apo = await page.evaluate(() => { const a = consolidate().apports; DB.expenses = DB.expenses.filter(e => e.label !== 'PRLV SEPA BITSTACK SAS'); const b = consolidate().apports; return a - b; });
   log('Gain de l\'année : les 10 € envoyés vers Bitstack ne sont pas comptés comme une perte', Math.abs(apo + 10) < 0.001, apo);
   await page.evaluate(() => { nav('dash'); });

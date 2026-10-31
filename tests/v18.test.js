@@ -121,7 +121,7 @@ const N = (s) => String(s || '').replace(/[  ]/g, ' ');
   for (const d of '2468') await page.locator('#lk-pad button', { hasText: d }).first().click();
   await page.waitForTimeout(400);
   const wait = await page.evaluate(() => ({ on: document.querySelector('#lock').classList.contains('on'), msg: document.querySelector('#lk-msg').textContent }));
-  log('5 erreurs : même le bon code est bloqué 30 s', wait.on && /réessaie dans \d+ s/.test(wait.msg), wait);
+  log('5 erreurs : même le bon code est bloqué 30 s', wait.on && /réessayez dans \d+ s/.test(wait.msg), wait);
   await page.clock.setFixedTime(new Date('2026-10-22T14:05:00+02:00')); // 30 s plus tard (et au-delà)
   for (const d of '2468') await page.locator('#lk-pad button', { hasText: d }).first().click();
   await page.waitForTimeout(600);

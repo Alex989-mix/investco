@@ -2,6 +2,44 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "22.0",
+      "date": "2026-10-31",
+      "title": "Un nouveau design, plus clair",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Nouveau design : chaque écran s'ouvre sur une carte qui résume l'essentiel (total, variation, trois chiffres clés), suivie de vos comptes en lignes faciles à toucher."
+        },
+        {
+          "type": "new",
+          "text": "Accueil : « Où est votre argent » répartit votre patrimoine entre immobilier, épargne, bourse et crypto et crowdfunding, avec une barre de couleur. Touchez une ligne pour ouvrir l'onglet correspondant de Placements."
+        },
+        {
+          "type": "improved",
+          "text": "Épargne regroupée par famille (épargne réglementée, assurance-vie, liquidités), avec le plafond et les intérêts de l'année sur chaque ligne ; import d'un relevé accessible directement depuis l'onglet."
+        },
+        {
+          "type": "improved",
+          "text": "Budget : le mois se choisit dans la carte du compte courant ; « Prévu vs réel », les dépenses du mois et les dépenses récurrentes s'affichent en lignes, sans tableau à faire défiler."
+        },
+        {
+          "type": "improved",
+          "text": "Boutons plus grands (44 px) pour un usage au doigt, icônes au trait à la place des emojis."
+        },
+        {
+          "type": "improved",
+          "text": "L'application vous vouvoie désormais, dans tous ses écrans, fenêtres et aides."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "03 · Épargne : lecture de l'écran",
+        "03 · Bourse : lignes et bouton Actualiser",
+        "05 · Budget : Prévu vs réel en lignes",
+        "07 · L'accueil : Où est votre argent"
+      ]
+    },
+    {
       "version": "21.2",
       "date": "2026-10-30",
       "title": "Un code demandé une seule fois",

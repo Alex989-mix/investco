@@ -206,12 +206,12 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
       </ol>
       <p>Les versements et retraits suivants se saisissent comme des <b>opérations</b> : touchez la fiche du produit, puis <b>+ Opération</b>. Le solde est toujours recalculé à partir de l'historique, et les intérêts suivent la règle officielle des quinzaines.</p>
       <div class="note tip"><b class="t">Plafonds surveillés</b>Invest.co vous prévient lorsqu'un livret approche de son plafond de versements, ainsi que pour le PEA.</div>
-      <h3>Lire une fiche</h3>
-      <p>Chaque produit affiche son <b>solde</b>, son <b>taux</b>, les <b>intérêts de l'année</b> (estimation nette d'impôt) et, pour un livret, la jauge de son plafond. Touchez la fiche pour le détail : montant versé, intérêts perçus et opérations.</p>
+      <h3>Lire l'écran Épargne</h3>
+      <p>La carte du haut donne le total, les <b>intérêts de l'année</b> (estimation nette d'impôt) et le montant de chaque famille : épargne réglementée, assurance-vie, liquidités. Dessous, chaque compte occupe une ligne : <b>solde</b>, <b>taux</b>, intérêts de l'année et, pour un livret, la jauge de son plafond. Touchez une ligne pour le détail : montant versé, intérêts perçus et opérations.</p>
       <h3>Comptes à taux libre</h3>
       <p>Pour une assurance-vie, un livret bancaire ou un portefeuille de plateforme, indiquez le taux et sa <b>date d'entrée en vigueur</b>. Lorsqu'il change, saisissez le nouveau taux à sa date : l'ancien reste appliqué aux jours passés.</p>
     </div>
-    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/epargne.png"></div><figcaption><b>Figure 3</b> — Épargne en fiches</figcaption></figure>
+    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/epargne.png"></div><figcaption><b>Figure 3</b> — Épargne regroupée par famille</figcaption></figure>
   </div>
   <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>5</span></div>
 </section>
@@ -246,8 +246,8 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     <div>
       <h3 style="margin-top:0">Bourse et crypto</h3>
       <p>Dans <span class="path">Placements › Bourse &amp; crypto › + Actif</span>, indiquez le nom, le symbole et l'enveloppe (PEA, CTO, plateforme crypto). Pour un ETF coté à Paris, le code Euronext suffit (par exemple <span class="k">CW8</span>) ; pour le bitcoin, utilisez <span class="k">BTC-EUR</span>. Le <b>code ISIN</b> (12 caractères, par exemple <span class="k">LU1681043599</span>) est facultatif ; il est vérifié à la saisie.</p>
-      <p>Saisissez ensuite vos achats et ventes. Vos lignes s'affichent en <b>fiches regroupées par enveloppe</b> (PEA, compte-titres, plateforme crypto) avec leur sous-total : valeur, gain ou perte depuis l'achat et variation du jour. Touchez une fiche pour son détail : prix de revient, quantité, <b>seuils de revente</b> et opérations.</p>
-      <p><b>Crypto en direct :</b> tant que l'application est ouverte, le cours de vos cryptomonnaies se met à jour en continu, avec la variation sur 24 heures (badge <span class="k">● direct</span>). Pour les actions et les ETF, le bouton <span class="k">↻ Cours</span> actualise les cotations et affiche la <b>variation du jour</b>, par rapport à la clôture de la séance précédente.</p>
+      <p>Saisissez ensuite vos achats et ventes. Vos titres s'affichent en <b>lignes regroupées par enveloppe</b> (PEA, compte-titres, plateforme crypto) avec leur sous-total : valeur, gain ou perte depuis l'achat et variation du jour. Touchez une ligne pour son détail : prix de revient, quantité, <b>seuils de revente</b> et opérations.</p>
+      <p><b>Crypto en direct :</b> tant que l'application est ouverte, le cours de vos cryptomonnaies se met à jour en continu, avec la variation sur 24 heures (badge <span class="k">● direct</span>). Pour les actions et les ETF, le bouton <span class="k">↻ Actualiser</span> actualise les cotations et affiche la <b>variation du jour</b>, par rapport à la clôture de la séance précédente.</p>
       <h3>La fiche PEA</h3>
       <p>Touchez <b>fiche PEA</b> pour renseigner la date d'ouverture, l'établissement et vos <b>versements</b> d'argent sur le plan. Invest.co affiche alors :</p>
       <ul class="dots">
@@ -323,9 +323,9 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
     <div>
       <p class="lead">L'espace Budget suit votre compte courant mois par mois : où part l'argent, ce qui revient chaque mois, et l'écart avec ce que vous aviez prévu.</p>
       <h3 style="margin-top:0">Fixer vos budgets</h3>
-      <p>Touchez <b>Budgets</b> et attribuez un montant mensuel à chaque catégorie. Le tableau <b>Prévu vs réel</b> affiche l'écart, le mois précédent et la moyenne des trois derniers mois.</p>
+      <p>Touchez <b>Budgets</b> et attribuez un montant mensuel à chaque catégorie. La liste <b>Prévu vs réel</b> montre, pour chaque catégorie, une barre de progression, ce qu'il reste ou le dépassement, et le mois précédent. Un budget dépassé s'affiche en rouge en haut de l'écran.</p>
       <h3>Dépenses récurrentes</h3>
-      <p>Loyer, abonnements, assurances : ajoutez-les via <b>+ Récurrent</b>, ils sont enregistrés automatiquement à chaque échéance. Invest.co repère aussi les dépenses qui reviennent chaque mois et vous propose de les ajouter en un appui.</p>
+      <p>Loyer, abonnements, assurances : ajoutez-les via <b>+ Récurrente</b>, ils sont enregistrés automatiquement à chaque échéance. Invest.co repère aussi les dépenses qui reviennent chaque mois et vous propose de les ajouter en un appui.</p>
       <h3>Catégorisation automatique</h3>
       <p>Les libellés sont classés automatiquement. Ajoutez vos propres règles dans <span class="path">Réglages › Règles de catégories</span>, par exemple « boulangerie » vers Courses ; elles s'appliquent en priorité.</p>
       <div class="note info"><b class="t">Investir n'est pas dépenser</b>Le solde du mois distingue la part investie (« dont X € investis ») de vos dépenses courantes.</div>
@@ -415,13 +415,14 @@ td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
   <div class="two">
     <div>
       <h3 style="margin-top:0">L'accueil</h3>
-      <p>Votre <b>patrimoine net</b>, expliqué en une phrase : la variation depuis le 1<sup>er</sup> janvier, dont ce que vous avez épargné et ce que vos placements ont rapporté. Puis trois chiffres :</p>
+      <p>Votre <b>patrimoine net</b>, expliqué en une phrase : la variation depuis le 1<sup>er</sup> janvier, dont ce que vous avez épargné et ce que vos placements ont rapporté. Dans la même carte, trois chiffres :</p>
       <table>
         <tr><th>Chiffre</th><th>Contenu</th></tr>
         <tr><td>Disponible</td><td>Livrets et comptes hors assurance-vie, avec le nombre de mois de dépenses couverts.</td></tr>
         <tr><td>Revenus passifs</td><td>Intérêts, versements de crowdfunding et dividendes, par mois.</td></tr>
         <tr><td>Épargné du mois</td><td>Revenus moins dépenses courantes, comparé à votre moyenne.</td></tr>
       </table>
+      <p><b>Où est votre argent</b> répartit vos actifs entre immobilier, épargne, bourse et crypto et crowdfunding, avec une barre de couleur ; touchez une ligne pour ouvrir l'onglet correspondant de Placements.</p>
       <p>Le bloc <b>À surveiller</b> affiche au plus trois alertes, chacune avec son action (Voir, Pointer, Tout pointer). Vos <b>objectifs</b> suivent, avec l'effort mensuel nécessaire.</p>
       <h3>L'écran Analyse</h3>
       <p>Depuis l'accueil, <b>Analyse</b> regroupe le bilan de l'année, l'évolution du patrimoine, la répartition (brute ou nette de crédits), la performance de vos placements, le cash-flow sur douze mois et le récapitulatif fiscal.</p>
