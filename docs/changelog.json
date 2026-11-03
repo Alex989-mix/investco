@@ -2,6 +2,38 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "28.2",
+      "date": "2026-11-04",
+      "title": "Importer les relevés de votre assureur",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Import du relevé d'un contrat d'assurance-vie : nouvel onglet « Assurance-vie » dans l'écran d'import, reconnu automatiquement, et bouton « Relevé » dans l'onglet Assurance-vie. CSV de l'espace client ou texte d'un PDF."
+        },
+        {
+          "type": "new",
+          "text": "Relevé d'opérations : versements, rachats, frais, intérêts (participation aux bénéfices) et prélèvements sociaux rattachés au bon support, avec le nombre de parts ; les lignes de sortie et d'entrée d'un arbitrage deviennent un seul arbitrage. Les doublons sont ignorés à trois jours près."
+        },
+        {
+          "type": "new",
+          "text": "Relevé de situation : la valeur de chaque unité de compte et sa valeur liquidative sont enregistrées à la date du relevé ; un écart du fonds en euros devient un ajustement daté ; un support inconnu est créé et repris comme argent déjà détenu (ni versement, ni gain)."
+        },
+        {
+          "type": "improved",
+          "text": "Une copie de sécurité est faite avant chaque import, et rien n'est écrasé : l'historique du contrat reste intact."
+        },
+        {
+          "type": "improved",
+          "text": "Onglet Assurance-vie : le bouton des cours des unités de compte devient « Cours », à côté du nouveau bouton « Relevé »."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "Chapitre 06 : nouvelle page « Relevé d'une assurance-vie »",
+        "Sommaire : numéros de page mis à jour (23 pages)"
+      ]
+    },
+    {
       "version": "28.1",
       "date": "2026-11-04",
       "title": "Simuler un rachat d'assurance-vie",

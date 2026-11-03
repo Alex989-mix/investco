@@ -1417,6 +1417,7 @@ const HELP={
     <p><b>Valeur d'une UC</b> : parts détenues × dernier cours (automatique avec un symbole Yahoo Finance), sinon la dernière valeur relevée sur votre relevé, sinon le montant investi.</p>
     <p><b>Versement</b> = argent nouveau. <b>Arbitrage</b> = déplacement entre supports, sans effet sur la valeur ni sur votre épargne. <b>Frais</b> = prélevés par l'assureur, ils réduisent la valeur sans être un retrait.</p>
     <p><b>Rachat</b> : seule la part de gains est imposable, rachat × (valeur − versements) ÷ valeur. Après 8 ans, abattement annuel de ${eur0(Fin.lifeAbattement('seul',ymd(today()),DB.params))} (seul) ou ${eur0(Fin.lifeAbattement('couple',ymd(today()),DB.params))} (couple), puis ${fin(r2((param('tax.av.ir8')||0)*100))} % d'impôt jusqu'à ${eur0(param('tax.av.seuil')||0)} de versements.</p>`],
+  impLife:['Relevé d\'assurance-vie',()=>`<p>Exportez depuis l'espace client de votre assureur l'historique des opérations (CSV) ou la situation du contrat (valeur de chaque support), ou chargez le PDF.</p><p><b>Opérations</b> : versements, rachats, frais et intérêts sont ajoutés au bon support ; les deux lignes d'un arbitrage (sortie et entrée, même date) deviennent un seul arbitrage. Les doublons sont ignorés.</p><p><b>Situation</b> : la valeur de chaque unité de compte est enregistrée à la date du relevé ; un écart sur le fonds en euros devient un ajustement daté. Un support inconnu de l'appli est créé et repris comme argent déjà détenu. Une copie de sécurité est faite avant l'import.</p>`],
   lifeGain:['Part de gains d\'un rachat',()=>`<p>Lors d'un rachat, seule la part de gains est imposable. L'appli l'estime : rachat × (valeur du contrat − versements) ÷ valeur, juste avant le rachat.</p><p>Votre assureur indique le montant exact sur l'avis d'opération ou le relevé fiscal (IFU) : saisissez-le ici pour un récap fiscal exact.</p>`],
   foyer:['Foyer fiscal',()=>`<p>L'abattement sur les gains des rachats d'assurance-vie de plus de 8 ans est de ${eur0(Fin.lifeAbattement('seul',ymd(today()),DB.params))} par an pour une personne seule, ${eur0(Fin.lifeAbattement('couple',ymd(today()),DB.params))} pour un couple marié ou pacsé soumis à imposition commune. Il est partagé entre tous vos contrats.</p>`],
   jour:['Variation du jour',()=>`<p>Somme des variations de chaque ligne de bourse et de crypto : <b>valeur actuelle − valeur à la clôture de la veille</b>. Le pourcentage est calculé sur la valeur de la veille des lignes concernées.</p>
@@ -1520,7 +1521,7 @@ function placeLife(){
   $('#place-body').innerHTML=heroCard({label:'Assurance-vie',labelExtra:' '+hq('life'),value:eur0(tot),
       pill:L.length&&vers?{t:`${g>=0?'+':''}${eur0(g)}`,tone:g>=0?'pos':'neg',arrow:g>=0?'up':'down'}:null,sub:L.length?`depuis l'ouverture, pour ${eur0(vers)} versés nets`:'',
       stats:L.length?[{l:'Fonds en euros',v:eur0(eu)},{l:'Unités de compte',v:eur0(uc),s:tot?PCT1(uc/tot)+' du total':''},{l:'Contrats',v:String(L.length)}]:[]})+`
-   <div class="acts"><button class="btn" onclick="lifeRefresh()">${svgI('refresh')}Cours des UC</button><button class="btn primary" onclick="editLife(-1)">${svgI('plus')}Contrat</button></div>
+   <div class="acts">${modOn('import')?`<button class="btn" onclick="openImport()">${svgI('upload')}Relevé</button>`:''}<button class="btn" onclick="lifeRefresh()">${svgI('refresh')}Cours</button><button class="btn primary" onclick="editLife(-1)">${svgI('plus')}Contrat</button></div>
    ${L.length?`<div class="grp"><span>Mes contrats</span><b>${eur0(tot)}</b></div><div class="lgrp">${L.map(({s,i,c})=>{const d8=Fin.life8(s.open),pg=c.life.total-c.versed;
      return `<div class="fiche" onclick="lifeDetail(${i})"><div class="spread" style="align-items:flex-start;gap:10px"><div style="min-width:0"><div class="t-name">${esc(s.name)}</div>
        <div class="t-sub">${esc(s.bank||'Assurance-vie')} · ${(s.life.funds||[]).length} support${(s.life.funds||[]).length>1?'s':''}${d8?(d8<=t?' · plus de 8 ans':' · 8 ans le '+pd(d8).toLocaleDateString('fr-FR')):''}</div></div><div class="fv">${eur0(c.life.total)}</div></div>
@@ -1600,7 +1601,7 @@ function editFund(i,fid){const s=DB.savings[i],f=fid?lifeFund(s,fid):{id:'',kind
      <div class="hint">${(f.rates||[]).length?'Historique : '+f.rates.slice().sort((a,b)=>a.from<b.from?1:-1).map(x=>fin(r2(x.rate*10000)/100)+' % depuis le '+pd(x.from).toLocaleDateString('fr-FR')).join(' · '):'Le taux sert à estimer les intérêts de l\'année. Un nouveau taux s\'ajoute à l\'historique.'}</div></div>
    <div id="u_uc"><div class="two"><div class="field"><label>Symbole (cours automatique)</label><input id="u_sym" value="${esc(f.sym||'')}" placeholder="CW8.PA, 0P0000…" autocapitalize="characters"></div>
        <div class="field"><label>Dernier cours (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="u_px" value="${fin(f.px??'')}"></div></div>
-     <div class="hint" style="margin-top:-4px">${f.pxD?'Cours du '+pd(f.pxD).toLocaleDateString('fr-FR')+' · ':''}Avec un symbole Yahoo Finance, le cours se met à jour avec « Cours des UC ». La valeur = parts détenues × cours (saisissez les parts dans les opérations).</div>
+     <div class="hint" style="margin-top:-4px">${f.pxD?'Cours du '+pd(f.pxD).toLocaleDateString('fr-FR')+' · ':''}Avec un symbole Yahoo Finance, le cours se met à jour avec « Cours » (onglet Assurance-vie) ou ↻. La valeur = parts détenues × cours (saisissez les parts dans les opérations).</div>
      <div class="two" style="margin-top:10px"><div class="field"><label>Ou valeur relevée sur le relevé (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="u_val"></div><div class="field"><label>À la date du</label><input type="date" id="u_vald" value="${ymd(today())}"></div></div>
      <div class="hint">${(f.vals||[]).length?'Valeurs relevées : '+f.vals.slice().sort((a,b)=>a.d<b.d?1:-1).slice(0,4).map(x=>eur0(x.v)+' le '+pd(x.d).toLocaleDateString('fr-FR')).join(' · ')+'. ':''}Pour une UC sans cours (SCPI, fonds maison) : la valeur relevée, puis les opérations suivantes s'y ajoutent.</div></div>
    ${F?`<div class="t-sub" style="margin-top:10px">Valeur aujourd'hui : <b>${eur0(F.value)}</b>${F.units!=null?' · '+QTY(F.units)+' parts':''}</div>`:''}
@@ -2015,16 +2016,18 @@ function impAnalyze(){
   const tabular=rows.filter(r=>r.length>=2).length>=Math.max(1,rows.length*0.6);
   impBankMap=null;impCryptoMap=null;impCsv=null;impCrypto=null;
   impSav=null;
-  if(tabular){impMode=CsvImp.looksCrypto(txt)?'ops':(CsvImp.looksSaving(txt)?'saving':'bank');}else{impMode='bank';}
+  impLife=null;const isLife=modOn('life')&&(tabular?CsvImp.looksLife(txt):/assurance.?vie|unit[ée]s? de compte|fonds (en )?euros?/i.test(txt.slice(0,600)));
+  if(tabular){impMode=CsvImp.looksCrypto(txt)?'ops':(isLife?'life':(CsvImp.looksSaving(txt)?'saving':'bank'));}else{impMode=isLife?'life':'bank';}
   impTabular=tabular;impRender();}
 let impTabular=false;
 function impRender(){
-  const tabs=`<div class="subtabs" style="margin:14px 0 10px"><div class="subtab ${impMode==='bank'?'on':''}" onclick="setImpMode('bank')">${svgI('card')} Relevé bancaire</div><div class="subtab ${impMode==='saving'?'on':''}" onclick="setImpMode('saving')">${svgI('bank')} Épargne</div><div class="subtab ${impMode==='ops'?'on':''}" onclick="setImpMode('ops')">${svgI('chart')} Plateforme</div></div>`;
+  const tabs=`<div class="subtabs" style="margin:14px 0 10px"><div class="subtab ${impMode==='bank'?'on':''}" onclick="setImpMode('bank')">${svgI('card')} Relevé bancaire</div><div class="subtab ${impMode==='saving'?'on':''}" onclick="setImpMode('saving')">${svgI('bank')} Épargne</div><div class="subtab ${impMode==='ops'?'on':''}" onclick="setImpMode('ops')">${svgI('chart')} Plateforme</div>${modOn('life')?`<div class="subtab ${impMode==='life'?'on':''}" onclick="setImpMode('life')">${svgI('shield')} Assurance-vie</div>`:''}</div>`;
   $('#imp_result').innerHTML=tabs+'<div id="imp_body"></div>';impBuild();}
 function setImpMode(m){impMode=m;impRender();}
 function impBuild(){
   if(impMode==='ops')return impBuildOps();
   if(impMode==='saving')return impSavingUI();
+  if(impMode==='life')return impLifeUI();
   return impBankUI();}
 function impBankUI(){
   let ui='';
@@ -2164,6 +2167,96 @@ function impSavFix(name,d,how,gap){
     DB.movements=DB.movements.filter(m=>!(m.p===name&&!m.link&&(m.t==='Reprise'||m.t==='Ajustement')&&String(m.d)>=d&&m.n!=='Solde au début du relevé'));}
   else DB.movements.push({d,p:name,t:'Ajustement',q:null,pu:null,m:r2(gap),f:0,n:'Écart avec le relevé'});
   save();renderAll();closeSheet();nav('placements');setPlace('epargne');toast('Solde mis à jour');}
+// ---- v28.2 : relevé d'un contrat d'assurance-vie (CSV de l'assureur ou texte d'un PDF).
+// Deux sortes de relevés : les opérations (versements, rachats, arbitrages, frais, intérêts) et la situation (valeur de chaque
+// support à une date). Rien n'est écrasé : opérations ajoutées (doublons ignorés à ±3 jours), valeurs relevées datées,
+// écart du fonds en euros enregistré en ajustement daté, nouveau support repris comme argent déjà détenu.
+let impLife=null;
+const IL_KINDS=[['Dépôt','Versement'],['Retrait','Rachat'],['Arbitrage','Arbitrage'],['Frais','Frais'],['Intérêts','Intérêts'],['Ignorer','Ignorer']];
+const lnorm=(x)=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+// Support du contrat correspondant à un nom lu sur le relevé (sinon « new:<nom> » : support à créer)
+function lifeMatchFund(s,name){const n=lnorm(name),F=s.life.funds;if(!n)return Fin.lifeDefaultFund(s.life);
+  const ex=F.find(f=>lnorm(f.name)===n);if(ex)return ex.id;
+  if(/euro/.test(n)){const e=F.find(f=>f.kind==='euro');if(e)return e.id;}
+  const inc=F.find(f=>{const m=lnorm(f.name);return m.length>3&&(n.includes(m)||m.includes(n));});if(inc)return inc.id;
+  return 'new:'+String(name).trim();}
+function impLifeParse(){const txt=$('#imp_txt').value;
+  if(impTabular)return CsvImp.readLife(txt);
+  // texte d'un PDF : une opération par ligne (date, libellé, montant)
+  const ops=[];txt.split(/\n/).forEach(line=>{line=line.replace(/\s+/g,' ').trim();if(!line)return;
+    const dm=line.match(/(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})/);if(!dm)return;
+    const ams=[...line.matchAll(/(-|−)?\s?(\d[\d   ]*[.,]\d{2})\s*€?/g)].filter(a=>a[2]);if(!ams.length)return;
+    const pick=ams[ams.length-1];let amt=CsvImp.parseAmount(pick[2]);if(amt==null||!amt)return;if(pick[1])amt=-Math.abs(amt);
+    const label=line.replace(pick[0],'').replace(dm[0],'').replace(/\d[\d   ]*[.,]\d{2}/g,'').replace(/\s+/g,' ').trim()||'Opération';
+    const kind=CsvImp.lifeKind(label,amt);ops.push({date:pdate(dm[1]),label,amount:amt,support:'',units:null,kind,leg:kind==='Arbitrage'?CsvImp.lifeLeg(label,amt):null});});
+  return {mode:'ops',ops,date:null};}
+function impLifeUI(){const C=lifeContracts();
+  if(!C.length){const plain=DB.savings.find(s=>s.type==='Assurance-vie');
+    $('#imp_body').innerHTML=`<div class="note">Le relevé d'une assurance-vie s'importe sur un contrat complet. ${plain?`Convertissez d'abord « ${esc(plain.name)} » (sa fiche ▸ Convertir en contrat complet).`:'Créez d\'abord votre contrat (Ajouter ▸ Contrat d\'assurance-vie).'}</div>`;return;}
+  const txt=$('#imp_txt').value;
+  if(!impLife||impLife.src!==txt){const P=impLifeParse(),head=lnorm(txt.split(/\r?\n/).slice(0,3).join(' '));
+    const c=(C.find(({s})=>head.includes(lnorm(s.name)))||C.find(({s})=>s.bank&&head.includes(lnorm(s.bank)))||C[0]).s;
+    impLife={src:txt,P,acc:c.name,d:P.date||ymd(today())};impLifeMap();}
+  const s=findSaving(impLife.acc),P=impLife.P;
+  $('#imp_body').innerHTML=`<div class="field"><label>Contrat concerné ${hq('impLife')}</label><select onchange="impLife.acc=this.value;impLifeMap();impLifeUI()">${C.map(({s:x})=>`<option ${x.name===impLife.acc?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
+    <div class="hint" style="margin-top:-4px">${P.mode==='situation'?`Relevé de situation : la valeur de chaque support${P.date?' au '+pd(P.date).toLocaleDateString('fr-FR'):''}.`:`Relevé d'opérations : ${P.ops.length} ligne${P.ops.length>1?'s':''} lue${P.ops.length>1?'s':''}.`}</div>
+    ${P.mode==='situation'?`<div class="field"><label>Date du relevé</label><input type="date" id="il_d" value="${impLife.d}" onchange="impLife.d=this.value;impLifeRev()"></div>`:''}
+    <div id="il_rev"></div><div id="il_sum" class="card pad" style="margin-top:10px;background:var(--card2);font-size:12.5px;line-height:1.7"></div>
+    <button class="btn primary" style="width:100%;margin-top:10px" onclick="impDoLife()">Importer sur ce contrat</button>`;
+  impLifeRev();}
+// Rattache chaque ligne à un support du contrat choisi
+function impLifeMap(){const s=findSaving(impLife.acc),P=impLife.P;
+  if(P.mode==='situation')impLife.rows=P.positions.map(x=>Object.assign({},x,{fund:lifeMatchFund(s,x.support),on:true}));
+  else impLife.rows=P.ops.map(x=>Object.assign({},x,{fund:lifeMatchFund(s,x.support)}));}
+function impLifeFundSel(i){const s=findSaving(impLife.acc),r=impLife.rows[i],nw=String(r.fund).startsWith('new:');
+  return `<select onchange="impLife.rows[${i}].fund=this.value;impLifeRev()" style="width:auto;max-width:150px;padding:5px;font-size:11px">${s.life.funds.map(f=>`<option value="${f.id}" ${r.fund===f.id?'selected':''}>${esc(f.name)}</option>`).join('')}
+    ${r.support?`<option value="new:${esc(r.support)}" ${nw?'selected':''}>Nouveau : ${esc(r.support.slice(0,24))}</option>`:''}</select>`;}
+// Valeur d'un support dans l'appli à une date (relevé de situation)
+function impLifeFundValue(s,fid,d){const F=Fin.lifeValue(s.life,DB.movements.filter(m=>String(m.d).slice(0,10)<=d),s.name,d).funds.find(f=>f.id===fid);return F?F.value:0;}
+function impLifeRev(){const s=findSaving(impLife.acc),R=impLife.rows,P=impLife.P;if(!s)return;
+  if(P.mode==='situation'){const d=impLife.d;
+    $('#il_rev').innerHTML=!R.length?'<div class="emptybox">Aucun support lu. Vérifiez le fichier.</div>':`<div style="border:1px solid var(--line);border-radius:10px;padding:0 10px">`+R.map((r,i)=>{const nw=String(r.fund).startsWith('new:'),app=nw?0:impLifeFundValue(s,r.fund,d),gap=r2(r.value-app);
+      return `<div class="row" style="gap:6px;padding:8px 2px;border-bottom:1px solid var(--line)"><input type="checkbox" style="width:auto" ${r.on?'checked':''} onchange="impLife.rows[${i}].on=this.checked;impLifeSum()">
+        <div style="flex:1;min-width:0"><div class="t-name" style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.support)}</div>
+        <div class="t-sub">${eur(r.value)}${r.units!=null?' · '+QTY(r.units)+' parts':''}${r.vl!=null?' × '+eur(r.vl):''} · ${nw?'nouveau support':(Math.abs(gap)<0.01?'identique à l\'appli':'appli '+eur(app)+' ('+(gap>0?'+':'')+eur(gap)+')')}</div></div>${impLifeFundSel(i)}</div>`;}).join('')+'</div>';}
+  else{const arb=CsvImp.lifePairArbitrages(R.map((r,i)=>({date:r.date,leg:r.leg,amount:r.amount,support:r.fund,units:r.units,i})).filter(x=>R[x.i].kind==='Arbitrage').map(x=>Object.assign({},x)));
+    impLife.arb=arb;const bad=new Set(arb.bad);impLife.bad=bad; // indices des lignes du relevé
+    $('#il_rev').innerHTML=!R.length?'<div class="emptybox">Aucune opération lue. Vérifiez le fichier.</div>':`<div class="sub" style="margin-bottom:6px">${R.length} opérations — vérifiez puis importez</div>
+      <div style="max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:0 10px">`+R.map((r,i)=>`<div class="row" style="gap:6px;padding:8px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap">
+        <div style="flex:1;min-width:140px"><div class="t-name" style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.label)}</div>
+          <div class="t-sub">${pd(r.date).toLocaleDateString('fr-FR')} · <span class="${r.amount<0?'neg':'pos'}">${r.amount<0?'−':'+'}${eur(Math.abs(r.amount))}</span>${r.units!=null?' · '+QTY(r.units)+' parts':''}${r.kind==='Arbitrage'?(bad.has(i)?' · <span style="color:var(--warn)">sans contrepartie : ignoré</span>':(r.leg==='out'?' · sortie':' · entrée')):''}</div></div>
+        <select onchange="impLife.rows[${i}].kind=this.value;if(this.value==='Arbitrage'&&!impLife.rows[${i}].leg)impLife.rows[${i}].leg=CsvImp.lifeLeg(impLife.rows[${i}].label,impLife.rows[${i}].amount);impLifeRev()" style="width:auto;padding:5px;font-size:11px">${IL_KINDS.map(([k,l])=>`<option value="${k}" ${r.kind===k?'selected':''}>${l}</option>`).join('')}</select>${impLifeFundSel(i)}</div>`).join('')+'</div>';}
+  impLifeSum();}
+// Opérations à créer (fund peut valoir « new:<nom> » tant que le support n'est pas créé)
+function impLifeOps(){const s=findSaving(impLife.acc),R=impLife.rows,out=[];
+  R.forEach((r,i)=>{if(r.kind==='Ignorer'||r.kind==='Arbitrage')return;const o={d:r.date,p:s.name,t:r.kind,q:null,pu:null,m:r2(Math.abs(r.amount)),f:0,n:r.label.slice(0,80),fund:r.fund};
+    const nw=String(r.fund).startsWith('new:'),uc=nw?!/euro/i.test(r.fund):(lifeFund(s,r.fund)||{}).kind!=='euro';if(r.units!=null&&uc)o.q=Math.abs(r.units); // parts : unités de compte seulement
+    out.push(o);});
+  (impLife.arb?impLife.arb.arbitrages:[]).forEach(a=>{if(a.from===a.to)return;const o={d:a.date,p:s.name,t:'Arbitrage',q:a.unitsOut,pu:null,m:r2(a.amount),f:0,n:'Arbitrage (relevé)',fund:a.from,fund2:a.to};if(a.unitsIn!=null)o.q2=a.unitsIn;out.push(o);});
+  return out;}
+function impLifeDup(o){const t0=pd(o.d).getTime();return DB.movements.some(m=>m.p===o.p&&m.t===o.t&&(m.fund||'')===(o.fund||'')&&(m.fund2||'')===(o.fund2||'')&&Math.round((+m.m||0)*100)===Math.round(o.m*100)&&Math.abs(pd(m.d).getTime()-t0)<=3*86400000);}
+function impLifeSum(){if(!$('#il_sum'))return;const R=impLife.rows,P=impLife.P,nw=new Set(R.filter(r=>(P.mode==='situation'?r.on:r.kind!=='Ignorer')&&String(r.fund).startsWith('new:')).map(r=>r.fund));
+  if(P.mode==='situation'){const on=R.filter(r=>r.on),s=findSaving(impLife.acc);let gaps=0;on.forEach(r=>{if(!String(r.fund).startsWith('new:')&&Math.abs(r.value-impLifeFundValue(s,r.fund,impLife.d))>=0.01)gaps++;});
+    $('#il_sum').innerHTML=`${on.length} support${on.length>1?'s':''} mis à jour au ${pd(impLife.d).toLocaleDateString('fr-FR')}${gaps?' · '+gaps+' écart'+(gaps>1?'s':'')+' avec l\'appli':''}${nw.size?' · '+nw.size+' nouveau'+(nw.size>1?'x':'')+' support'+(nw.size>1?'s':'')+' (argent déjà détenu)':''}.<br><span class="muted">Unités de compte : la valeur du relevé est enregistrée, datée. Fonds en euros : un écart est enregistré en ajustement daté.</span>`;return;}
+  const ops=impLifeOps(),fresh=ops.filter(o=>!impLifeDup(o));
+  $('#il_sum').innerHTML=`${fresh.length} opération${fresh.length>1?'s':''} à ajouter${ops.length-fresh.length?' · '+(ops.length-fresh.length)+' déjà présente'+(ops.length-fresh.length>1?'s':''):''}${ops.some(o=>o.t==='Arbitrage')?' · dont '+ops.filter(o=>o.t==='Arbitrage').length+' arbitrage'+(ops.filter(o=>o.t==='Arbitrage').length>1?'s':''):''}${nw.size?' · '+nw.size+' nouveau'+(nw.size>1?'x':'')+' support'+(nw.size>1?'s':''):''}${impLife.bad&&impLife.bad.size?' · <span style="color:var(--warn)">'+impLife.bad.size+' ligne'+(impLife.bad.size>1?'s':'')+' d\'arbitrage sans contrepartie ignorée'+(impLife.bad.size>1?'s':'')+'</span>':''}.`;}
+// Crée les supports « new:<nom> » et renvoie la table nom → identifiant
+function impLifeNewFunds(s,names){const ids={};names.forEach(n=>{const name=n.slice(4);let k=1;while(s.life.funds.some(f=>f.id==='f'+k))k++;
+  const f={id:'f'+k,kind:/euro/i.test(name)?'euro':'uc',name,rates:[],vals:[]};s.life.funds.push(f);ids[n]=f.id;});return ids;}
+function impDoLife(){const s=findSaving(impLife.acc);if(!s)return;const P=impLife.P,R=impLife.rows;
+  backupLocal('Avant import du relevé du contrat « '+s.name+' »');let n=0,dup=0,nf=0;
+  if(P.mode==='situation'){const d=impLife.d||ymd(today()),on=R.filter(r=>r.on);if(!on.length){toast('Rien à importer',true);return;}
+    const ids=impLifeNewFunds(s,[...new Set(on.map(r=>r.fund).filter(f=>String(f).startsWith('new:')))]);nf=Object.keys(ids).length;
+    on.forEach(r=>{const isNew=String(r.fund).startsWith('new:'),fid=isNew?ids[r.fund]:r.fund,f=lifeFund(s,fid);if(!f)return;
+      if(isNew){DB.movements.push({d,p:s.name,t:'Reprise',q:f.kind!=='euro'&&r.units!=null?r.units:null,pu:null,m:r2(r.value),f:0,n:'Support repris du relevé',fund:fid});} // argent déjà détenu : ni versement ni gain
+      if(f.kind==='euro'){if(!isNew){const gap=r2(r.value-impLifeFundValue(s,fid,d));if(Math.abs(gap)>=0.01)DB.movements.push({d,p:s.name,t:'Ajustement',q:null,pu:null,m:gap,f:0,n:'Écart avec le relevé du '+pd(d).toLocaleDateString('fr-FR'),fund:fid});}}
+      else{f.vals=(f.vals||[]).filter(x=>x.d!==d);f.vals.push({d,v:r2(r.value)});if(r.vl!=null&&r.vl>0&&(!f.pxD||d>=f.pxD)){f.px=r.vl;f.pxD=d;}}
+      n++;});}
+  else{const ops=impLifeOps();if(!ops.length){toast('Rien à importer',true);return;}
+    const ids=impLifeNewFunds(s,[...new Set(ops.flatMap(o=>[o.fund,o.fund2]).filter(f=>f&&String(f).startsWith('new:')))]);nf=Object.keys(ids).length;
+    ops.forEach(o=>{if(ids[o.fund])o.fund=ids[o.fund];if(o.fund2&&ids[o.fund2])o.fund2=ids[o.fund2];if(impLifeDup(o)){dup++;return;}o.n='import · '+o.n;DB.movements.push(o);n++;});}
+  save();renderAll();const i=DB.savings.indexOf(s);closeSheet();nav('placements');setPlace('life');lifeDetail(i);
+  toast((P.mode==='situation'?n+' support'+(n>1?'s':'')+' mis à jour':n+' opération'+(n>1?'s':'')+' importée'+(n>1?'s':''))+(nf?' · '+nf+' support'+(nf>1?'s':'')+' créé'+(nf>1?'s':''):'')+(dup?' · '+dup+' doublon'+(dup>1?'s':'')+' ignoré'+(dup>1?'s':''):''));}
 let impOps=[];
 function cryptoAssetFor(sym){const s=(sym||'').toUpperCase();
   return DB.assets.find(a=>a.type==='Crypto'&&s&&((a.ticker||'').toUpperCase().startsWith(s)||a.name.toUpperCase()===s))

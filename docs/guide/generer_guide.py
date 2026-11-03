@@ -134,9 +134,9 @@ pages.append(('cover', f'''<div class="top"></div>
     <div class="v">Version {{{{VERSION}}}}<br>Édition {{{{EDITION}}}}</div></div>'''))
 # 2 · sommaire
 TOC = [('01', "Installer l'appli", 'Android, iPhone, ordinateur', 3), ('02', 'Votre appli à la carte', 'Modules et profils', 4), ('03', 'Premiers réglages', 'Données, fiscalité', 6),
-       ('04', 'Épargne et assurance-vie', 'Quinzaines, plafonds, contrats', 7), ('05', 'Bourse et crypto', 'PEA, dividendes, direct', 11), ('06', 'Importer vos relevés', 'Banques, plateformes', 12),
-       ('07', 'Budget', 'Prévu et réel, récurrentes', 14), ('08', 'Immobilier et crowdfunding', 'Biens, crédits, projets', 15), ('09', 'Accueil, analyse et sécurité', 'Chiffres clés, verrouillage', 18),
-       ('10', 'Questions fréquentes', 'Confidentialité, appareils', 21), ('11', 'Informations importantes', 'Limites et avertissements', 22)]
+       ('04', 'Épargne et assurance-vie', 'Quinzaines, plafonds, contrats', 7), ('05', 'Bourse et crypto', 'PEA, dividendes, direct', 11), ('06', 'Importer vos relevés', 'Banques, plateformes, assureurs', 12),
+       ('07', 'Budget', 'Prévu et réel, récurrentes', 15), ('08', 'Immobilier et crowdfunding', 'Biens, crédits, projets', 16), ('09', 'Accueil, analyse et sécurité', 'Chiffres clés, verrouillage', 19),
+       ('10', 'Questions fréquentes', 'Confidentialité, appareils', 22), ('11', 'Informations importantes', 'Limites et avertissements', 23)]
 pages.append(('tocp', '<div class="toc"><h2>Sommaire</h2><p class="intro">Onze chapitres courts. Commencez par les deux premiers, puis lisez ceux de vos modules.</p><div class="list">'
   + ''.join(f'<div class="it"><span class="num">{n}</span><div><b>{t}</b><span>{d}</span></div><span class="pg">{p}</span></div>' for n, t, d, p in TOC) + '''</div></div>
   <div class="prof"><h3>Votre parcours</h3><div class="p"><b>Épargnant</b><span>02 · 04 · 07</span></div><div class="p"><b>Bourse</b><span>02 · 05 · 06</span></div><div class="p"><b>Immobilier</b><span>02 · 08</span></div><div class="p"><b>Tout</b><span>Tout le guide</span></div></div>'''))
@@ -179,9 +179,9 @@ cont('04', 'Épargne et livrets', None,
 # 8 bis · 04 assurance-vie (v28)
 cont('04', 'Assurance-vie', 'assurance_vie.png',
   '<h3>Un contrat, plusieurs supports</h3><p>Le module <b>Assurance-vie</b> suit chaque contrat support par support : le fonds en euros et vos unités de compte (ETF, fonds, SCPI).</p>'
-  + st([('Convertir ou créer', 'Sur la fiche de votre assurance-vie, touchez <b>Convertir en contrat complet</b> : le solde devient le fonds en euros, au centime près. Ou <span class="path">Ajouter › Contrat d\'assurance-vie</span>.'),
-        ('Ajouter les supports', '<b>+ Support</b> : fonds en euros avec son taux, ou unité de compte avec son symbole.'), ('Saisir les opérations', 'Versement, rachat, arbitrage, frais ou intérêts, depuis la fiche du contrat.')])
-  + '<h3>La valeur des unités de compte</h3>' + rows([('Avec un symbole', 'Parts détenues × cours, mis à jour par « Cours des UC » ou Actualiser.'), ('Sans symbole', 'La valeur lue sur votre relevé, avec sa date.'), ('Ni l\'un ni l\'autre', 'Estimée au montant investi, signalé sur la fiche.')]), h=128)
+  + st([('Convertir ou créer', 'Sur la fiche de votre assurance-vie, touchez « Convertir en contrat complet » : le solde devient le fonds en euros, au centime près. Ou <span class="path">Ajouter › Contrat d\'assurance-vie</span>.'),
+        ('Ajouter les supports', '« + Support » : fonds en euros avec son taux, ou unité de compte avec son symbole.'), ('Saisir les opérations', 'Versement, rachat, arbitrage, frais ou intérêts, depuis la fiche du contrat.')])
+  + '<h3>La valeur des unités de compte</h3>' + rows([('Avec un symbole', 'Parts détenues × cours, mis à jour par « Cours » ou Actualiser.'), ('Sans symbole', 'La valeur lue sur votre relevé, avec sa date.'), ('Ni l\'un ni l\'autre', 'Estimée au montant investi, signalé sur la fiche.')]), h=128)
 cont('04', 'Assurance-vie', None,
   '<h3>Chaque opération à sa place</h3>' + rows([('Versement', 'Argent nouveau : il compte dans votre épargne de l\'année.'), ('Rachat', 'Argent retiré : seule la part de gains est imposable.'), ('Arbitrage', 'Passage d\'un support à l\'autre : la valeur ne change pas, ce n\'est ni un versement ni un gain.'),
     ('Frais', 'Prélevés par l\'assureur : ils réduisent la valeur sans être un retrait.'), ('Intérêts', 'Crédités sur le fonds en euros, nets de prélèvements sociaux : un gain.')])
@@ -206,6 +206,13 @@ cont('06', 'Importer vos relevés', 'import_bitstack.png',
   + rows([('Achat', 'Ponctuel, programmé ou arrondi : ajouté au prix de revient.'), ('Gratuit', 'Parrainage, bonus : crypto reçue à coût nul.'), ('Vente', 'Plus-value calculée au prix de revient moyen.'), ('Ignorer', 'Retrait vers votre portefeuille, dépôt d\'euros.')])
   + tip('Frais', 'Le montant est compté frais inclus. Décochez l\'option si votre plateforme les facture en plus.')
   + '<h3>Relevé d\'un livret</h3><p>Onglet <b>Épargne</b> de l\'import, puis le compte concerné : versements, retraits, intérêts et virements sont rattachés sans double comptage, et le solde est comparé à celui du relevé.</p>', h=126)
+# 11 bis · 06 relevé d'assurance-vie (v28.2)
+cont('06', 'Importer vos relevés', 'import_av.png',
+  '<h3>Relevé d\'une assurance-vie</h3><p>Depuis l\'espace client de votre assureur, exportez l\'historique des opérations ou la situation du contrat en CSV, ou chargez le PDF.</p>'
+  + st([('Importer', '<span class="path">Placements › Assurance-vie › Relevé</span>, ou <span class="path">Ajouter › Importer un relevé</span>.'), ('Vérifier', 'Onglet « Assurance-vie » de l\'import : choisissez le contrat, contrôlez la nature et le support de chaque ligne.'), ('Valider', 'Touchez « Importer sur ce contrat » ; une copie de sécurité est faite avant.')])
+  + rows([('Arbitrage', 'Les lignes de sortie et d\'entrée d\'une même date deviennent un seul arbitrage.'), ('Prélèvements sociaux', 'Classés en frais : ils réduisent la valeur sans être un retrait.'), ('Situation', 'La valeur de chaque unité de compte est enregistrée à la date du relevé ; un écart du fonds en euros devient un ajustement daté.'),
+    ('Support inconnu', 'Créé et repris comme argent déjà détenu : ni versement, ni gain.'), ('Doublons', 'Un relevé déjà importé est reconnu, à trois jours près.')])
+  + tip('Contrat complet', 'Le relevé s\'importe sur un contrat complet : convertissez d\'abord votre assurance-vie depuis sa fiche.'), h=126)
 # 12 · 07 budget
 opener('07', 'Module Budget', 'Budget', 'Où part votre argent chaque mois, ce qui revient, et l\'écart avec ce que vous aviez prévu.', 'budget.png',
   '<h3>Fixer vos budgets</h3><p>Touchez <b>Budgets</b> et donnez un montant à chaque catégorie. Un budget dépassé s\'affiche en rouge en haut de l\'écran.</p>'

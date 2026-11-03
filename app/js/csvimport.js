@@ -129,7 +129,7 @@
     category: ['categorie', 'category'],
   };
   const SENS_VALUES = /^(d|c|db|cr|dr|debit|credit|debiteur|crediteur|\+|-|in|out|entree|sortie|incoming|outgoing)$/;
-  const HEADER_WORDS = ['date', 'libell', 'montant', 'debit', 'credit', 'amount', 'description', 'label', 'operation', 'valeur', 'solde', 'devise', 'type', 'categ',
+  const HEADER_WORDS = ['support', 'date', 'libell', 'montant', 'debit', 'credit', 'amount', 'description', 'label', 'operation', 'valeur', 'solde', 'devise', 'type', 'categ',
     'quantit', 'prix', 'frais', 'fee', 'balance', 'currency', 'reference', 'detail', 'statut', 'state', 'payee', 'btc', 'eur', 'sens', 'nature', 'intitul', 'motif'];
 
   function profile(rows, j) {
@@ -235,7 +235,7 @@
       const parts = [m.label >= 0 ? r[m.label] : ''].concat(m.details.map((j) => r[j])).map((x) => String(x || '').replace(/\s+/g, ' ').trim()).filter(Boolean);
       const label = [...new Set(parts)].join(' · ') || 'Opération';
       const bal = m.balance >= 0 ? parseAmount(r[m.balance], decOf(m.balance)) : null;
-      out.push({ date, label, amount: Math.round(amount * 100) / 100, currency: m.currency >= 0 ? String(r[m.currency] || '').toUpperCase() : 'EUR', balance: bal == null ? null : Math.round(bal * 100) / 100 });
+      out.push({ raw: r, date, label, amount: Math.round(amount * 100) / 100, currency: m.currency >= 0 ? String(r[m.currency] || '').toUpperCase() : 'EUR', balance: bal == null ? null : Math.round(bal * 100) / 100 });
     });
     const unsigned = out.length > 2 && m.debit < 0 && m.credit < 0 && m.sens < 0 && out.every((x) => x.amount > 0);
     return { rows: out, skipped, delim, headerRow: h, header, map: m, unsigned, columns: header || (data[0] || []).map((_, j) => 'Colonne ' + (j + 1)) };
@@ -354,7 +354,65 @@
     return { opening: round(best[0].balance - best[0].amount), closing: best[best.length - 1].balance, from: best[0].date, to: best[best.length - 1].date };
   }
 
-  const api = { savingKind, looksSaving, balanceInfo, decode, parseCSV, detectDelim, parseAmount, parseDate, dateOrder, findHeader, mapBank, readBank, readCrypto, cryptoKind, looksCrypto };
+  // ---------- Relevé d'assurance-vie (v28.2) : opérations ou situation (valeur de chaque support) ----------
+  // Nature d'une ligne : versement, rachat, arbitrage, frais (dont prélèvements sociaux), intérêts (participation aux bénéfices)
+  function lifeKind(label, amount) {
+    const l = strip2(label);
+    if (/arbitrage|desinvest|reinvest|reallocation|reorientation|switch|transfert (entre|inter) ?supports?|changement de support/.test(l)) return 'Arbitrage';
+    if (/prelevements? sociaux|\bcsg\b|\bcrds\b|frais|commission|droits? d.entree|chargement|cotisation (de )?gestion/.test(l)) return 'Frais';
+    if (/participation aux benefices|\bpb\b|revalorisation|interets?|remuneration|rendement|attribution de benefices|dividende|coupon|loyers? (de )?scpi/.test(l)) return 'Intérêts';
+    if (/rachat|retrait|remboursement partiel|capital verse au beneficiaire/.test(l)) return 'Retrait';
+    if (/versement|prime|cotisation|apport|souscription|investissement initial|adhesion/.test(l)) return 'Dépôt';
+    return amount >= 0 ? 'Dépôt' : 'Retrait';
+  }
+  // Sens d'une ligne d'arbitrage : « out » = le support est vendu, « in » = il reçoit l'argent
+  function lifeLeg(label, amount) { const l = strip2(label);
+    if (amount < 0 || /desinvest|sortie|vente|cession|depuis|origine/.test(l)) return 'out'; return 'in'; }
+  // Relevé d'assurance-vie ? (seulement l'en-tête du relevé, ou les titres des colonnes)
+  function looksLife(text) {
+    const t = String(text || ''), rows = parseCSV(t, detectDelim(t)), h = findHeader(rows);
+    const head = strip2(t.split(/\r?\n/).slice(0, Math.max(1, Math.min(h, 4))).join(' ')), hdr = h >= 0 ? strip2(rows[h].join(' ')) : '';
+    return /assurance.?vie|contrat d.assurance|\badhesion\b|unites? de compte|fonds (en )?euros?/.test(head) || /\bsupport\b|unite de compte|valeur liquidative/.test(hdr);
+  }
+  const LH = { support: ['support', 'fonds', 'isin', 'placement', 'unite de compte', 'libelle du support', 'nom du support'], units: ['nombre de parts', 'nb parts', 'parts', 'quantite', 'nombre d.unites', 'unites'],
+    vl: ['valeur liquidative', 'vl', 'cours', 'prix de la part', 'valeur de la part'], value: ['montant', 'valorisation', 'encours', 'epargne atteinte', 'valeur de rachat', 'valeur atteinte', 'valeur', 'solde'],
+    label: ['operation', 'libelle', 'nature', 'type', 'mouvement', 'description'] };
+  function lifeCols(header) { const hs = (header || []).map((x) => strip2(x)), find = (words, not) => hs.findIndex((h) => words.some((w) => new RegExp('(^|[^a-z])' + w + '([^a-z]|$)').test(h)) && !(not || []).some((w) => h.includes(w)));
+    const support = find(LH.support, ['date']), units = find(LH.units), vl = find(LH.vl, ['date']), label = find(LH.label, ['date', 'support']);
+    const value = hs.findIndex((h, j) => j !== vl && j !== units && j !== support && LH.value.some((w) => h.includes(w)) && !/liquidative|de la part|date/.test(h));
+    return { support, units, vl, value, label }; }
+  function readLife(text, opts) {
+    const o = opts || {}, t = String(text || ''), delim = o.delim || detectDelim(t), rows = parseCSV(t, delim), h = findHeader(rows), header = h >= 0 ? rows[h] : null;
+    const c = Object.assign(lifeCols(header), o.cols || {}), dec = (v) => parseAmount(v);
+    const data = rows.slice(h + 1).filter((r) => r.length > 1), dateOrd = dateOrder(data.map((r) => r.find((x) => parseDate(x)) || ''));
+    const hasDateCol = header ? header.some((x, j) => /date/.test(strip2(x)) && data.filter((r) => parseDate(r[j], dateOrd)).length >= Math.max(1, data.length * 0.6)) : false;
+    const headDate = (() => { for (const line of t.split(/\r?\n/).slice(0, Math.max(1, h))) { const m = line.match(/(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{4}-\d{2}-\d{2})/); if (m) { const d = parseDate(m[1], 'dmy'); if (d) return d; } } return null; })();
+    // Situation : un support par ligne et sa valeur, sans colonne de dates (date en tête du relevé)
+    if (c.support >= 0 && c.value >= 0 && !hasDateCol) {
+      const positions = data.map((r) => ({ support: String(r[c.support] || '').replace(/\s+/g, ' ').trim(), value: dec(r[c.value]), units: c.units >= 0 ? dec(r[c.units]) : null, vl: c.vl >= 0 ? dec(r[c.vl]) : null }))
+        .filter((x) => x.support && x.value != null && !/^total/.test(strip2(x.support)));
+      return { mode: 'situation', date: headDate, positions, cols: c, header, columns: header || [] };
+    }
+    const B = readBank(t, Object.assign({}, o, { delim }));
+    const ops = B.rows.map((r) => { const label = c.label >= 0 && c.label !== B.map.label ? [r.raw[c.label], r.label].filter(Boolean).join(' · ') : r.label;
+      const support = c.support >= 0 ? String(r.raw[c.support] || '').replace(/\s+/g, ' ').trim() : '', units = c.units >= 0 ? dec(r.raw[c.units]) : null;
+      const kind = lifeKind(label, r.amount); return { date: r.date, label, amount: r.amount, support, units: units == null ? null : Math.abs(units), kind, leg: kind === 'Arbitrage' ? lifeLeg(label, r.amount) : null }; });
+    return { mode: 'ops', ops, cols: c, map: B.map, header, columns: B.columns, skipped: B.skipped, date: headDate };
+  }
+  // Arbitrages : les lignes « sortie » et « entrée » d'une même date sont appariées (le total doit concorder à 1 € près)
+  function lifePairArbitrages(legs) {
+    const byDate = {}; (legs || []).forEach((x, i) => { (byDate[x.date] = byDate[x.date] || []).push(Object.assign({ i }, x)); });
+    const out = [], bad = [];
+    Object.keys(byDate).sort().forEach((d) => { const L = byDate[d], O = L.filter((x) => x.leg === 'out'), I = L.filter((x) => x.leg === 'in');
+      const so = O.reduce((a, x) => a + Math.abs(x.amount), 0), si = I.reduce((a, x) => a + Math.abs(x.amount), 0);
+      if (!O.length || !I.length || Math.abs(so - si) > 1) { L.forEach((x) => bad.push(x.i)); return; }
+      // chaque entrée est financée par les sorties, au prorata
+      I.forEach((x) => O.forEach((y) => out.push({ date: d, from: y.support, to: x.support, amount: Math.round(Math.abs(x.amount) * Math.abs(y.amount) / so * 100) / 100,
+        unitsOut: y.units != null ? Math.round(y.units * Math.abs(x.amount) / si * 1e6) / 1e6 : null, unitsIn: x.units != null ? Math.round(x.units * Math.abs(y.amount) / so * 1e6) / 1e6 : null, src: [y.i, x.i] }))); });
+    return { arbitrages: out, bad };
+  }
+
+  const api = { lifeKind, lifeLeg, looksLife, readLife, lifePairArbitrages, savingKind, looksSaving, balanceInfo, decode, parseCSV, detectDelim, parseAmount, parseDate, dateOrder, findHeader, mapBank, readBank, readCrypto, cryptoKind, looksCrypto };
   root.CsvImp = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

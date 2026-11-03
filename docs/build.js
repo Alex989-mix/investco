@@ -88,6 +88,10 @@ async function shots(browser) {
       { d: ymd(addMonths(today(), -4)), p: s.name, t: 'Frais', q: null, pu: null, m: 18.4, f: 0, n: 'Frais de gestion', fund: 'f1' });
     save(); renderAll(); closeSheet(); document.querySelector('#toast').style.visibility = 'hidden'; lifeDetail(i); document.querySelector('#sheet').scrollTop = 0; });
   await shot('assurance_vie', '#sheet');
+  // v28.2 : import du relevé d'opérations d'un assureur (écran de vérification, rien n'est importé)
+  await page.evaluate(() => { closeSheet(); openImport(); $('#imp_txt').value = 'Contrat Assurance-vie - Relevé des opérations\nDate;Opération;Support;Montant;Nombre de parts\n15/01/2026;Versement libre;Fonds euros;1 000,00;\n15/01/2026;Versement libre;Amundi MSCI World;500,00;4,1234\n01/03/2026;Arbitrage - désinvestissement;Fonds euros;-2 000,00;\n01/03/2026;Arbitrage - réinvestissement;Amundi MSCI World;2 000,00;16,5\n30/06/2026;Frais de gestion;Amundi MSCI World;-12,30;-0,1\n';
+    impAnalyze(); document.querySelector('#imp_result').scrollIntoView({ block: 'start' }); });
+  await shot('import_av', '#sheet');
   await page.evaluate(() => { closeSheet(); document.querySelector('#toast').style.visibility = ''; });
   await page.evaluate(() => { nav('budget'); window.scrollTo(0, 0); }); await shot('budget', null, top);
   // v21 : onglet Crowdfunding (fiches compactes) puis détail d'un projet (échéancier en liste)

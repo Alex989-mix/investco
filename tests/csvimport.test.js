@@ -84,5 +84,21 @@ const bi2 = C.balanceInfo(rev.rows);
 log('Relevé du plus récent au plus ancien : soldes retrouvés (départ 14 245,60 €)', bi2 && bi2.opening === 14245.6 && bi2.closing === 14645.6, bi2);
 log('Sans colonne Solde : pas de solde déduit', C.balanceInfo(C.readBank('Date;Libellé;Montant\n10/09/2026;VERSEMENT;200,00\n').rows) === null);
 
+
+// --- v28.2 : relevés d'assurance-vie
+const AV_OPS = 'Contrat Linxea Spirit 2 - Relevé des opérations\nDate;Opération;Support;Montant;Nombre de parts\n15/01/2026;Versement libre;Fonds euros Euro Objectif Climat;1 000,00;\n15/01/2026;Versement libre;Amundi MSCI World;500,00;4,1234\n01/03/2026;Arbitrage - désinvestissement;Fonds euros Euro Objectif Climat;-2 000,00;\n01/03/2026;Arbitrage - réinvestissement;Amundi MSCI World;2 000,00;16,5\n31/12/2025;Participation aux bénéfices;Fonds euros Euro Objectif Climat;245,10;\n31/12/2025;Prélèvements sociaux;Fonds euros Euro Objectif Climat;-42,16;\n30/06/2026;Frais de gestion;Amundi MSCI World;-12,30;-0,1\n10/09/2026;Rachat partiel;Fonds euros Euro Objectif Climat;-3 000,00;\n';
+log('Relevé d\'assurance-vie reconnu (en-tête), relevé bancaire non', C.looksLife(AV_OPS) && !C.looksLife('Date;Libellé;Montant\n10/09/2026;CARREFOUR;-82,40\n'));
+const LO = C.readLife(AV_OPS);
+log('Opérations : 8 lignes, support et parts lus', LO.mode === 'ops' && LO.ops.length === 8 && LO.ops[1].support === 'Amundi MSCI World' && LO.ops[1].units === 4.1234, LO.ops[1]);
+log('Natures : versement, arbitrage (sortie / entrée), intérêts, prélèvements sociaux en frais, frais, rachat', LO.ops.map((x) => x.kind + (x.leg ? ':' + x.leg : '')).join() === 'Dépôt,Dépôt,Arbitrage:out,Arbitrage:in,Intérêts,Frais,Frais,Retrait', LO.ops.map((x) => x.kind + (x.leg ? ':' + x.leg : '')));
+const PA = C.lifePairArbitrages(LO.ops.filter((x) => x.kind === 'Arbitrage'));
+log('Arbitrage apparié : 2 000 € du fonds euros vers Amundi MSCI World, 16,5 parts reçues', PA.arbitrages.length === 1 && PA.arbitrages[0].from.startsWith('Fonds euros') && PA.arbitrages[0].to === 'Amundi MSCI World' && PA.arbitrages[0].amount === 2000 && PA.arbitrages[0].unitsIn === 16.5 && !PA.bad.length, PA);
+const PB = C.lifePairArbitrages([{ date: '2026-03-01', leg: 'out', amount: -1000, support: 'A' }, { date: '2026-03-01', leg: 'in', amount: 600, support: 'B' }, { date: '2026-03-01', leg: 'in', amount: 400, support: 'C' }, { date: '2026-04-01', leg: 'in', amount: 50, support: 'B' }]);
+log('Arbitrage vers deux supports réparti ; ligne sans contrepartie signalée', PB.arbitrages.length === 2 && PB.arbitrages[0].amount === 600 && PB.arbitrages[1].amount === 400 && PB.bad.join() === '3', PB);
+const AV_SIT = 'Situation de votre contrat au 31/10/2026\nSupport;Nombre de parts;Valeur liquidative;Montant\nFonds euros Euro Objectif Climat;;;10 245,90\nAmundi MSCI World;20,5234;121,40;2 491,54\nTotal;;;12 737,44\n';
+const LS = C.readLife(AV_SIT);
+log('Situation : date du relevé, 2 supports (ligne Total ignorée), parts, valeur liquidative et montant', LS.mode === 'situation' && LS.date === '2026-10-31' && LS.positions.length === 2 && LS.positions[1].units === 20.5234 && LS.positions[1].vl === 121.4 && LS.positions[1].value === 2491.54 && LS.positions[0].value === 10245.9, LS);
+log('Libellés : « Revalorisation » = intérêts, « Rachat » = retrait, « Prime » = versement', C.lifeKind('Revalorisation annuelle', 10) === 'Intérêts' && C.lifeKind('RACHAT PARTIEL', 500) === 'Retrait' && C.lifeKind('Prime versée', 100) === 'Dépôt');
+
 console.log(out.every(Boolean) ? `\n✓ csvimport.js : ${out.length} tests OK` : '\n✗ csvimport.js : erreurs');
 process.exitCode = out.every(Boolean) ? 0 : 1;
