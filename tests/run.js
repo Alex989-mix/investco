@@ -26,6 +26,7 @@ for (const [name, args] of [
   ['Premier écran « Composez votre appli » (v26)', [path.join(__dirname, 'v26.test.js'), APP]],
   ['Crypto masquable seule (v27)', [path.join(__dirname, 'v27.test.js'), APP]],
   ['Assurance-vie complète (v28)', [path.join(__dirname, 'v28.test.js'), APP]],
+  ['Rachats d\'assurance-vie et geste retour (v28.1)', [path.join(__dirname, 'v28_1.test.js'), APP]],
   ['Import de relevés', [path.join(__dirname, 'import.test.js'), APP]],
   ['Mises à jour', [path.join(__dirname, 'update.test.js'), path.join(__dirname, 'fixtures', 'v16'), APP, path.join(tmp, 'serve')]],
 ]) {

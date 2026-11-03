@@ -97,8 +97,8 @@ const near = (a, b) => Math.abs(a - b) < 0.005;
 
   // ===== 8. Rachat et foyer fiscal =====
   const tx = await page.evaluate(() => { const s = findSaving('Assurance-vie');
-    DB.movements.push({ d: '2026-10-01', p: s.name, t: 'Retrait', q: null, pu: null, m: 3000, f: 0, n: '', fund: 'f1' }); save();
-    const V = s.cap + 3000, P = savingCalc(s).versed + 3000, part = Fin.lifeGainPart(3000, V, P), u8 = fiscalData();
+    const m = { d: '2026-11-04', p: s.name, t: 'Retrait', q: null, pu: null, m: 3000, f: 0, n: '', fund: 'f1' }; DB.movements.push(m); save();
+    const B = lifeRachatBase(s, '2026-11-04', m), part = Fin.lifeGainPart(3000, B.value, B.versed), u8 = fiscalData(); // v28.1 : valeur juste avant le rachat
     const open = s.open; s.open = '2017-01-15'; const seul = fiscalData(); s.open = open; return { part, u8: [u8.avOver8, u8.avAbat, u8.avTaxable], seul: [seul.avOver8, seul.avRachat, seul.avAbat, seul.avTaxable] }; });
   log('Rachat de 3 000 € : part de gains = rachat × (V − P) / V ; avant 8 ans elle est imposable en entier', tx.part > 0 && !tx.u8[0] && tx.u8[1] === 0 && near(tx.u8[2], tx.part), tx);
   log('… après 8 ans, couverte par l\'abattement du foyer (rien d\'imposable)', tx.seul[0] && tx.seul[1] === 3000 && near(tx.seul[2], tx.part) && near(tx.seul[3], 0), tx);

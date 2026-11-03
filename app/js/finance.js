@@ -15,7 +15,7 @@
 
   // Champs monétaires de chaque collection : convertis en centimes au stockage (localStorage, export, Drive)
   const MONEY_FIELDS = {
-    movements: ['pu', 'm', 'f', 'vg'],
+    movements: ['pu', 'm', 'f', 'vg', 'gp'], // gp (v28.1) : part de gains d'un rachat indiquée par l'assureur
     assets: ['price'],
     savings: ['cap', 'ceil'],
     crowd: ['amt'],
@@ -529,6 +529,38 @@
   // Abattement annuel des rachats > 8 ans selon le foyer (« couple » = imposition commune)
   const lifeAbattement = (foyer, date, userParams) => getParam(foyer === 'couple' ? 'tax.av.abattement.couple' : 'tax.av.abattement', date, userParams) || 0;
 
+  // ---------- Assurance-vie (v28.1) : fiscalité d'un rachat, estimation ----------
+  // o = {rachat, value (V juste avant), versed (P juste avant), gain (part de gains connue, facultatif), over8, abatLeft,
+  //      ir (taux avant 8 ans, 12,8 %), ir8 (7,5 %), ps (17,2 %), seuil (150 000 €), versedAll (versements nets, tous contrats),
+  //      ucShare (part des unités de compte : seuls leurs gains supportent les PS au rachat, ceux du fonds en euros les ont déjà payés)}.
+  function lifeRachatTax(o) {
+    const R = Math.max(0, +o.rachat || 0);
+    const known = o.gain != null && o.gain !== '' && Number.isFinite(+o.gain);
+    const gain = known ? round2(Math.min(R, Math.max(0, +o.gain))) : lifeGainPart(R, o.value, o.versed);
+    let abat = 0, taxable = gain, part7 = 0, ir = 0;
+    if (o.over8) {
+      abat = round2(Math.min(gain, Math.max(0, +o.abatLeft || 0))); taxable = round2(gain - abat);
+      part7 = +o.versedAll > 0 ? Math.min(1, Math.max(0, +o.seuil || 0) / +o.versedAll) : 1; // part des gains liée aux versements ≤ seuil
+      ir = round2(taxable * (part7 * (+o.ir8 || 0) + (1 - part7) * (+o.ir || 0)));
+    } else ir = round2(gain * (+o.ir || 0));
+    const share = Math.min(1, Math.max(0, +o.ucShare || 0)), ps = round2(gain * share * (+o.ps || 0));
+    return { rachat: round2(R), gain, known, capital: round2(R - gain), over8: !!o.over8, abat, taxable, part7, ir, ps, tax: round2(ir + ps), net: round2(R - ir - ps) };
+  }
+  // Rachat le plus élevé dont la part de gains reste couverte par l'abattement restant (après 8 ans)
+  function lifeTaxFreeRachat(value, versed, abatLeft) {
+    const V = +value || 0, G = V - (+versed || 0), A = Math.max(0, +abatLeft || 0);
+    if (!(V > 0)) return 0; if (G <= 0) return round2(V);
+    return Math.floor(Math.min(V, A * V / G) * 100) / 100;
+  }
+  // Récap d'une année : rachats dans l'ordre des dates, l'abattement du foyer se consomme au fil des rachats de plus de 8 ans
+  function lifeTaxYear(list, ctx) {
+    let left = Math.max(0, +ctx.abattement || 0);
+    const lines = (list || []).slice().sort((a, b) => (String(a.d) < String(b.d) ? -1 : 1)).map((x) => {
+      const t = lifeRachatTax(Object.assign({}, ctx, x, { abatLeft: left })); left = round2(left - t.abat); return Object.assign({}, x, t); });
+    const sum = (k) => round2(lines.reduce((a, l) => a + l[k], 0));
+    return { lines, rachat: sum('rachat'), gain: sum('gain'), abat: sum('abat'), taxable: sum('taxable'), ir: sum('ir'), ps: sum('ps'), abatLeft: left, over8: lines.some((l) => l.over8) };
+  }
+
   // Variation du jour d'une action / d'un ETF : écart du dernier cours avec la clôture de la veille,
   // en points de pourcentage arrondis au centième ; null si l'une des deux valeurs est invalide ou aberrante.
   function dayChange(price, prevClose) {
@@ -559,7 +591,7 @@
   const api = { round2, budgetVsActual, detectRecurring, sameExpense, toCents, fromCents, MONEY_FIELDS, serialize, deserialize, PARAM_DEFAULTS, getParam, paramHistory, paramKeys,
     addMonthsYmd, monthsDiff, loanPayment, amortization, loanStatus, propertyValue, propertyStats, resaleItem, resaleYear,
     ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange, rateOn, dailyInterest, quinzStart, quinzStop, crowdDues, crowdCapitalAt, cryptoTax, portfolioDayChange,
-    lifeLines, lifeValue, lifeEuroEvents, lifeDefaultFund, life8, lifeGainPart, lifeAbattement };
+    lifeLines, lifeValue, lifeEuroEvents, lifeDefaultFund, life8, lifeGainPart, lifeAbattement, lifeRachatTax, lifeTaxFreeRachat, lifeTaxYear };
   root.Fin = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

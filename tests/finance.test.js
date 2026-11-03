@@ -185,6 +185,19 @@ console.log(out.every(Boolean) ? '\n✓ finance.js : tout est bon' : '\n✗ fina
   log('Assurance-vie : intérêts du fonds en euros calculés sur ses seules opérations', F.lifeEuroEvents(LF, LM, 'AV').length === 5 && F.lifeEuroEvents(LF, LM, 'AV').every((x) => x.e !== 5000 || x.d !== '2024-01-10'));
   const LS = F.serialize({ savings: [{ cap: 1, life: { funds: [{ id: 'f2', kind: 'uc', px: 120.456, vals: [{ d: '2026-06-30', v: 5300.25 }] }] } }], meta: {} });
   log('Assurance-vie : cours et valeurs des supports stockés en centimes, relus sans perte', LS.savings[0].life.funds[0].px === 12046 && LS.savings[0].life.funds[0].vals[0].v === 530025 && F.deserialize(JSON.parse(JSON.stringify(LS))).savings[0].life.funds[0].vals[0].v === 5300.25);
+  // v28.1 : fiscalité des rachats d'assurance-vie
+  const TC = { ir: 0.128, ir8: 0.075, ps: 0.172, seuil: 150000, versedAll: 100000 };
+  const T1 = F.lifeRachatTax(Object.assign({ rachat: 10000, value: 50000, versed: 40000, over8: false, ucShare: 0 }, TC));
+  log('Rachat avant 8 ans : 10 000 € sur 50 000 € dont 40 000 € versés → 2 000 € de gains, 256 € d\'impôt (12,8 %), PS déjà payés (fonds en euros)', T1.gain === 2000 && T1.capital === 8000 && T1.ir === 256 && T1.ps === 0 && T1.net === 9744, T1);
+  const T2 = F.lifeRachatTax(Object.assign({ rachat: 10000, value: 50000, versed: 40000, over8: true, abatLeft: 4600, ucShare: 0.5 }, TC));
+  log('Rachat après 8 ans : 2 000 € de gains sous l\'abattement de 4 600 € → aucun impôt ; PS sur la moitié UC (172 €)', T2.abat === 2000 && T2.taxable === 0 && T2.ir === 0 && T2.ps === 172, T2);
+  const T3 = F.lifeRachatTax(Object.assign({ rachat: 50000, value: 100000, versed: 60000, over8: true, abatLeft: 4600, ucShare: 0 }, TC, { versedAll: 300000 }));
+  log('Après 8 ans, 300 000 € versés : 20 000 € de gains − 4 600 € = 15 400 € imposés moitié à 7,5 %, moitié à 12,8 % (1 563,10 €)', T3.gain === 20000 && T3.taxable === 15400 && T3.part7 === 0.5 && T3.ir === 1563.1, T3);
+  log('Part de gains indiquée par l\'assureur prioritaire sur l\'estimation', F.lifeRachatTax(Object.assign({ rachat: 1000, value: 2000, versed: 1000, gain: 123.45, over8: false }, TC)).gain === 123.45);
+  log('Rachat sans impôt après 8 ans : 4 600 € de gains autorisés sur un contrat de 50 000 € dont 10 000 € de gains → 23 000 €', F.lifeTaxFreeRachat(50000, 40000, 4600) === 23000 && F.lifeTaxFreeRachat(1000, 1200, 4600) === 1000);
+  const TY = F.lifeTaxYear([{ d: '2026-09-01', rachat: 23000, value: 50000, versed: 40000, over8: true }, { d: '2026-03-01', rachat: 10000, value: 50000, versed: 40000, over8: true }], Object.assign({ abattement: 4600 }, TC));
+  log('Récap de l\'année : l\'abattement se consomme dans l\'ordre des dates (2 000 € puis 2 600 €), 2 000 € imposables au total', TY.lines[0].d === '2026-03-01' && TY.lines[0].abat === 2000 && TY.lines[1].abat === 2600 && TY.taxable === 2000 && TY.abatLeft === 0, TY);
+  log('Part de gains indiquée par l\'assureur stockée en centimes', F.serialize({ movements: [{ m: 10, gp: 1.25 }], meta: {} }).movements[0].gp === 125);
   console.log(out.every(Boolean) ? '✓ hachage OK' : '✗ erreurs');
   process.exitCode = out.every(Boolean) ? 0 : 1;
 })();

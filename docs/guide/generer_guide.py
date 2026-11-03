@@ -187,6 +187,7 @@ cont('04', 'Assurance-vie', None,
     ('Frais', 'Prélevés par l\'assureur : ils réduisent la valeur sans être un retrait.'), ('Intérêts', 'Crédités sur le fonds en euros, nets de prélèvements sociaux : un gain.')])
   + figs([('8 ans', 'La date figure sur chaque contrat : au-delà, les rachats sont moins imposés.'), ('4 600 €', 'Abattement annuel sur les gains rachetés, 9 200 € pour un couple, tous contrats confondus.'), ('Chaque année', 'Les prélèvements sociaux du fonds en euros sont déjà retenus.')])
   + '<h3>Ce qui est imposé lors d\'un rachat</h3><p style="max-width:160mm">La part de gains : rachat × (valeur du contrat − versements) ÷ valeur. Avant 8 ans, elle relève du prélèvement forfaitaire. Après 8 ans, l\'abattement de votre foyer s\'applique d\'abord, puis un taux réduit jusqu\'à 150 000 € de versements. Choisissez votre foyer dans <span class="path">Réglages › Ma situation fiscale</span>.</p>'
+  + '<h3>Simuler un rachat</h3><p style="max-width:160mm">Sur la fiche du contrat, touchez <b>Simuler un rachat</b> et saisissez un montant : capital, gains, abattement, impôt, prélèvements sociaux et net perçu s\'affichent, avec le montant que vous pouvez retirer cette année sans impôt. Une fois le rachat fait, saisissez la <b>part de gains indiquée par l\'assureur</b> : le récap fiscal l\'utilise.</p>'
   + tip('Une unité de compte « estimée » ?', 'Sans cours ni valeur relevée, l\'appli retient le montant investi. Ouvrez le support et indiquez son symbole Yahoo Finance ou la valeur de votre dernier relevé.')
   + tip('Masquer le module', 'Vos contrats restent comptés dans votre patrimoine net et votre récap fiscal, sur la ligne « Modules masqués ».'))
 # 9 · 05 bourse
@@ -253,6 +254,7 @@ QA = [('Où sont mes données ?', 'Uniquement sur votre appareil. Si vous active
       ('Les cours sont-ils en temps réel ?', 'Oui pour les cryptos, tant que l\'appli est ouverte. Actions et ETF : environ 15 minutes de différé.'),
       ('J\'ai oublié mon code', 'Touchez « Code oublié ? ». La seule issue est d\'effacer les données de l\'appli, puis de les restaurer depuis un export ou Google Drive.'),
       ('Plusieurs appareils ?', 'Oui. Chacun a ses données ; utilisez l\'export ou Google Drive pour les retrouver partout.'),
+      ('Le geste retour ferme l\'appli ?', 'Non. Il ferme la fenêtre ouverte, sinon revient à l\'Accueil. Pour quitter, passez par l\'écran des applis récentes.'),
       ('Mon relevé est mal lu', 'Vérifiez qu\'il s\'agit d\'un CSV, puis corrigez les colonnes dans l\'écran d\'import. Pour un PDF, contrôlez le sens de chaque montant.'),
       ('Partager un appareil ?', 'Même appareil et même navigateur = mêmes données. Chacun doit avoir son appareil ou son profil de navigateur.'),
       ('Tout supprimer ?', 'Réglages › Réinitialiser, puis une base vide. Exportez d\'abord une sauvegarde si besoin.'),

@@ -2,6 +2,42 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "28.1",
+      "date": "2026-11-04",
+      "title": "Simuler un rachat d'assurance-vie",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Simulateur de rachat (fiche du contrat › Simuler un rachat) : part de capital non imposable, part de gains, abattement utilisé, impôt sur le revenu, prélèvements sociaux et montant net perçu, recalculés à chaque saisie."
+        },
+        {
+          "type": "new",
+          "text": "Après 8 ans : le montant que vous pouvez retirer cette année sans impôt sur le revenu, d'après l'abattement restant de votre foyer, tous contrats confondus. Avant 8 ans : la date des 8 ans et le taux appliqué."
+        },
+        {
+          "type": "new",
+          "text": "Rachat : champ facultatif « Part de gains indiquée par l'assureur ». Quand il est rempli, le récap fiscal utilise ce montant exact plutôt que l'estimation."
+        },
+        {
+          "type": "improved",
+          "text": "Récap fiscal : chaque rachat de l'année est détaillé (gains, abattement, impôt, prélèvements sociaux), avec l'abattement qui vous reste. Les versements au-delà de 150 000 € et les prélèvements sociaux des unités de compte sont pris en compte."
+        },
+        {
+          "type": "improved",
+          "text": "L'impôt estimé du récap applique à l'assurance-vie ses taux propres (7,5 % ou 12,8 %) au lieu du barème."
+        },
+        {
+          "type": "fixed",
+          "text": "Le geste « retour » (balayage latéral de l'écran sur Android, bouton retour) ne fait plus quitter l'appli : il ferme l'aide ou la fenêtre ouverte, sinon revient à l'Accueil."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "Chapitre 04 : simuler un rachat d'assurance-vie",
+        "Questions fréquentes : le geste retour"
+      ]
+    },
+    {
       "version": "28.0",
       "date": "2026-11-04",
       "title": "L'assurance-vie, support par support",

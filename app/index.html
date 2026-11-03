@@ -33,7 +33,8 @@
   --pos:#0f7a4d; --posbg:#e4f4ec; --neg:#c0362c; --negbg:#fbe9e7; --warn:#9a6a00; --warnbg:#fdf3d8;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--ink);
+html,body{overscroll-behavior-x:none;background:var(--bg);color:var(--ink); /* v28.1 : pas de navigation par balayage latéral du navigateur */
+
   font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0)}
 h1,h2,h3,.k-v,.brandmark{font-family:'Space Grotesk','Inter',sans-serif;letter-spacing:-.01em}
@@ -785,6 +786,15 @@ function cryptoVgEstimate(m){const d=String(m.d).slice(0,10);let v=0;
     const px=a.name===m.p&&m.pu?+m.pu:(+a.price||0);v+=q*px;});
   return r2(v);}
 function cryptoTaxYear(y){return Fin.cryptoTax(cryptoOps(),y,param('crypto.seuil.cessions')||0);}
+// v28.1 : contexte fiscal des rachats d'assurance-vie (paramètres datés, foyer, versements de tous les contrats)
+function lifeTaxCtx(d){const t=d||ymd(today());return {abattement:Fin.lifeAbattement(DB.settings.foyer,t,DB.params),ir:param('tax.ir.pfu',t)||0,ir8:param('tax.av.ir8',t)||0,
+  ps:param('tax.ps.reduit',t)||0,seuil:param('tax.av.seuil',t)||0,versedAll:r2(DB.savings.filter(s=>s.type==='Assurance-vie').reduce((a,s)=>a+Math.max(0,savingCalc(s).versed),0))};}
+// Valeur, versements et part d'UC d'un contrat juste avant une date (le rachat m lui-même exclu) ; d = aujourd'hui pour une simulation
+function lifeRachatBase(s,d,m){const ops=DB.movements.filter(x=>{if(x===m)return false;const xd=String(x.d).slice(0,10);return xd<d||(xd===d&&!(x.t==='Retrait'&&x.p===s.name));}); // le rachat a lieu après les autres opérations du jour
+  const over8=!!(s.open&&Fin.life8(s.open)<=d);
+  if(s.life){const L=Fin.lifeValue(s.life,ops,s.name,d);return {value:L.total,versed:L.versed,ucShare:L.total>0?Math.max(0,L.uc)/L.total:0,over8,est:L.funds.some(f=>f.approx)};}
+  const v=ops.reduce((a,x)=>a+movEffect(x,s.name),0),p=ops.reduce((a,x)=>a+((x.t==='Dépôt'||x.t==='Reprise')&&x.p===s.name?(+x.m||0):(x.t==='Retrait'||x.t==='Transfert')&&x.p===s.name?-(+x.m||0):x.t==='Transfert'&&x.p2===s.name?(+x.m||0):0),0);
+  return {value:r2(v),versed:r2(p),ucShare:0,over8,est:false};}
 function fiscalData(){
   const y=today().getFullYear(),jan=new Date(y,0,1);
   let pelInt=0,pelName='',livretBancaireInt=0,celInt=0,hasExo=false;
@@ -804,18 +814,18 @@ function fiscalData(){
   const CX=cryptoTaxYear(y);pvCrypto=CX.taxable;
   let revRevenue=0,revCount=0;DB.resale.forEach(r=>{if(r.st==='Vendu'&&r.sellD&&new Date(r.sellD)>=jan){revRevenue+=r.sell||0;revCount++;}});
   const revBase=Fin.resaleYear(DB.resale,y,{regime:DB.settings.resaleRegime,abattement:param('revente.microbic.abattement')}).taxable;
-  let avRachat=0,avTaxable=0,avAbat=0,avOver8=false;
-  // v28 : abattement de 4 600 € (seul) ou 9 200 € (couple) par an, partagé entre tous les contrats de plus de 8 ans
-  let abLeft=Fin.lifeAbattement(DB.settings.foyer,ymd(today()),DB.params);
-  DB.savings.filter(s=>s.type==='Assurance-vie').forEach(s=>{
-    const rachat=DB.movements.filter(m=>m.t==='Retrait'&&m.p===s.name&&new Date(m.d)>=jan).reduce((a,m)=>a+(m.m||0),0);
-    if(rachat>0){avRachat+=rachat;const sc=savingCalc(s);let g=Fin.lifeGainPart(rachat,(s.cap||0)+rachat,sc.versed+rachat);
-      const o8=s.open&&Fin.life8(s.open)<=ymd(today());if(o8){avOver8=true;const ab=Math.min(g,abLeft);abLeft-=ab;avAbat+=ab;g=Math.max(0,g-ab);}avTaxable+=g;}
-  });
+  // v28.1 : rachats de l'année, contrat par contrat, dans l'ordre des dates (abattement du foyer partagé)
+  const AV=lifeTaxCtx(),avL=[];
+  DB.savings.filter(s=>s.type==='Assurance-vie').forEach(s=>{DB.movements.forEach(m=>{if(m.t!=='Retrait'||m.p!==s.name||String(m.d).slice(0,4)!==String(y))return;
+    avL.push(Object.assign({name:s.name,gain:m.gp},lifeRachatBase(s,String(m.d).slice(0,10),m),{rachat:+m.m||0}));});});
+  const AVY=Fin.lifeTaxYear(avL,AV);
+  const avRachat=AVY.rachat,avTaxable=AVY.taxable,avAbat=AVY.abat,avOver8=AVY.over8||DB.savings.some(s=>s.type==='Assurance-vie'&&s.open&&Fin.life8(s.open)<=ymd(today()));
   let avNext=null;DB.savings.filter(s=>s.type==='Assurance-vie'&&s.open).forEach(s=>{const yr=new Date(s.open).getFullYear()+8;if(avNext==null||yr<avNext)avNext=yr;});
   const rate=taxBareme();
   const totalTaxable=interestsTotal+Math.max(0,pvStock)+Math.max(0,pvCrypto)+revBase+avTaxable;
-  return {cx:CX,y,pelInt,pelName,celInt,livretBancaireInt,bricks,interestsTotal,hasExo,pvStock,pvCrypto,revRevenue,revCount,revBase,avRachat,avTaxable,avAbat,avOver8,avNext,rate,totalTaxable,estTax:totalTaxable*rate};
+  // assurance-vie : impôt et prélèvements calculés à part (taux propres), le reste au barème
+  const estTax=r2((totalTaxable-avTaxable)*rate+AVY.ir+AVY.ps);
+  return {av:AVY,avAbatTotal:AV.abattement,cx:CX,y,pelInt,pelName,celInt,livretBancaireInt,bricks,interestsTotal,hasExo,pvStock,pvCrypto,revRevenue,revCount,revBase,avRachat,avTaxable,avAbat,avOver8,avNext,rate,totalTaxable,estTax};
 }
 function fiscSections(f){
   const S=[];
@@ -843,18 +853,21 @@ function fiscSections(f){
     else rL.push("Ventes occasionnelles de vos objets personnels : non imposables (sauf objet vendu plus de 5 000 €, bijoux et objets d'art). Si vous achetez pour revendre, choisissez « Activité d'achat-revente » dans Réglages.");}
   S.push({t:"Votre revente d'objets",a:f.revBase,pos:f.revCount===0||f.revBase===0,lines:rL,c:f.revBase>0?"À déclarer dans les revenus industriels et commerciaux (micro-BIC, ventes de marchandises) de votre déclaration de revenus.":""});
   // AV
-  let aL=[];if(f.avRachat<=0){aL.push("Vous n'avez pas retiré d'argent cette année, donc rien à déclarer.");
-    if(f.avOver8)aL.push("Bon à savoir : vous pouvez retirer jusqu'à 4 600 € de gains par an sans impôt.");
-    else if(f.avNext)aL.push(`Bon à savoir : à partir de ${f.avNext}, vous pourrez retirer jusqu'à 4 600 € de gains par an sans impôt.`);}
-  else{aL.push(`Vous avez retiré ${eur0(f.avRachat)}, dont ${eur0(f.avTaxable)} de gains imposables${f.avAbat>0?` (après ${eur0(f.avAbat)} d'abattement)`:''}.`);}
-  S.push({t:"Votre assurance-vie",a:f.avTaxable,pos:f.avRachat<=0,lines:aL,c:""});
+  let aL=[];const AB=eur0(f.avAbatTotal);
+  if(f.avRachat<=0){aL.push("Vous n'avez pas retiré d'argent cette année, donc rien à déclarer.");
+    if(f.avOver8)aL.push(`Bon à savoir : vous pouvez retirer jusqu'à ${AB} de gains par an sans impôt sur le revenu (${DB.settings.foyer==='couple'?'couple':'personne seule'}).`);
+    else if(f.avNext)aL.push(`Bon à savoir : à partir de ${f.avNext}, vous pourrez retirer jusqu'à ${AB} de gains par an sans impôt sur le revenu.`);}
+  else{f.av.lines.forEach(l=>aL.push(`Rachat de ${eur0(l.rachat)} sur « ${esc(l.name)} » le ${pd(l.d).toLocaleDateString('fr-FR')} : ${eur0(l.gain)} de gains${l.known?' (indiqués par l\'assureur)':' (estimation)'}${l.over8?(l.abat>0?`, ${eur0(l.abat)} d'abattement`:''):', contrat de moins de 8 ans'}, impôt ≈ ${eur0(l.ir)}${l.ps>0?`, prélèvements sociaux ≈ ${eur0(l.ps)}`:''}.`));
+    aL.push(`Total : ${eur0(f.avTaxable)} de gains imposables${f.avAbat>0?` après ${eur0(f.avAbat)} d'abattement`:''}${f.av.over8?` · il vous reste ${eur0(f.av.abatLeft)} d'abattement cette année`:''}.`);
+    aL.push("L'assureur prélève déjà un acompte d'impôt et les prélèvements sociaux lors du rachat : ces montants figurent sur son relevé fiscal (IFU) et sur votre déclaration préremplie.");}
+  S.push({t:"Votre assurance-vie",a:f.avTaxable,pos:f.avRachat<=0,lines:aL,c:f.avRachat>0?"Simulez un prochain rachat depuis la fiche du contrat (Placements ▸ Assurance-vie).":""});
   return S;
 }
 function taxRecap(){const f=fiscalData();const S=fiscSections(f);
   openSheet(`<div class="spread"><h2>Récap fiscal ${f.y}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="card pad" style="margin-top:6px;background:var(--hero)"><div class="k-l" style="color:var(--ink2)">À déclarer cette année</div>
      <div class="k-v" style="color:#fff;font-size:22px">${f.totalTaxable>0?'≈ '+eur0(f.totalTaxable)+' de revenus':'Rien à déclarer'}</div>
-     ${f.totalTaxable>0?`<div class="k-s" style="color:var(--ink2)">Impôt estimé : <b style="color:var(--orange)">${eur0(f.estTax)}</b> (prélèvements sociaux ${fin(r2(f.rate*100))} %)</div>`:''}</div>
+     ${f.totalTaxable>0?`<div class="k-s" style="color:var(--ink2)">Impôt estimé : <b style="color:var(--orange)">${eur0(f.estTax)}</b> (barème ${fin(r2(f.rate*100))} %, prélèvements sociaux compris${f.avTaxable>0?', assurance-vie à ses taux propres':''})</div>`:''}</div>
    ${S.map(s=>`<div class="card pad" style="margin-top:10px"><div class="spread"><span style="font-weight:600">${s.t}</span><b style="font-size:16px;color:${s.pos?'var(--pos)':'var(--ink)'}">${eur0(s.a)}</b></div>
      <div style="font-size:12.5px;color:var(--ink2);margin-top:5px;line-height:1.5">${s.lines.join('<br>')}</div>${s.c?`<div class="hint">${s.c}</div>`:''}</div>`).join('')}
    <button class="btn primary wide" onclick="genFiscalPdf()">${svgI('download')} Télécharger le relevé (PDF)</button>
@@ -875,7 +888,7 @@ function genFiscalPdf(){
   doc.setFillColor(...SOFT);doc.setDrawColor(...LINE);doc.roundedRect(M,y,cw,24,2,2,'FD');
   doc.setFontSize(8.5);doc.setTextColor(...MUT);doc.setFont('helvetica','bold');doc.text('À DÉCLARER CETTE ANNÉE',M+6,y+7);
   doc.setFontSize(16);doc.setTextColor(...NAVY);doc.text(f.totalTaxable>0?('Environ '+eur0(f.totalTaxable)+' de revenus'):'Rien à déclarer cette année',M+6,y+15);
-  if(f.totalTaxable>0){doc.setFontSize(9.5);doc.setFont('helvetica','normal');doc.setTextColor(...INK);doc.text('Impôt estimé : '+eur0(f.estTax)+' (prélèvements sociaux)',M+6,y+21);}
+  if(f.totalTaxable>0){doc.setFontSize(9.5);doc.setFont('helvetica','normal');doc.setTextColor(...INK);doc.text('Impôt estimé : '+eur0(f.estTax)+' (barème, prélèvements sociaux compris ; assurance-vie à ses taux propres)',M+6,y+21);}
   y+=30;
   S.forEach(s=>{
     const lines=doc.splitTextToSize(s.lines.join(' '),cw-40);const caseH=s.c?5:0;
@@ -1404,6 +1417,7 @@ const HELP={
     <p><b>Valeur d'une UC</b> : parts détenues × dernier cours (automatique avec un symbole Yahoo Finance), sinon la dernière valeur relevée sur votre relevé, sinon le montant investi.</p>
     <p><b>Versement</b> = argent nouveau. <b>Arbitrage</b> = déplacement entre supports, sans effet sur la valeur ni sur votre épargne. <b>Frais</b> = prélevés par l'assureur, ils réduisent la valeur sans être un retrait.</p>
     <p><b>Rachat</b> : seule la part de gains est imposable, rachat × (valeur − versements) ÷ valeur. Après 8 ans, abattement annuel de ${eur0(Fin.lifeAbattement('seul',ymd(today()),DB.params))} (seul) ou ${eur0(Fin.lifeAbattement('couple',ymd(today()),DB.params))} (couple), puis ${fin(r2((param('tax.av.ir8')||0)*100))} % d'impôt jusqu'à ${eur0(param('tax.av.seuil')||0)} de versements.</p>`],
+  lifeGain:['Part de gains d\'un rachat',()=>`<p>Lors d'un rachat, seule la part de gains est imposable. L'appli l'estime : rachat × (valeur du contrat − versements) ÷ valeur, juste avant le rachat.</p><p>Votre assureur indique le montant exact sur l'avis d'opération ou le relevé fiscal (IFU) : saisissez-le ici pour un récap fiscal exact.</p>`],
   foyer:['Foyer fiscal',()=>`<p>L'abattement sur les gains des rachats d'assurance-vie de plus de 8 ans est de ${eur0(Fin.lifeAbattement('seul',ymd(today()),DB.params))} par an pour une personne seule, ${eur0(Fin.lifeAbattement('couple',ymd(today()),DB.params))} pour un couple marié ou pacsé soumis à imposition commune. Il est partagé entre tous vos contrats.</p>`],
   jour:['Variation du jour',()=>`<p>Somme des variations de chaque ligne de bourse et de crypto : <b>valeur actuelle − valeur à la clôture de la veille</b>. Le pourcentage est calculé sur la valeur de la veille des lignes concernées.</p>
     <p><b>Actions et ETF</b> : depuis la clôture de la séance précédente, au dernier « Actualiser » (cours différé d'environ 15 min). Le week-end et les jours fériés, c'est la variation de la dernière séance.</p>
@@ -1561,6 +1575,7 @@ function lifeDetail(i){const s=DB.savings[i];if(!s||!s.life){if(s)productDetail(
    <div class="g2k"><div><div class="k-l">Versé net</div><b>${eur0(c.versed)}</b></div><div><div class="k-l">Intérêts perçus</div><b>${eur0(c.received)}</b></div>
      <div><div class="k-l">Fonds en euros</div><b>${eur0(L.euro)}</b></div><div><div class="k-l">Unités de compte</div><b>${eur0(L.uc)}${L.total?' <span class="muted" style="font-weight:500">· '+PCT1(L.uc/L.total)+'</span>':''}</b></div></div>
    <div class="row" style="gap:8px;margin-top:12px"><button class="btn sm primary" style="flex:1" onclick="editLifeOp(${i},-1,'Dépôt')">+ Versement</button><button class="btn sm" style="flex:1" onclick="editLifeOp(${i},-1,'Retrait')">+ Rachat</button><button class="btn sm" style="flex:1" onclick="editLifeOp(${i},-1,'Arbitrage')">Arbitrage</button></div>
+   <button class="btn sm" style="width:100%;margin-top:8px" onclick="lifeSim(${i})">${svgI('receipt')} Simuler un rachat</button>
    <div class="spread" style="margin:16px 0 8px"><span style="font-weight:600">Supports (${L.funds.length})</span><button class="btn sm" onclick="editFund(${i},'')">+ Support</button></div>
    <div class="lgrp">${L.funds.map(F=>`<div class="fiche" onclick="editFund(${i},'${F.id}')"><div class="spread" style="gap:10px"><div style="min-width:0"><div class="t-name">${esc(F.name||'Support')}</div><div class="t-sub">${lifeFundLine(s,F)}</div></div><div class="fv">${eur0(F.value)}</div></div>
      ${F.kind!=='euro'&&F.cost?`<div class="spread" style="margin-top:4px;font-size:12.5px"><span class="muted">Investi net ${eur0(F.cost)}</span><span class="${F.value-F.cost>=0?'pos':'neg'}">${F.value-F.cost>=0?'+':''}${eur0(F.value-F.cost)}</span></div>`:''}</div>`).join('')}</div>
@@ -1613,6 +1628,7 @@ function editLifeOp(i,gi,t){const s=DB.savings[i],m=gi>=0?DB.movements[gi]:{d:ym
    <div class="two"><div class="field"><label>Date</label><input type="date" id="o_d" value="${String(m.d).slice(0,10)}"></div><div class="field"><label>Type</label><select id="o_t" onchange="lifeOpFields()">${T.map(x=>`<option value="${x}" ${m.t===x?'selected':''}>${LIFE_T[x]}</option>`).join('')}</select></div></div>
    <div class="two"><div class="field"><label id="o_fl">Support</label><select id="o_f" onchange="lifeOpFields()">${opt(m.fund||Fin.lifeDefaultFund(s.life))}</select></div><div class="field" id="o_w2"><label>Vers le support</label><select id="o_f2" onchange="lifeOpFields()">${opt(f2)}</select></div></div>
    <div class="two"><div class="field"><label id="o_ml">Montant (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="o_m" value="${fin(m.m??'')}"></div><div class="field" id="o_wq"><label id="o_ql">Parts (facultatif)</label><input type="text" inputmode="decimal" autocomplete="off" id="o_q" value="${fin(m.q??'')}"></div></div>
+   <div class="field" id="o_wgp"><label>Part de gains indiquée par l'assureur (€, facultatif) ${hq('lifeGain')}</label><input type="text" inputmode="decimal" autocomplete="off" id="o_gp" value="${fin(m.gp??'')}" placeholder="sinon estimée"></div>
    <div class="field" id="o_wq2"><label>Parts reçues sur le support d'arrivée (facultatif)</label><input type="text" inputmode="decimal" autocomplete="off" id="o_q2" value="${fin(m.q2??'')}"></div>
    <div class="field"><label>Note</label><input id="o_n" value="${esc(m.n||'')}"></div>
    <div class="hint" id="o_h"></div>
@@ -1621,7 +1637,7 @@ function editLifeOp(i,gi,t){const s=DB.savings[i],m=gi>=0?DB.movements[gi]:{d:ym
 let lifeOpI=-1;
 function lifeOpFields(){const t=$('#o_t').value,s=DB.savings[lifeOpI];if(!s)return;
   const uc=id=>{const f=lifeFund(s,id);return !!f&&f.kind!=='euro';},arb=t==='Arbitrage';
-  $('#o_w2').style.display=arb?'':'none';$('#o_wq').style.display=uc($('#o_f').value)?'':'none';$('#o_wq2').style.display=arb&&uc($('#o_f2').value)?'':'none';
+  $('#o_w2').style.display=arb?'':'none';$('#o_wgp').style.display=t==='Retrait'?'':'none';$('#o_wq').style.display=uc($('#o_f').value)?'':'none';$('#o_wq2').style.display=arb&&uc($('#o_f2').value)?'':'none';
   $('#o_fl').textContent=arb?'Depuis le support':'Support';$('#o_ql').textContent=t==='Dépôt'||t==='Reprise'?'Parts achetées (facultatif)':'Parts vendues (facultatif)';
   $('#o_h').textContent={Dépôt:'Argent nouveau versé sur le contrat : compte dans votre épargne de l\'année.',Retrait:'Argent sorti du contrat. La part de gains est imposable (récap fiscal).',
     Arbitrage:'Déplacement entre supports : la valeur du contrat ne change pas, ce n\'est ni un versement ni un rachat.',Frais:'Frais de gestion ou d\'arbitrage prélevés par l\'assureur : ils réduisent la valeur, sans être un retrait.',
@@ -1632,9 +1648,35 @@ function saveLifeOp(i,gi){const s=DB.savings[i],t=$('#o_t').value,d=val('o_d'),m
   const isUc=id=>{const f=lifeFund(s,id);return !!f&&f.kind!=='euro';};
   const q=isUc(fund)?num('o_q'):null,q2=t==='Arbitrage'&&isUc(fund2)?num('o_q2'):null;
   if((q!=null&&q<0)||(q2!=null&&q2<0)){toast('Nombre de parts invalide',true);return;}
-  const o={d,p:s.name,t,q,pu:null,m:r2(m),f:0,n:($('#o_n').value||'').trim(),fund};if(fund2)o.fund2=fund2;if(q2!=null)o.q2=q2;
+  const gp=t==='Retrait'?num('o_gp'):null;if(gp!=null&&(gp<0||gp>m)){toast('Part de gains entre 0 et le montant du rachat',true);return;}
+  const o={d,p:s.name,t,q,pu:null,m:r2(m),f:0,n:($('#o_n').value||'').trim(),fund};if(fund2)o.fund2=fund2;if(q2!=null)o.q2=q2;if(gp!=null)o.gp=r2(gp);
   if(gi>=0){const old=DB.movements[gi];if(old.p2)o.p2=old.p2;if(old.link)o.link=old.link;DB.movements[gi]=o;}else DB.movements.push(o);
   save();renderAll();lifeDetail(i);toast('Opération enregistrée');}
+// v28.1 : simulateur de rachat (aujourd'hui) : part de gains, abattement restant du foyer, impôt, prélèvements sociaux, net perçu
+function lifeSim(i){const s=DB.savings[i],t=ymd(today()),B=lifeRachatBase(s,t,null),left=fiscalData().av.abatLeft,d8=Fin.life8(s.open);
+  const free=B.over8?Fin.lifeTaxFreeRachat(B.value,B.versed,left):0,def=B.over8&&free>0&&free<B.value?free:Math.min(B.value,1000);
+  openSheet(`<div class="spread"><h2>Simuler un rachat</h2><button class="btn sm" onclick="lifeDetail(${i})">Retour</button></div>
+   <div class="t-sub" style="margin-top:-4px">${esc(s.name)} · valeur ${eur0(B.value)} · versé net ${eur0(B.versed)}${B.value>B.versed?' · gains '+eur0(B.value-B.versed):''}</div>
+   <div class="field" style="margin-top:12px"><label>Montant à retirer (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="sim_m" value="${fin(r2(def))}" oninput="lifeSimCalc(${i})"></div>
+   ${B.over8?`<div class="memo">${svgI('info')}<div><div class="t">Sans impôt sur le revenu cette année : jusqu'à ${eur0(free)}</div><div class="d">Abattement restant pour votre foyer (${DB.settings.foyer==='couple'?'couple':'personne seule'}) : ${eur0(left)} sur ${eur0(Fin.lifeAbattement(DB.settings.foyer,t,DB.params))}. Il est partagé entre tous vos contrats de plus de 8 ans.</div></div></div>`
+     :`<div class="memo">${svgI('info')}<div><div class="t">Contrat de moins de 8 ans${d8?' (8 ans le '+pd(d8).toLocaleDateString('fr-FR')+')':''}</div><div class="d">Les gains sont imposés à ${fin(r2(lifeTaxCtx().ir*100))} % (ou au barème si vous le choisissez sur votre déclaration). Après 8 ans, un abattement annuel de ${eur0(Fin.lifeAbattement(DB.settings.foyer,t,DB.params))} s'applique d'abord.</div></div></div>`}
+   <div id="sim_r"></div>
+   <button class="btn primary wide" onclick="lifeSimSave(${i})">Enregistrer ce rachat</button>
+   <div class="note">Estimation, à date d'aujourd'hui. L'assureur retient un acompte d'impôt et les prélèvements sociaux au moment du rachat ; l'impôt définitif est calculé sur votre déclaration. Versements antérieurs au 27/09/2017 : régime antérieur non simulé.</div>`);
+  lifeSimCalc(i);}
+function lifeSimCalc(i){const s=DB.savings[i],t=ymd(today()),B=lifeRachatBase(s,t,null),C=lifeTaxCtx(t),R=Math.min(num('sim_m')||0,B.value);
+  const T=Fin.lifeRachatTax(Object.assign({},C,B,{rachat:R,abatLeft:fiscalData().av.abatLeft}));
+  const row=(a,b,cls)=>`<div class="li"><span>${a}</span><b class="${cls||''}" style="text-align:right">${b}</b></div>`;
+  $('#sim_r').innerHTML=`<div class="lst" style="margin-top:12px">
+    ${row('Part de capital',eur(T.capital)+' · non imposable')}${row('Part de gains',eur(T.gain))}
+    ${T.over8?row('Abattement utilisé',eur(T.abat)):''}${row('Impôt sur le revenu',eur(T.ir)+(T.over8&&T.taxable>0?` · ${T.part7<1?'7,5 % et 12,8 %':fin(r2(C.ir8*100))+' %'}`:(!T.over8&&T.gain>0?' · '+fin(r2(C.ir*100))+' %':'')),T.ir>0?'neg':'')}
+    ${row('Prélèvements sociaux',eur(T.ps)+(T.ps>0?' · sur la part en unités de compte':' · déjà prélevés sur le fonds en euros'),T.ps>0?'neg':'')}
+    ${row('Vous recevez',`<b style="font-size:16px">${eur(T.net)}</b>`)}</div>
+    ${(num('sim_m')||0)>B.value?`<div class="hint" style="color:var(--warn)">Montant ramené à la valeur du contrat (${eur0(B.value)}).</div>`:''}
+    ${C.versedAll>C.seuil&&T.over8?`<div class="hint">Vos versements dépassent ${eur0(C.seuil)} (tous contrats) : une partie des gains est imposée à 12,8 %.</div>`:''}
+    ${B.est?'<div class="hint">Une unité de compte est estimée à son montant investi : résultat approximatif.</div>':''}`;
+  return T;}
+function lifeSimSave(i){const R=num('sim_m');if(!(R>0)){toast('Montant ?',true);return;}editLifeOp(i,-1,'Retrait');$('#o_m').value=fin(r2(R));}
 function delLifeOp(i,gi){if(!confirm('Supprimer cette opération ?'))return;DB.movements.splice(gi,1);save();renderAll();lifeDetail(i);toast('Opération supprimée');}
 // Cours des unités de compte qui ont un symbole (Yahoo, déjà autorisé par la CSP)
 async function lifeUcPrices(fx,rep){let n=0;
@@ -2698,6 +2740,18 @@ function checkAlerts(){if(!DB.settings.notif||!('Notification'in window)||Notifi
   const msgs=alertsList().map(a=>a.txt);
   if(msgs.length){try{new Notification('Invest.co',{body:msgs.slice(0,3).join('\n'),icon:'icon-192.png'});}catch(e){}}}
 function toggleTheme(){DB.settings.theme=(DB.settings.theme==='dark')?'light':'dark';applyTheme();save();renderAll();}
+// v28.1 : le geste « retour » (balayage latéral d'Android, bouton retour) ne fait plus sortir de l'appli.
+// Il ferme d'abord l'aide ou la fenêtre ouverte, sinon revient à l'Accueil, sinon ne fait rien. Une entrée d'historique
+// « garde » (même adresse, aucune donnée) est remise après chaque retour ; Chrome n'en tient compte qu'après un toucher.
+let backArmed=false,backNeedGesture=true;
+function backPush(){try{history.pushState({investco:'garde'},'');backArmed=true;}catch(e){}}
+function backArm(){if(!backArmed||backNeedGesture){backNeedGesture=false;backPush();}}
+function backHandle(){if($('#lock')&&$('#lock').classList.contains('on'))return;
+  if($('#hlp')&&$('#hlp').classList.contains('on')){hideHelp();return;}
+  if($('#ov')&&$('#ov').classList.contains('on')){closeSheet();return;}
+  const cur=document.querySelector('.view.on');if(cur&&cur.id!=='v-dash')nav('dash');}
+window.addEventListener('popstate',()=>{backArmed=false;backHandle();backPush();backNeedGesture=true;});
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,backArm,{capture:true,passive:true}));
 function nav(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));$('#v-'+v).classList.add('on');
   document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));window.scrollTo(0,0);
   if(v==='dash'){dashAnimated=false;renderDash();}
