@@ -2,6 +2,29 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "26.0",
+      "date": "2026-11-03",
+      "title": "Composez votre appli dès le premier lancement",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Premier lancement : après « Partir de mes données », l'écran « Composez votre appli » propose quatre points de départ (Épargnant, Bourse, Immobilier, Tout) et les modules en tuiles à cocher, avec le nombre de modules retenus."
+        },
+        {
+          "type": "improved",
+          "text": "L'appli s'ouvre ensuite avec seulement les onglets et les entrées « Ajouter » des modules choisis ; les dépendances (Épargne et Crowdfunding) sont gérées pour vous."
+        },
+        {
+          "type": "improved",
+          "text": "« Explorer avec les exemples » garde tous les modules actifs. Si vous utilisez déjà l'appli, rien ne change : l'écran ne s'affiche qu'à la toute première ouverture."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "02 · Premiers réglages : composer votre appli"
+      ]
+    },
+    {
       "version": "25.0",
       "date": "2026-11-03",
       "title": "Choisissez vos modules",

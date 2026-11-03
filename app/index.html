@@ -263,6 +263,10 @@ input.bad{border-color:var(--neg)!important;box-shadow:0 0 0 2px var(--negbg)}
 .mtile .mt-top{display:flex;width:100%;justify-content:space-between;align-items:center}.mtile .mt-top>svg{width:18px;height:18px;stroke:var(--orange);fill:none;stroke-width:2.4;stroke-linecap:round}
 .mtile .mt-n{font-weight:600;font-size:13.5px;line-height:1.25}.mtile .mt-d{font-size:11.5px;color:var(--ink3);line-height:1.35}
 .mtile.soon{opacity:.55;cursor:default}
+.mtile.on{background:var(--orange-soft);border:2px solid var(--orange);padding:11px}
+.obp{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}.obp button{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--card);color:var(--ink2);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.obp button.on{border-color:var(--orange);background:var(--orange-soft);color:var(--orange)}
+.btn[disabled]{opacity:.45;cursor:default}
 .ico-i{display:inline-flex;vertical-align:-3px}.ico-i svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
@@ -873,19 +877,35 @@ function genFiscalPdf(){
   DB.settings.lastBackup=DB.settings.lastBackup;save();toast('Relevé téléchargé');
 }
 
-function maybeOnboard(){
-  if(!isFresh||DB.settings.onboarded)return;
+function maybeOnboard(force){
+  if(!force&&(!isFresh||DB.settings.onboarded))return;
   openSheet(`<div style="text-align:center;padding:8px 0 4px"><div style="width:64px;height:64px;border-radius:50%;background:var(--hero);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15l5-5 3 3 6-7"/><circle cx="18" cy="6" r="1.7" fill="#F7931A" stroke="none"/></svg></div>
      <h2>Bienvenue sur Invest.co</h2><div style="color:var(--ink2);font-size:13.5px;margin-top:6px;line-height:1.6">Suivez bourse, crypto, épargne, immobilier et budget au même endroit.</div></div>
-   <div class="field"><button class="btn primary" style="width:100%" onclick="onboardStart()">Partir de mes données (vide)</button><div class="hint" style="text-align:center">Efface les exemples et vous laisse une base vierge.</div></div>
+   <div class="field"><button class="btn primary" style="width:100%" onclick="onboardCompose()">Partir de mes données (vide)</button><div class="hint" style="text-align:center">Vous choisissez ensuite ce que vous voulez suivre.</div></div>
    <div class="field"><button class="btn" style="width:100%" onclick="onboardDemo()">Explorer avec les exemples</button></div>
    <div class="field" style="margin-top:4px"><button class="btn" style="width:100%" onclick="closeSheet();openGuide()">${svgI('book')} Guide : cours en direct & synchro Drive</button><div class="hint" style="text-align:center">Facultatif — l'appli marche aussi sans.</div></div>`);}
 function onboardDemo(){DB.settings.onboarded=true;save();closeSheet();toast('Bon tour !');}
+// ---- v26 : premier écran « Composez votre appli » (piste 2 « Catalogue ») : raccourcis de profil + tuiles à cocher
+const OB_PRESETS=[['saver','Épargnant',['savings','budget','import']],['stocks','Bourse',['savings','stocks','crypto','analyse','import']],
+  ['realty','Immobilier',['savings','realty','crowd','analyse','import']],['all','Tout',null]];
+let obSel=null;
+function obPreset(k){const P=OB_PRESETS.find(x=>x[0]===k);const o={};Mods.ids().forEach(id=>{o[id]={on:!P[2]||P[2].includes(id),order:Mods.defaults()[id].order};});obSel=o;onboardCompose();}
+function obToggle(id){obSel=Mods.setOn(obSel,id,!Mods.isOn(obSel,id));obSel.crypto.on=obSel.stocks.on;onboardCompose();}
+function onboardCompose(){if(!obSel){obPreset('saver');return;}
+  const MA=Mods.MODULES.filter(m=>m.toggle!==false),n=MA.filter(m=>Mods.isOn(obSel,m.id)).length;
+  const cur=(OB_PRESETS.find(P=>MA.every(m=>Mods.isOn(obSel,m.id)===(!P[2]||P[2].includes(m.id))))||[])[0];
+  openSheet(`<div class="spread"><button class="btn sm" onclick="maybeOnboard(true)">‹ Retour</button><span class="t-sub">Étape 2 sur 2</span></div>
+   <h2 style="margin:12px 0 4px">Composez votre appli</h2><div class="t-sub" style="line-height:1.5">Touchez les modules dont vous avez besoin. Vous pourrez en ajouter ou en masquer à tout moment dans Réglages ▸ Modules. Un point de départ :</div>
+   <div class="obp">${OB_PRESETS.map(P=>`<button class="${cur===P[0]?'on':''}" onclick="obPreset('${P[0]}')">${P[1]}</button>`).join(' ')}</div>
+   <div class="mgrid">${MA.map(m=>{const on=Mods.isOn(obSel,m.id);return `<button class="mtile${on?' on':''}" aria-pressed="${on}" onclick="obToggle('${m.id}')"><span class="mt-top"><span class="ricon${on?' on':''}">${svgI(m.icon)}</span>${svgI(on?'check':'plus')}</span><span class="mt-n">${esc(m.label)}</span><span class="mt-d">${esc(m.desc)}</span></button>`;}).join('')}</div>
+   <div class="t-sub" style="text-align:center;margin-top:10px">Bientôt : assurance-vie complète, PER, SCPI, or, comptes à l'étranger…</div>
+   <button class="btn primary wide" ${n?'':'disabled'} onclick="onboardStart()">Continuer · ${n} module${n>1?'s':''}</button>`);}
 function onboardStart(){
+  if(obSel)DB.settings.modules=Mods.normalize(obSel);obSel=null;
   DB.movements=[];DB.assets=[];DB.crowd=[];DB.expenses=[];DB.recurring=[];DB.resale=[];
   DB.savings=[{name:'Compte courant',type:'Compte courant',bank:'',cap:0,open:null,rate:null,tax:'Exonéré',ceil:null}];
   DB.settings.snapshots={};DB.settings.onboarded=true;DB.settings.lastProc=ymd(today());
-  save();closeSheet();renderAll();nav('placements');toast('Base vierge — ajoutez vos actifs');}
+  save();closeSheet();renderAll();if(Mods.placeTabs(DB.settings.modules).length)nav('placements');else nav('dash');toast('Base vierge — ajoutez vos actifs');}
 
 function editBudgets(){const cb=DB.settings.catBudgets||{};
   openSheet(`<div class="spread"><h2>Budgets par catégorie ${hq('budgets')}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>

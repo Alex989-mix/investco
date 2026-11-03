@@ -23,6 +23,7 @@ for (const [name, args] of [
   ['Variation du jour et actualisation sur place (v22.2)', [path.join(__dirname, 'v222.test.js'), APP]],
   ['Appli modulable : registre des modules (v24)', [path.join(__dirname, 'v24.test.js'), APP]],
   ['Réglages ▸ Modules, piste Catalogue (v25)', [path.join(__dirname, 'v25.test.js'), APP]],
+  ['Premier écran « Composez votre appli » (v26)', [path.join(__dirname, 'v26.test.js'), APP]],
   ['Import de relevés', [path.join(__dirname, 'import.test.js'), APP]],
   ['Mises à jour', [path.join(__dirname, 'update.test.js'), path.join(__dirname, 'fixtures', 'v16'), APP, path.join(tmp, 'serve')]],
 ]) {
