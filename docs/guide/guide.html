@@ -1,572 +1,220 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><title>Invest.co — Guide utilisateur</title>
 <style>
+@font-face{font-family:'Sora';src:url('fonts/sora-latin-400-normal.woff2') format('woff2');font-weight:400}
+@font-face{font-family:'Sora';src:url('fonts/sora-latin-600-normal.woff2') format('woff2');font-weight:600}
+@font-face{font-family:'Sora';src:url('fonts/sora-latin-700-normal.woff2') format('woff2');font-weight:700}
+@font-face{font-family:'Sora';src:url('fonts/sora-latin-800-normal.woff2') format('woff2');font-weight:800}
 @font-face{font-family:'Inter';src:url('../../app/Inter.woff2') format('woff2');font-weight:100 900}
-@font-face{font-family:'Space Grotesk';src:url('../../app/SpaceGrotesk.woff2') format('woff2');font-weight:300 700}
-:root{--orange:#F7931A;--orange2:#FF8A00;--orange-soft:#2c1e10;--bg:#0B1420;--card:#16202E;--card2:#101826;--hero:#091120;--line:#1e2a3a;--line2:#28374a;
-  --ink:#E6EDF5;--ink2:#8DA0B5;--ink3:#63788A;--pos:#3DD1A0;--neg:#E86C64;--warn:#E7B650;--warnbg:#332703}
-@page{size:A4;margin:0}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:10pt;line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.page{width:210mm;height:297mm;padding:20mm 18mm 18mm;position:relative;overflow:hidden;page-break-after:always;background:var(--bg)}
+:root{--navy:#0B1420;--navy2:#111C2A;--line:#1F2C3C;--line2:#2A3A4E;--or:#F7931A;--orange:#F7931A;--ink:#F4F6F8;--ink2:#9AABBD;--ink3:#6B7D90;--card:#111C2A}
+@page{size:A4;margin:0}*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--navy);color:var(--ink);font-family:'Inter',sans-serif;font-size:10pt;line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;position:relative;overflow:hidden;page-break-after:always;background:var(--navy)}
 .page:last-child{page-break-after:auto}
-h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;letter-spacing:-.015em}
-.run{position:absolute;top:9mm;left:18mm;right:18mm;display:flex;justify-content:space-between;align-items:center;font-size:7.5pt;color:var(--ink3);text-transform:uppercase;letter-spacing:.12em}
-.run .dot{color:var(--orange)}
-.foot{position:absolute;bottom:9mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;color:var(--ink3);border-top:1px solid var(--line);padding-top:3mm}
-.logo{display:inline-flex;align-items:center;gap:13px;font-family:'Space Grotesk';font-weight:700;font-size:18pt;letter-spacing:-.01em;color:var(--ink)}
-.logo i{width:44px;height:44px;border-radius:50%;background:var(--hero);border:1px solid var(--line2);display:inline-flex;align-items:center;justify-content:center}
-/* ---------- couverture ---------- */
-.cover{padding:0;background:radial-gradient(120mm 120mm at 100% 0%,rgba(247,147,26,.22),transparent 70%),radial-gradient(90mm 90mm at 0% 100%,rgba(61,130,175,.16),transparent 70%),var(--bg)}
-.cover .in{position:absolute;inset:22mm 18mm 18mm}
-.eyebrow{font-size:8pt;letter-spacing:.22em;text-transform:uppercase;color:var(--orange);font-weight:600}
-.cover h1{font-size:44pt;line-height:1.02;margin-top:5mm;max-width:150mm}
-.cover h1 span{color:var(--orange)}
-.cover .sub{font-size:12.5pt;color:var(--ink2);margin-top:6mm;max-width:98mm;line-height:1.5}
-.mock{position:absolute;right:-2mm;top:118mm;width:70mm;transform:rotate(-5deg)}
-.mock .frame{border-radius:30px;padding:3mm;background:#05090f;border:1px solid var(--line2);box-shadow:0 30px 60px rgba(0,0,0,.6),0 0 0 1px rgba(247,147,26,.15)}
-.mock img{width:100%;display:block;border-radius:22px}
-.cover .meta{position:absolute;left:0;bottom:0;right:0;display:flex;justify-content:space-between;align-items:flex-end;font-size:8.5pt;color:var(--ink3);border-top:1px solid var(--line);padding-top:4mm}
-.cover .meta b{color:var(--ink);font-weight:600}
-.pills{display:flex;flex-wrap:wrap;gap:2mm;margin-top:9mm;max-width:92mm}
-.pill{font-size:8.5pt;border:1px solid var(--line2);background:rgba(22,32,46,.7);border-radius:999px;padding:1.2mm 3.5mm;color:var(--ink)}
-/* ---------- titres ---------- */
-.chap{display:flex;align-items:baseline;gap:5mm;margin-bottom:5mm}
-.chap .n{font-family:'Space Grotesk';font-size:30pt;font-weight:700;color:var(--orange);line-height:1}
-.chap h2{font-size:20pt;line-height:1.15}
-.chap .kick{display:block;font-family:'Inter';font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin-bottom:1mm}
-h3{font-size:12pt;margin:5mm 0 2mm}
-p{color:var(--ink2);margin-bottom:2.5mm}
-p b,li b,td b{color:var(--ink);font-weight:600}
-.lead{font-size:11pt;color:var(--ink);line-height:1.55;margin-bottom:4mm}
-.rule{height:1px;background:linear-gradient(90deg,var(--orange),transparent);margin:6mm 0}
-/* ---------- listes ---------- */
-ol.steps{list-style:none;counter-reset:s;margin:2mm 0 3mm}
-ol.steps li{counter-increment:s;position:relative;padding-left:10mm;margin-bottom:2.6mm;color:var(--ink2)}
-ol.steps li::before{content:counter(s);position:absolute;left:0;top:.2mm;width:6.5mm;height:6.5mm;border-radius:50%;background:var(--orange);color:#0B1420;font:700 8.5pt 'Space Grotesk';display:flex;align-items:center;justify-content:center}
-ul.dots{list-style:none;margin:1mm 0 3mm}
-ul.dots li{position:relative;padding-left:5mm;margin-bottom:1.8mm;color:var(--ink2)}
-ul.dots li::before{content:'';position:absolute;left:0;top:2.1mm;width:5px;height:5px;border-radius:50%;background:var(--orange)}
-.path{font-weight:600;color:var(--ink);white-space:nowrap}
-.k{display:inline-block;background:var(--card);border:1px solid var(--line2);border-radius:5px;padding:0 4px;color:var(--ink);font-size:8.5pt;line-height:1.5}
-/* ---------- encadrés ---------- */
-.qz{margin:3mm 0 2mm}.qz .row{display:grid;grid-template-columns:34mm repeat(4,1fr);gap:1.2mm;align-items:center;margin-bottom:2.2mm}
+h1,h2,h3,.num,.big{font-family:'Sora',sans-serif;letter-spacing:-.03em}
+.foot{position:absolute;left:20mm;right:20mm;bottom:11mm;display:flex;justify-content:space-between;font-size:7.5pt;color:var(--ink3)}
+.logo{display:flex;align-items:center;gap:3mm;font:700 15pt 'Sora';letter-spacing:-.02em}
+.logo i{width:10mm;height:10mm;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center}.logo i svg{width:5.5mm;height:5.5mm}
+.phone{position:absolute;border-radius:9mm;background:#000;padding:2.2mm;box-shadow:0 30px 60px rgba(0,0,0,.45),0 0 0 1px #2B3746;z-index:2}
+.phone .scr{border-radius:7mm;overflow:hidden;aspect-ratio:9/19}.phone .scr img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.phone.short .scr{aspect-ratio:9/12}
+b{color:var(--ink);font-weight:600}
+.path{color:var(--ink);font-weight:600;white-space:nowrap}
+.k{display:inline-block;border:1px solid var(--line2);border-radius:4px;padding:0 4px;color:var(--ink);font-size:8.5pt;line-height:1.5}
+/* couverture */
+.cover .top{position:absolute;left:0;right:0;top:0;height:178mm;background:var(--or)}
+.cover .logo{position:absolute;left:20mm;top:18mm;color:var(--navy)}
+.cover h1{position:absolute;left:20mm;top:60mm;width:104mm;font:800 46pt 'Sora';line-height:.98;color:var(--navy);letter-spacing:-.045em}
+.cover .tag{position:absolute;left:20mm;top:150mm;font:600 10pt 'Sora';color:var(--navy);opacity:.75}
+.cover .phone{right:20mm;top:96mm;width:66mm}
+.cover .bot{position:absolute;left:20mm;right:20mm;bottom:22mm}
+.cover .bot .kk{font:600 8pt 'Inter';letter-spacing:.22em;text-transform:uppercase;color:var(--or)}
+.cover .bot .t{font:700 26pt 'Sora';margin-top:2mm;letter-spacing:-.03em;line-height:1.1}
+.cover .bot .s{color:var(--ink2);margin-top:3mm;width:100mm}
+.cover .bot .v{position:absolute;right:0;bottom:0;text-align:right;color:var(--ink3);font-size:8pt}
+/* sommaire */
+.toc{position:absolute;left:20mm;right:20mm;top:24mm}
+.toc h2{font:800 40pt 'Sora';letter-spacing:-.045em}
+.toc .intro{color:var(--ink2);margin-top:3mm;width:120mm}
+.toc .list{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;grid-template-rows:repeat(6,auto);column-gap:12mm;margin-top:13mm}
+.toc .it{display:flex;align-items:baseline;gap:5mm;padding:4.2mm 0;border-top:1px solid var(--line)}
+.toc .it .num{font:700 20pt 'Sora';color:var(--or);width:13mm;flex:none}
+.toc .it b{display:block;font:600 11.5pt 'Sora';letter-spacing:-.02em}.toc .it span{font-size:8.5pt;color:var(--ink3)}
+.toc .it .pg{margin-left:auto;font:600 9pt 'Sora';color:var(--ink3)}
+.prof{position:absolute;left:20mm;right:20mm;bottom:28mm;background:var(--navy2);border-radius:6mm;padding:7mm 8mm;display:flex;gap:7mm;align-items:center}
+.prof h3{font:700 13pt 'Sora';width:36mm;flex:none}
+.prof .p{flex:1}.prof .p b{display:block;font:600 10pt 'Sora'}.prof .p span{font-size:8.5pt;color:var(--or)}
+/* ouverture de chapitre */
+.band{position:absolute;left:0;right:0;top:0;height:112mm;background:var(--navy2)}
+.open .n{position:absolute;left:20mm;top:20mm;font:800 92pt 'Sora';color:var(--or);line-height:1;letter-spacing:-.06em}
+.open .mod{position:absolute;left:20mm;top:62mm;font:600 8pt 'Inter';letter-spacing:.2em;text-transform:uppercase;color:var(--ink2)}
+.open h2{position:absolute;left:20mm;top:69mm;width:105mm;font:800 32pt 'Sora';line-height:1.02;letter-spacing:-.045em}
+.open .lead{position:absolute;left:20mm;top:97mm;width:100mm;font-size:11pt;color:var(--ink2);line-height:1.5}
+.open .phone{right:20mm;top:24mm;width:56mm}
+/* page suite */
+.cont .hd{position:absolute;left:20mm;top:16mm;font:600 8pt 'Inter';letter-spacing:.2em;text-transform:uppercase;color:var(--ink3)}
+.cont .hd b{color:var(--or);font-family:'Sora';letter-spacing:0;margin-right:2mm}
+.cont .phone{right:20mm;top:26mm;width:54mm}
+/* zone de texte qui contourne le téléphone */
+.flow{position:absolute;left:20mm;right:20mm}
+.flow::before{content:'';float:right;width:var(--w,66mm);height:var(--h,0mm)}
+.flow h3{font:700 12.5pt 'Sora';margin:5.5mm 0 1.8mm;letter-spacing:-.02em}.flow>h3:first-child,.flow>.first{margin-top:0}
+.flow p{color:var(--ink2);margin-bottom:2.4mm}
+.flow ul{list-style:none;margin:0 0 2.6mm}.flow li{position:relative;padding-left:5mm;color:var(--ink2);margin-bottom:1.4mm}
+.flow li::before{content:'';position:absolute;left:0;top:2.1mm;width:2mm;height:2mm;border-radius:50%;background:var(--or)}
+.steps .st{display:flex;gap:5mm;padding:3.4mm 0;border-top:1px solid var(--line)}
+.steps .st .num{font:700 14pt 'Sora';color:var(--or);width:8mm;flex:none;line-height:1.2}
+.steps .st b{display:block;font:600 10.3pt 'Sora';letter-spacing:-.01em;margin-bottom:.4mm}.steps .st p{font-size:9.2pt;color:var(--ink2);line-height:1.45;margin:0}
+.figs{clear:both;display:grid;grid-template-columns:repeat(3,1fr);gap:5mm;margin:5mm 0}
+.figs.two{grid-template-columns:1fr 1fr}
+.fig{background:var(--or);color:var(--navy);border-radius:6mm;padding:5.5mm 6mm}
+.fig.alt{background:var(--navy2);color:var(--ink)}
+.fig .big{font:800 18pt 'Sora';letter-spacing:-.045em;line-height:1;white-space:nowrap}.fig p{font-size:8.6pt;margin:2.5mm 0 0;line-height:1.4;color:inherit;opacity:.85}
+.cols{clear:both;display:grid;grid-template-columns:1fr 1fr;gap:10mm}
+.cols p{font-size:9.4pt}
+.rows{margin:1mm 0 3mm;overflow:hidden}
+.rows .r{display:grid;grid-template-columns:38mm 1fr;gap:4mm;padding:2.8mm 0;border-top:1px solid var(--line)}
+.rows .r b{font:600 9.6pt 'Sora'}.rows .r span{color:var(--ink2);font-size:9.2pt}
+.tip{overflow:hidden;border-radius:6mm;padding:5mm 7mm;background:rgba(247,147,26,.1);display:flex;gap:5mm;align-items:baseline;margin:4mm 0}
+.tip b{font:700 10.5pt 'Sora';color:var(--or);flex:none}.tip p{color:var(--ink);font-size:9.4pt;margin:0}
+.tip.abs{position:absolute;left:20mm;right:20mm;bottom:22mm;margin:0}
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:4.5mm 6mm}
+.mods .m{display:flex;align-items:center;gap:3mm;font:600 9.5pt 'Sora';letter-spacing:-.01em}
+.ico{width:9mm;height:9mm;border-radius:50%;background:rgba(247,147,26,.14);display:flex;align-items:center;justify-content:center;flex:none}
+.ico svg{width:4.6mm;height:4.6mm;stroke:var(--or);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mods .m span{display:block;font:400 7.8pt 'Inter';color:var(--ink3)}
+.os{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm}
+.os .o{border-top:2px solid var(--or);padding-top:4mm}.os .o h4{font:700 12pt 'Sora';margin:3mm 0 2mm}.os .o p{font-size:9pt}
+.os .o ol{list-style:none;counter-reset:s}.os .o li{counter-increment:s;padding-left:6mm;position:relative;color:var(--ink2);font-size:9pt;margin-bottom:1.6mm}
+.os .o li::before{content:counter(s);position:absolute;left:0;top:0;font:700 9pt 'Sora';color:var(--or);background:none;width:auto;height:auto}
+.qa{break-inside:avoid;margin-bottom:5mm}.qa h4{font:700 10.5pt 'Sora';margin-bottom:1.2mm;letter-spacing:-.01em}.qa p{font-size:9.2pt;color:var(--ink2);margin:0}
+.qcols{columns:2;column-gap:10mm}
+/* quinzaines */
+.qz{margin:3mm 0 2mm;clear:both}.qz .row{display:grid;grid-template-columns:30mm repeat(4,1fr);gap:1.4mm;align-items:center;margin-bottom:5.5mm}
 .qz .lab{font-size:8.3pt;color:var(--ink);font-weight:600;line-height:1.3}
-.qz .seg{height:9mm;border-radius:2mm;position:relative;display:flex;align-items:center;justify-content:center;font-size:7.6pt;font-weight:600}
-.qz .on{background:var(--orange);color:#0B1420}.qz .off{background:var(--card);border:1px solid var(--line2);color:var(--ink3)}
+.qz .seg{height:9mm;border-radius:2.5mm;position:relative;display:flex;align-items:center;justify-content:center;font-size:7.6pt;font-weight:600}
+.qz .on{background:var(--or);color:#0B1420}.qz .off{background:var(--navy2);color:var(--ink3)}
 .qz .mk{position:absolute;top:-4.3mm;font-size:7.3pt;color:var(--ink);font-weight:700;white-space:nowrap}
-.qz .row.head{margin-bottom:5.5mm}.qz .row{margin-bottom:5.5mm}
-.qz .head .seg{height:auto;background:none;border:none;color:var(--ink3);font-weight:500;font-size:7.6pt}
-.qz .leg{display:flex;gap:6mm;font-size:8pt;color:var(--ink2);margin-top:1mm}.qz .leg i{display:inline-block;width:3.2mm;height:3.2mm;border-radius:1mm;margin-right:1.5mm;vertical-align:-0.4mm}
-.note{border-radius:10px;padding:3.5mm 4.5mm 3.5mm 13mm;position:relative;font-size:9.3pt;margin:3mm 0;color:var(--ink2)}
-.note::before{position:absolute;left:4.5mm;top:3.5mm;width:5.5mm;height:5.5mm;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 8pt 'Space Grotesk'}
-.note b.t{display:block;color:var(--ink);font-size:9.3pt;margin-bottom:.5mm}
-.note.tip{background:var(--orange-soft);border:1px solid rgba(247,147,26,.4)}
-.note.tip::before{content:'✓';background:var(--orange);color:#0B1420}
-.note.imp{background:var(--warnbg);border:1px solid rgba(231,182,80,.45)}
-.note.imp::before{content:'!';background:var(--warn);color:#0B1420}
-.note.info{background:var(--card);border:1px solid var(--line2)}
-.note.info::before{content:'i';background:#3D82AF;color:#fff}
-/* ---------- figures ---------- */
-.two{display:grid;grid-template-columns:1fr 60mm;gap:9mm;align-items:start}
-.fig{margin:0}
-.fig .ph{border-radius:14px;overflow:hidden;border:1px solid var(--line2);box-shadow:0 10px 26px rgba(0,0,0,.45);background:var(--card);max-height:118mm}
-.fig .ph img{display:block;width:100%;object-fit:cover;object-position:top}
-.fig figcaption{font-size:7.8pt;color:var(--ink3);margin-top:2mm;text-align:center}
-.fig figcaption b{color:var(--ink2)}
-/* ---------- grilles / cartes ---------- */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4mm}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4.5mm 5mm}
-.card h4{font:600 10.5pt 'Space Grotesk';margin:2.5mm 0 1mm;color:var(--ink)}
-.card p{font-size:9pt;margin:0}
-.ic{width:9mm;height:9mm;border-radius:9px;background:var(--orange-soft);border:1px solid rgba(247,147,26,.35);display:flex;align-items:center;justify-content:center}
-.ic svg{width:5mm;height:5mm;stroke:var(--orange);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-/* ---------- sommaire ---------- */
-.toc{margin-top:4mm}
-.toc .row{display:flex;align-items:baseline;gap:4mm;padding:3.2mm 0;border-bottom:1px solid var(--line)}
-.toc .row .n{font:700 11pt 'Space Grotesk';color:var(--orange);width:9mm}
-.toc .row .t{font-weight:600;color:var(--ink)}
-.toc .row .d{color:var(--ink3);font-size:8.8pt;flex:1}
-.toc .row .p{font:600 10pt 'Space Grotesk';color:var(--ink2)}
-/* ---------- tableaux ---------- */
-table.tight td{padding:1.5mm 2.5mm;font-size:8.6pt}table.tight th{padding:1.5mm 2.5mm}
-table{width:100%;border-collapse:collapse;font-size:9pt;margin:2mm 0 3mm}
-th{text-align:left;font-weight:600;color:var(--ink3);font-size:7.8pt;text-transform:uppercase;letter-spacing:.08em;padding:2mm 3mm;border-bottom:1px solid var(--line2)}
-td{padding:2.4mm 3mm;border-bottom:1px solid var(--line);color:var(--ink2);vertical-align:top}
-td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
-.qa{margin-bottom:4mm;break-inside:avoid}
-.qa h4{font:600 10.5pt 'Space Grotesk';color:var(--ink);margin-bottom:1mm}
-.qa p{margin:0;font-size:9.3pt}
-.small{font-size:8.3pt;color:var(--ink3)}
-/* ---------- v27.3 : mise en page épurée ---------- */
-.chap{align-items:center;gap:5mm;margin-bottom:6mm;padding-bottom:4mm;border-bottom:1px solid var(--line)}
-.chap .n{width:14mm;height:14mm;border-radius:4mm;background:linear-gradient(145deg,#FFB04D,var(--orange) 55%,#D9770A);color:#0B1420;font-size:17pt;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 6px 18px rgba(247,147,26,.28)}
-.chap h2{font-size:22pt}
-.chap .kick{display:inline-block;background:var(--orange-soft);border:1px solid rgba(247,147,26,.35);color:var(--orange);border-radius:999px;padding:.5mm 3mm;letter-spacing:.1em;font-size:6.8pt;margin-bottom:1.6mm}
-.lead{font-size:11.5pt;line-height:1.6;color:var(--ink)}
-.fig .ph{border-radius:16px}
-.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-top:2mm}
-.tcard{display:flex;align-items:center;gap:3.5mm;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3mm 4mm}
-.tcard .tn{width:9mm;height:9mm;border-radius:2.6mm;background:var(--orange-soft);border:1px solid rgba(247,147,26,.35);color:var(--orange);font:700 10pt 'Space Grotesk';display:flex;align-items:center;justify-content:center;flex:none}
-.tcard .tt{flex:1;min-width:0}.tcard .tt b{display:block;color:var(--ink);font:600 10pt 'Space Grotesk';line-height:1.25}.tcard .tt span{font-size:7.8pt;color:var(--ink3)}
-.tcard .tp{font:600 9pt 'Space Grotesk';color:var(--ink2)}
-.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm}
-.pcard{background:linear-gradient(160deg,rgba(247,147,26,.14),rgba(22,32,46,.9) 55%);border:1px solid var(--line2);border-radius:12px;padding:4mm}
-.pcard .ic{margin-bottom:2.5mm}.pcard h4{font:600 10.5pt 'Space Grotesk';color:var(--ink);margin-bottom:1mm}.pcard p{font-size:8pt;margin:0;line-height:1.45}
-.pcard .ch{margin-top:2.5mm;font:600 7.8pt 'Inter';color:var(--orange);letter-spacing:.02em}
-.mgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm;margin-top:2mm}
-.mtile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3.5mm 3.8mm;display:flex;flex-direction:column;gap:1.2mm}
-.mtile .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:1mm}
-.mtile .chip{font:600 7pt 'Inter';color:var(--ink3);border:1px solid var(--line2);border-radius:999px;padding:.4mm 2.2mm}
-.mtile b{color:var(--ink);font:600 9.6pt 'Space Grotesk';line-height:1.25}.mtile span.d{font-size:7.9pt;color:var(--ink3);line-height:1.4}
+.qz .head .seg{height:auto;background:none;color:var(--ink3);font-weight:500}
+.qz .leg{display:flex;gap:6mm;font-size:8pt;color:var(--ink2)}.qz .leg i{display:inline-block;width:3.2mm;height:3.2mm;border-radius:1mm;margin-right:1.5mm;vertical-align:-.4mm}
+.small{font-size:8pt;color:var(--ink3)}
 </style></head><body>
-
-<!-- ======================= COUVERTURE ======================= -->
 <section class="page cover">
-  <div class="in">
-    <span class="logo"><i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg></i>Invest.co</span>
-    <div style="margin-top:28mm">
-      <div class="eyebrow">Guide utilisateur</div>
-      <h1>Votre patrimoine,<br><span>enfin lisible.</span></h1>
-      <p class="sub">Épargne, bourse, crypto, immobilier et budget réunis dans une seule application, sur votre téléphone. Ce guide vous accompagne de l'installation à votre premier import, en une vingtaine de minutes.</p>
-      <div class="pills"><span class="pill">Épargne réglementée</span><span class="pill">PEA &amp; CTO</span><span class="pill">Crypto</span><span class="pill">Immobilier &amp; crédits</span><span class="pill">Budget</span><span class="pill">Fiscalité</span></div>
-    </div>
-    <div class="mock"><div class="frame"><img src="img/tableau.png"></div></div>
-    <div class="meta"><span>Version de l'application <b>{{VERSION}}</b></span><span>Édition <b>{{EDITION}}</b></span></div>
-  </div>
+  <div class="top"></div>
+  <div class="logo"><i><svg viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15l5-5 3 3 6-7"/><circle cx="18" cy="6" r="1.7" fill="#F7931A" stroke="none"/></svg></i>Invest.co</div>
+  <h1>Votre patrimoine, enfin lisible.</h1>
+  <div class="tag">Épargne · Bourse · Crypto · Immobilier · Budget</div>
+  <div class="phone "><div class="scr"><img src="img/tableau.png"></div></div>
+  <div class="bot"><div class="kk">Guide utilisateur</div><div class="t">Prise en main<br>en 20 minutes</div><div class="s">Installez l'appli, choisissez vos modules et suivez tout votre argent au même endroit.</div>
+    <div class="v">Version {{VERSION}}<br>Édition {{EDITION}}</div></div>
+  
 </section>
-
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>Sommaire</span></div>
-  <div class="chap"><div><span class="kick">Bienvenue</span><h2>Sommaire</h2></div></div>
-  <div class="tgrid"><div class="tcard"><span class="tn">01</span><span class="tt"><b>Installer l'application</b><span>Socle · Android, iPhone, ordinateur</span></span><span class="tp">3</span></div><div class="tcard"><span class="tn">02</span><span class="tt"><b>Votre appli à la carte</b><span>Modules, profils, dépannage</span></span><span class="tp">4</span></div><div class="tcard"><span class="tn">03</span><span class="tt"><b>Premiers réglages</b><span>Socle · données, situation fiscale</span></span><span class="tp">6</span></div><div class="tcard"><span class="tn">04</span><span class="tt"><b>Épargne et livrets</b><span>Module Épargne réglementée</span></span><span class="tp">7</span></div><div class="tcard"><span class="tn">05</span><span class="tt"><b>Bourse et crypto</b><span>Modules Bourse et Crypto</span></span><span class="tp">9</span></div><div class="tcard"><span class="tn">06</span><span class="tt"><b>Importer vos relevés</b><span>Module Import de relevés</span></span><span class="tp">10</span></div><div class="tcard"><span class="tn">07</span><span class="tt"><b>Budget</b><span>Module Budget</span></span><span class="tp">12</span></div><div class="tcard"><span class="tn">08</span><span class="tt"><b>Immobilier et crowdfunding</b><span>Modules Immobilier et crédits, Crowdfunding</span></span><span class="tp">13</span></div><div class="tcard"><span class="tn">09</span><span class="tt"><b>Accueil, analyse et sécurité</b><span>Socle · Analyse, Achat-revente</span></span><span class="tp">16</span></div><div class="tcard"><span class="tn">10</span><span class="tt"><b>Questions fréquentes</b><span>Confidentialité, appareils, code oublié</span></span><span class="tp">19</span></div><div class="tcard"><span class="tn">11</span><span class="tt"><b>Informations importantes</b><span>Avertissements et limites</span></span><span class="tp">20</span></div></div>
-  <h3 style="margin-top:8mm">Lire selon votre profil</h3>
-  <p>Chaque chapitre indique en tête le module qu'il concerne. Commencez par le chapitre 01, puis lisez ceux de votre profil.</p>
-  <div class="pgrid"><div class="pcard"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div><h4>Épargnant</h4><p>Livrets et budget du mois</p><div class="ch">Chap. 02 · 04 · 07</div></div><div class="pcard"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></div><h4>Bourse</h4><p>PEA, compte-titres, crypto</p><div class="ch">Chap. 02 · 05 · 06</div></div><div class="pcard"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></div><h4>Immobilier</h4><p>Biens, crédits, crowdfunding</p><div class="ch">Chap. 02 · 08</div></div><div class="pcard"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg></div><h4>Tout</h4><p>Les neuf modules</p><div class="ch">Tout le guide</div></div></div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>2</span></div>
+<section class="page tocp">
+  <div class="toc"><h2>Sommaire</h2><p class="intro">Onze chapitres courts. Commencez par les deux premiers, puis lisez ceux de vos modules.</p><div class="list"><div class="it"><span class="num">01</span><div><b>Installer l'appli</b><span>Android, iPhone, ordinateur</span></div><span class="pg">3</span></div><div class="it"><span class="num">02</span><div><b>Votre appli à la carte</b><span>Modules et profils</span></div><span class="pg">4</span></div><div class="it"><span class="num">03</span><div><b>Premiers réglages</b><span>Données, fiscalité</span></div><span class="pg">6</span></div><div class="it"><span class="num">04</span><div><b>Épargne et livrets</b><span>Quinzaines, plafonds</span></div><span class="pg">7</span></div><div class="it"><span class="num">05</span><div><b>Bourse et crypto</b><span>PEA, dividendes, direct</span></div><span class="pg">9</span></div><div class="it"><span class="num">06</span><div><b>Importer vos relevés</b><span>Banques, plateformes</span></div><span class="pg">10</span></div><div class="it"><span class="num">07</span><div><b>Budget</b><span>Prévu et réel, récurrentes</span></div><span class="pg">12</span></div><div class="it"><span class="num">08</span><div><b>Immobilier et crowdfunding</b><span>Biens, crédits, projets</span></div><span class="pg">13</span></div><div class="it"><span class="num">09</span><div><b>Accueil, analyse et sécurité</b><span>Chiffres clés, verrouillage</span></div><span class="pg">16</span></div><div class="it"><span class="num">10</span><div><b>Questions fréquentes</b><span>Confidentialité, appareils</span></div><span class="pg">19</span></div><div class="it"><span class="num">11</span><div><b>Informations importantes</b><span>Limites et avertissements</span></div><span class="pg">20</span></div></div></div>
+  <div class="prof"><h3>Votre parcours</h3><div class="p"><b>Épargnant</b><span>02 · 04 · 07</span></div><div class="p"><b>Bourse</b><span>02 · 05 · 06</span></div><div class="p"><b>Immobilier</b><span>02 · 08</span></div><div class="p"><b>Tout</b><span>Tout le guide</span></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>2</span></div>
 </section>
-
-<!-- ======================= 01 INSTALLER ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>01 · Installation</span></div>
-  <div class="chap"><span class="n">01</span><div><span class="kick">Démarrer · socle commun</span><h2>Installer l'application</h2></div></div>
-  <p class="lead">Invest.co est une application web installable : elle s'ouvre depuis votre navigateur, puis s'installe sur votre écran d'accueil comme une application classique, sans passer par un store.</p>
-  <div class="g2">
-    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg></div><h4>Android — Chrome</h4>
-      <ol class="steps" style="margin-top:2mm"><li>Ouvrez le lien d'accès dans <b>Chrome</b>.</li><li>Touchez le menu <span class="k">⋮</span> puis <b>Installer l'application</b> (ou « Ajouter à l'écran d'accueil »).</li><li>Lancez Invest.co depuis son icône.</li></ol></div>
-    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 5h2"/></svg></div><h4>iPhone — Safari</h4>
-      <ol class="steps" style="margin-top:2mm"><li>Ouvrez le lien d'accès dans <b>Safari</b>.</li><li>Touchez <span class="k">Partager</span> puis <b>Sur l'écran d'accueil</b>, et validez.</li><li>Lancez Invest.co depuis son icône.</li></ol></div>
-  </div>
-  <div class="card" style="margin-top:4mm"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div><h4>Ordinateur</h4><p>Invest.co fonctionne aussi dans Chrome, Edge ou Safari sur ordinateur ; Chrome et Edge proposent également de l'installer. Chaque appareil conserve ses propres données (voir chapitre 09 pour passer de l'un à l'autre).</p></div>
-  <div class="note info"><b class="t">Fonctionne hors connexion</b>Une fois installée, l'application s'ouvre même sans réseau. Seuls les cours de bourse et de crypto nécessitent une connexion pour être actualisés.</div>
-  <div class="note tip"><b class="t">Mises à jour automatiques</b>Les nouvelles versions s'installent sans passer par un store : un bandeau orange « Nouvelle version » apparaît, un appui suffit. Une copie de sécurité de vos données est réalisée juste avant.</div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>3</span></div>
+<section class="page open">
+  <div class="band"></div><div class="n">01</div><div class="mod">Socle commun</div><h2>Installer<br>l'appli</h2><p class="lead">Une application web qui s'installe sur votre écran d'accueil, sans passer par un store.</p>
+  <div class="phone short"><div class="scr"><img src="img/accueil.png"></div></div>
+  <div class="flow" style="top:122mm;--h:0mm"><div class="os" style="clear:both;margin-top:30mm"><div class="o"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><h4>Android</h4><p class="small" style="margin-bottom:3mm">Chrome</p><ol><li>Ouvrez le lien d'accès dans <b>Chrome</b>.</li><li>Menu <span class="k">⋮</span> › <b>Installer l'application</b>.</li><li>Lancez Invest.co depuis son icône.</li></ol></div><div class="o"><span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><h4>iPhone</h4><p class="small" style="margin-bottom:3mm">Safari</p><ol><li>Ouvrez le lien d'accès dans <b>Safari</b>.</li><li><span class="k">Partager</span> › <b>Sur l'écran d'accueil</b>.</li><li>Lancez Invest.co depuis son icône.</li></ol></div><div class="o"><span class="ico"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span><h4>Ordinateur</h4><p class="small" style="margin-bottom:3mm">Chrome, Edge, Safari</p><ol><li>Ouvrez le lien d'accès.</li><li>Chrome et Edge proposent de l'installer.</li><li>Chaque appareil garde ses propres données.</li></ol></div></div><div class="figs "><div class="fig"><div class="big">Hors ligne</div><p>L'appli s'ouvre sans réseau ; seuls les cours ont besoin d'une connexion.</p></div><div class="fig alt"><div class="big">Mises à jour</div><p>Un bandeau orange « Nouvelle version », un appui suffit.</p></div><div class="fig alt"><div class="big">Sauvegarde</div><p>Une copie de vos données est faite avant chaque mise à jour.</p></div></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>3</span></div>
 </section>
-
-<!-- ======================= 02 VOTRE APPLI À LA CARTE ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>02 · Votre appli à la carte</span></div>
-  <div class="chap"><span class="n">02</span><div><span class="kick">Démarrer · modules</span><h2>Votre appli à la carte</h2></div></div>
-  <p class="lead">Invest.co est faite de modules : vous n'affichez que ce que vous suivez. Le reste se rajoute en un geste, sans jamais rien perdre.</p>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Au premier lancement</h3>
-      <ol class="steps">
-        <li>Touchez <b>Partir de mes données (vide)</b>. Pour découvrir l'appli avec des données fictives, choisissez plutôt <b>Explorer avec les exemples</b> : tous les modules sont alors affichés.</li>
-        <li>L'écran <b>Composez votre appli</b> propose un point de départ : <b>Épargnant</b>, <b>Bourse</b>, <b>Immobilier</b> ou <b>Tout</b>.</li>
-        <li>Touchez les tuiles pour ajouter ou retirer un module.</li>
-        <li>Touchez <b>Continuer</b> : l'appli s'ouvre avec seulement vos onglets.</li>
-      </ol>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:88mm"><img src="img/composer.png"></div><figcaption><b>Figure 1</b> — Composez votre appli</figcaption></figure>
-  </div>
-  <h3>Les neuf modules</h3>
-  <div class="mgrid3"><div class="mtile"><div class="top"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/></svg></span><span class="chip">Chap. 04</span></div><b>Épargne réglementée</b><span class="d">Livrets, PEL, assurance-vie, liquidités</span></div><div class="mtile"><div class="top"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span class="chip">Chap. 05</span></div><b>Bourse</b><span class="d">PEA, compte-titres, ETF, dividendes</span></div><div class="mtile"><div class="top"><span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><span class="chip">Chap. 05</span></div><b>Crypto</b><span class="d">Cours en direct, formulaire 2086</span></div><div class="mtile"><div class="top"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span class="chip">Chap. 08</span></div><b>Immobilier et crédits</b><span class="d">Biens, loyers, charges, emprunts</span></div><div class="mtile"><div class="top"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6M9 10h.01M15 10h.01"/></svg></span><span class="chip">Chap. 08</span></div><b>Crowdfunding</b><span class="d">Projets Bricks, échéancier, portefeuille</span></div><div class="mtile"><div class="top"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><span class="chip">Chap. 07</span></div><b>Budget</b><span class="d">Prévu et réel, dépenses récurrentes</span></div><div class="mtile"><div class="top"><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span><span class="chip">Chap. 09</span></div><b>Achat-revente</b><span class="d">Marge, micro-BIC, seuils DAC7</span></div><div class="mtile"><div class="top"><span class="ic"><svg viewBox="0 0 24 24"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg></span><span class="chip">Chap. 09</span></div><b>Analyse et fiscalité</b><span class="d">Performance, cash-flow, récap fiscal</span></div><div class="mtile"><div class="top"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span><span class="chip">Chap. 06</span></div><b>Import de relevés</b><span class="d">CSV ou PDF de vos banques et plateformes</span></div></div>
-  <p class="small" style="margin-top:3mm">En préparation : assurance-vie complète, PER, SCPI, or, comptes à l'étranger, autres actifs.</p>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>4</span></div>
+<section class="page open">
+  <div class="band"></div><div class="n">02</div><div class="mod">Démarrer · modules</div><h2>Votre appli<br>à la carte</h2><p class="lead">N'affichez que ce que vous suivez. Le reste se rajoute en un geste, sans rien perdre.</p>
+  <div class="phone "><div class="scr"><img src="img/composer.png"></div></div>
+  <div class="flow" style="top:120mm;--h:30mm"><div class="steps"><div class="st"><span class="num">1</span><div><b>Partir de vos données</b><p>Au premier lancement, touchez « Partir de mes données ».</p></div></div><div class="st"><span class="num">2</span><div><b>Choisir un point de départ</b><p>Épargnant, Bourse, Immobilier ou Tout.</p></div></div><div class="st"><span class="num">3</span><div><b>Ajuster</b><p>Touchez les tuiles pour ajouter ou retirer un module.</p></div></div><div class="st"><span class="num">4</span><div><b>Continuer</b><p>L'appli s'ouvre avec vos seuls onglets.</p></div></div></div><h3 style="clear:both;margin-top:9mm">Neuf modules au choix</h3><div class="mods"><div class="m"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/></svg></span><div>Épargne<span>Chapitre 04</span></div></div><div class="m"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><div>Bourse<span>Chapitre 05</span></div></div><div class="m"><span class="ico"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><div>Crypto<span>Chapitre 05</span></div></div><div class="m"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><div>Immobilier<span>Chapitre 08</span></div></div><div class="m"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6M9 10h.01M15 10h.01"/></svg></span><div>Crowdfunding<span>Chapitre 08</span></div></div><div class="m"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><div>Budget<span>Chapitre 07</span></div></div><div class="m"><span class="ico"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span><div>Achat-revente<span>Chapitre 09</span></div></div><div class="m"><span class="ico"><svg viewBox="0 0 24 24"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg></span><div>Analyse<span>Chapitre 09</span></div></div><div class="m"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span><div>Import<span>Chapitre 06</span></div></div></div><p class="small" style="margin-top:4mm">En préparation : assurance-vie complète, PER, SCPI, or, comptes à l'étranger, autres actifs.</p></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>4</span></div>
 </section>
-
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>02 · Votre appli à la carte</span></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Changer de modules à tout moment</h3>
-      <p>Ouvrez <span class="path">⚙ Réglages › Modules</span>.</p>
-      <ul class="dots">
-        <li><b>Dans votre appli</b> : vos modules actifs. Touchez <b>Masquer</b> pour en retirer un ; les flèches règlent l'ordre des onglets de Placements.</li>
-        <li><b>Catalogue</b> : les modules masqués, en tuiles. Touchez une tuile pour la rajouter. Le repère <b>données masquées</b> signale un module qui contient déjà des données.</li>
-        <li><b>Prévus</b> : les modules à venir, ajoutés un par version.</li>
-      </ul>
-      <div class="note tip"><b class="t">Masquer ne supprime rien</b>Les données d'un module masqué restent enregistrées et sauvegardées. Elles comptent toujours dans votre patrimoine net, sur une ligne <b>Modules masqués</b> de l'accueil, et dans votre récap fiscal.</div>
-      <h3>Modules liés</h3>
-      <p><b>Crowdfunding et Épargne</b> : le portefeuille de la plateforme est un compte d'épargne. Masquer l'Épargne masque donc aussi le Crowdfunding ; rajouter le Crowdfunding rajoute l'Épargne. L'appli vous le signale.</p>
-      <p><b>Bourse et Crypto</b> partagent un onglet. Avec les deux, il s'appelle « Bourse » ; avec la Crypto seule, « Crypto ». Une crypto détenue dans un PEA reste rangée avec la Bourse.</p>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:150mm"><img src="img/modules.png"></div><figcaption><b>Figure 2</b> — Réglages › Modules</figcaption></figure>
-  </div>
-  <h3>Vous ne trouvez pas un écran ?</h3>
-  <table>
-    <tr><th>Il vous manque…</th><th>Activez le module</th></tr>
-    <tr><td>L'onglet Budget</td><td>Budget</td></tr>
-    <tr><td>L'onglet Revente</td><td>Achat-revente</td></tr>
-    <tr><td>Le lien « Analyse » de l'accueil</td><td>Analyse et fiscalité</td></tr>
-    <tr><td>Un onglet de Placements</td><td>Épargne réglementée, Bourse, Crypto, Immobilier et crédits ou Crowdfunding</td></tr>
-    <tr><td>« Projet Bricks » dans Ajouter</td><td>Crowdfunding</td></tr>
-    <tr><td>« Importer un relevé » dans Ajouter</td><td>Import de relevés</td></tr>
-  </table>
-  <div class="note info" style="margin-top:2mm"><b class="t">Toujours présent, quels que soient vos modules</b>L'accueil et votre patrimoine net, le compte courant, les objectifs, les alertes, les sauvegardes, le verrouillage et les réglages.</div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>5</span></div>
+<section class="page cont">
+  <div class="hd"><b>02</b>Votre appli à la carte</div><div class="phone "><div class="scr"><img src="img/modules.png"></div></div>
+  <div class="flow" style="top:30mm;--h:124mm"><h3>Changer de modules à tout moment</h3><p>Ouvrez <span class="path">Réglages › Modules</span>.</p><ul><li><b>Dans votre appli</b> : touchez Masquer pour retirer un module ; les flèches règlent l'ordre des onglets.</li><li><b>Catalogue</b> : touchez une tuile pour la rajouter.</li><li><b>Prévus</b> : les modules à venir.</li></ul><h3>Modules liés</h3><p><b>Crowdfunding et Épargne</b> : masquer l'Épargne masque aussi le Crowdfunding, dont le portefeuille est un compte d'épargne.</p><p><b>Bourse et Crypto</b> partagent un onglet, « Crypto » si vous ne gardez que la Crypto.</p><div class="figs "><div class="fig"><div class="big">Rien supprimé</div><p>Un module masqué garde toutes ses données.</p></div><div class="fig alt"><div class="big">Total juste</div><p>Sa valeur reste dans votre patrimoine, ligne « Modules masqués ».</p></div><div class="fig alt"><div class="big">Fiscalité</div><p>Le récap fiscal compte toujours tout.</p></div></div><h3>Vous ne trouvez pas un écran ?</h3><div class="rows"><div class="r"><b>L'onglet Budget</b><span>Activez le module Budget</span></div><div class="r"><b>L'onglet Revente</b><span>Activez Achat-revente</span></div><div class="r"><b>Le lien Analyse</b><span>Activez Analyse et fiscalité</span></div><div class="r"><b>Un onglet de Placements</b><span>Activez Épargne, Bourse, Crypto, Immobilier ou Crowdfunding</span></div><div class="r"><b>Importer un relevé</b><span>Activez Import de relevés</span></div></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>5</span></div>
 </section>
-
-<!-- ======================= 02 PREMIERS RÉGLAGES ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>03 · Premiers réglages</span></div>
-  <div class="chap"><span class="n">03</span><div><span class="kick">Démarrer · socle commun</span><h2>Premiers réglages</h2></div></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Partir de vos propres données</h3>
-      <p>Avec <b>Partir de mes données (vide)</b>, l'appli démarre avec un simple compte courant, prêt à être complété ; les exemples sont effacés. Vous pourrez repartir de zéro à tout moment depuis les Réglages.</p>
-      <p>La barre du bas suit vos modules : <b>Accueil</b>, <b>Placements</b>, <b>Budget</b>, <b>Revente</b> et <b>Ajouter</b> quand tout est actif.</p>
-      <h3>Renseigner votre situation fiscale</h3>
-      <p>Pour afficher des revenus <b>nets d'impôt</b> fiables, ouvrez <span class="path">⚙ Réglages › Ma situation fiscale</span>. Les lignes utiles dépendent de vos modules :</p>
-      <table>
-        <tr><th>Réglage</th><th>À indiquer</th></tr>
-        <tr><td>Tranche d'imposition</td><td>Votre TMI (0, 11, 30, 41 ou 45 %), visible sur votre avis d'impôt.</td></tr>
-        <tr><td>Crypto / CTO</td><td>Prélèvement forfaitaire unique (PFU) ou option pour le barème.</td></tr>
-        <tr><td>Crowdfunding</td><td>PFU ou barème pour les intérêts perçus.</td></tr>
-        <tr><td>Achat-revente</td><td>Ventes occasionnelles d'objets personnels, ou activité d'achat-revente (micro-BIC).</td></tr>
-      </table>
-      <div class="note info"><b class="t">Taux officiels à jour</b>Taux des livrets, plafonds, prélèvements sociaux et PFU sont fournis avec leur date d'entrée en vigueur. Consultez-les dans <span class="path">Réglages › Paramètres réglementaires</span>.</div>
-    </div>
-    <div>
-      <figure class="fig"><div class="ph"><img src="img/accueil.png"></div><figcaption><b>Figure 3</b> — Écran de bienvenue</figcaption></figure>
-      <figure class="fig" style="margin-top:5mm"><div class="ph" style="max-height:92mm"><img src="img/reglages.png"></div><figcaption><b>Figure 4</b> — Situation fiscale</figcaption></figure>
-    </div>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>6</span></div>
+<section class="page open">
+  <div class="band"></div><div class="n">03</div><div class="mod">Socle commun</div><h2>Premiers<br>réglages</h2><p class="lead">Deux minutes pour des chiffres justes : votre point de départ et votre situation fiscale.</p>
+  <div class="phone "><div class="scr"><img src="img/reglages.png"></div></div>
+  <div class="flow" style="top:122mm;--h:30mm"><h3>Partir de vos données</h3><p>Avec <b>Partir de mes données</b>, l'appli démarre avec un simple compte courant ; les exemples sont effacés.</p><h3 style="clear:both;margin-top:10mm">Votre situation fiscale</h3><p>Ouvrez <span class="path">Réglages › Ma situation fiscale</span> pour des revenus nets d'impôt fiables :</p><div class="rows"><div class="r"><b>Tranche d'imposition</b><span>Votre TMI, sur votre avis d'impôt : 0, 11, 30, 41 ou 45 %.</span></div><div class="r"><b>Crypto, compte-titres</b><span>Prélèvement forfaitaire unique (PFU) ou barème.</span></div><div class="r"><b>Crowdfunding</b><span>PFU ou barème pour les intérêts.</span></div><div class="r"><b>Achat-revente</b><span>Ventes occasionnelles ou activité (micro-BIC).</span></div></div><div class="tip "><b>Taux à jour</b><p>Taux des livrets, plafonds et prélèvements sont fournis avec leur date. À consulter dans Réglages › Paramètres réglementaires.</p></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>6</span></div>
 </section>
-
-<!-- ======================= 03 ÉPARGNE BOURSE CRYPTO ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>04 · Épargne et livrets</span></div>
-  <div class="chap"><span class="n">04</span><div><span class="kick">Module · Épargne réglementée</span><h2>Épargne et livrets</h2></div></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Ajouter un compte d'épargne</h3>
-      <ol class="steps">
-        <li>Ouvrez <span class="path">Placements › Épargne › + Produit</span>.</li>
-        <li>Choisissez le type (Livret A, LDDS, LEP, PEL, assurance-vie, compte courant…), l'établissement et la date d'ouverture.</li>
-        <li>Saisissez le <b>solde actuel</b> et laissez cochée la case <b>Argent déjà détenu</b> : ce solde existant n'est compté ni comme une épargne nouvelle ni comme un gain. Pour les livrets réglementés, laissez le taux vide : il est appliqué automatiquement.</li>
-      </ol>
-      <p>Les versements et retraits suivants se saisissent comme des <b>opérations</b> : touchez la fiche du produit, puis <b>+ Opération</b>. Le solde est toujours recalculé à partir de l'historique, et les intérêts suivent la règle officielle des quinzaines.</p>
-      <div class="note tip"><b class="t">Plafonds surveillés</b>Invest.co vous prévient lorsqu'un livret approche de son plafond de versements, ainsi que pour le PEA.</div>
-      <h3>Lire l'écran Épargne</h3>
-      <p>La carte du haut donne le total, les <b>intérêts de l'année</b> (estimation nette d'impôt) et le montant de chaque famille : épargne réglementée, assurance-vie, liquidités. Dessous, chaque compte occupe une ligne : <b>solde</b>, <b>taux</b>, intérêts de l'année et, pour un livret, la jauge de son plafond. Touchez une ligne pour le détail : montant versé, intérêts perçus et opérations.</p>
-      <h3>Comptes à taux libre</h3>
-      <p>Pour une assurance-vie, un livret bancaire ou un portefeuille de plateforme, indiquez le taux et sa <b>date d'entrée en vigueur</b>. Lorsqu'il change, saisissez le nouveau taux à sa date : l'ancien reste appliqué aux jours passés.</p>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/epargne.png"></div><figcaption><b>Figure 5</b> — Épargne regroupée par famille</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>7</span></div>
+<section class="page open">
+  <div class="band"></div><div class="n">04</div><div class="mod">Module Épargne réglementée</div><h2>Épargne<br>et livrets</h2><p class="lead">Vos livrets, PEL, assurance-vie et liquidités, avec les intérêts de l'année.</p>
+  <div class="phone "><div class="scr"><img src="img/epargne.png"></div></div>
+  <div class="flow" style="top:122mm;--h:28mm"><div class="steps"><div class="st"><span class="num">1</span><div><b>Ajouter un produit</b><p><span class="path">Placements › Épargne › + Produit</span> : type, établissement, date.</p></div></div><div class="st"><span class="num">2</span><div><b>Saisir le solde</b><p>Laissez cochée « Argent déjà détenu » : ni épargne nouvelle, ni gain.</p></div></div><div class="st"><span class="num">3</span><div><b>Suivre les opérations</b><p>Versements et retraits se saisissent sur la fiche du produit.</p></div></div></div><div class="figs "><div class="fig"><div class="big">Quinzaines</div><p>Les intérêts des livrets suivent la règle officielle.</p></div><div class="fig alt"><div class="big">Plafonds</div><p>Une alerte quand un livret approche de son plafond.</p></div><div class="fig alt"><div class="big">Taux datés</div><p>Un nouveau taux s'applique à sa date, l'ancien au passé.</p></div></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>7</span></div>
 </section>
-
-<!-- ======================= 03 · INTÉRÊTS DES LIVRETS ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>04 · Intérêts des livrets</span></div>
-  <h3 style="margin-top:0">Les intérêts à la quinzaine</h3>
-  <p class="lead">Sur les livrets réglementés (Livret A, LDDS, LEP, Livret Jeune, CEL), les intérêts ne se calculent pas au jour près mais par <b>périodes de quinze jours</b> : du 1er au 15 et du 16 à la fin du mois.</p>
-  <div class="qz">
+<section class="page cont">
+  <div class="hd"><b>04</b>Épargne et livrets</div>
+  <div class="flow" style="top:30mm;--h:0mm"><h3>Les intérêts à la quinzaine</h3><p style="max-width:150mm">Sur les livrets réglementés (Livret A, LDDS, LEP, Livret Jeune, CEL), les intérêts se calculent par périodes de quinze jours : du 1<sup>er</sup> au 15 et du 16 à la fin du mois.</p><div class="qz">
     <div class="row head"><span></span><span class="seg">1 – 15 mars</span><span class="seg">16 – 31 mars</span><span class="seg">1 – 15 avril</span><span class="seg">16 – 30 avril</span></div>
     <div class="row"><span class="lab">1 000 € versés<br>le 10 mars</span><span class="seg off"><span class="mk" style="left:58%">▼ 10/03</span>sans intérêts</span><span class="seg on">intérêts</span><span class="seg on">intérêts</span><span class="seg on">intérêts</span></div>
     <div class="row"><span class="lab">1 000 € retirés<br>le 20 mars</span><span class="seg on">intérêts</span><span class="seg off"><span class="mk" style="left:22%">▼ 20/03</span>sans intérêts</span><span class="seg off">—</span><span class="seg off">—</span></div>
     <div class="leg"><span><i style="background:var(--orange)"></i>la somme rapporte</span><span><i style="background:var(--card);border:1px solid var(--line2)"></i>la somme ne rapporte pas</span></div>
-  </div>
-  <div class="g2" style="margin-top:4mm">
-    <div class="card"><h4>Un versement</h4><p>Il rapporte à partir du début de la quinzaine <b>suivante</b>. Versé le 10 mars : intérêts dès le 16 mars. Versé le 20 mars : dès le 1er avril.</p></div>
-    <div class="card"><h4>Un retrait</h4><p>Il cesse de rapporter dès le début de la quinzaine <b>en cours</b>. Retiré le 20 mars : plus d'intérêts depuis le 16 mars.</p></div>
-  </div>
-  <div class="note tip"><b class="t">Le bon réflexe</b>Versez en fin de quinzaine (le 15 ou le dernier jour du mois) et retirez en début de quinzaine (le 1er ou le 16). Les intérêts de l'année sont ajoutés au livret le 31 décembre.</div>
-  <p>Sous chaque livret, Invest.co indique à partir de quand un versement effectué le jour même commencera à rapporter, par exemple « Versé ce jour : intérêts dès le 1 nov. ».</p>
-  <h3>Comptes rémunérés au jour le jour</h3>
-  <p>Les livrets bancaires, l'assurance-vie et les portefeuilles de plateforme sont calculés <b>au jour le jour</b> : chaque jour, le solde rapporte le taux annuel divisé par le nombre de jours de l'année.</p>
-  <div class="note info"><b class="t">Les explications à portée de main</b>Dans l'application, les explications sont regroupées derrière les boutons <span class="k">?</span> placés à côté des titres et des champs. Touchez-les à tout moment : votre saisie en cours est conservée.</div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>8</span></div>
-</section>
 
-<!-- ======================= 03 bis BOURSE / PEA ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>05 · Bourse et crypto</span></div>
-  <div class="chap"><span class="n">05</span><div><span class="kick">Modules · Bourse · Crypto</span><h2>Bourse et crypto</h2></div></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Ajouter vos titres</h3>
-      <p><span class="path">Placements › Bourse › + Actif</span> : nom, symbole et enveloppe (PEA, compte-titres, plateforme crypto). Un ETF parisien se saisit avec son code Euronext (<span class="k">CW8</span>), le bitcoin avec <span class="k">BTC-EUR</span>. L'ISIN est facultatif.</p>
-      <p>Vos titres sont <b>regroupés par enveloppe</b>, avec la valeur, le gain depuis l'achat et la <b>variation du jour</b>. Touchez une ligne pour le prix de revient, les <b>seuils de revente</b> et les opérations.</p>
-      <p><b>Cours :</b> les cryptos se mettent à jour <b>en direct</b> ; actions et ETF avec <span class="k">↻ Actualiser</span>.</p>
-      <h3>La fiche PEA</h3>
-      <p>Renseignez l'ouverture et vos <b>versements</b> pour suivre :</p>
-      <ul class="dots">
-        <li>le <b>plafond restant</b> (150 000 €) ;</li>
-        <li>les <b>liquidités</b> non investies ;</li>
-        <li>l'<b>ancienneté</b> : avant 5 ans, un retrait clôture le plan.</li>
-      </ul>
-      <h3>Dividendes</h3>
-      <p><span class="path">+ Ajouter › Opération › Dividende</span>, montant net reçu. Le prix de revient ne bouge pas ; le total figure dans le récap fiscal.</p>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/pea.png"></div><figcaption><b>Figure 6</b> — Fiche PEA et portefeuille</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>9</span></div>
+<div class="figs two"><div class="fig"><div class="big">Versement</div><p>Il rapporte dès la quinzaine suivante : versé le 10 mars, intérêts dès le 16.</p></div><div class="fig alt"><div class="big">Retrait</div><p>Il cesse de rapporter dès le début de la quinzaine en cours.</p></div></div><div class="tip "><b>Le bon réflexe</b><p>Versez le 15 ou le dernier jour du mois, retirez le 1<sup>er</sup> ou le 16. Les intérêts sont versés le 31 décembre.</p></div><h3>Comptes au jour le jour</h3><p>Livrets bancaires, assurance-vie et portefeuilles de plateforme rapportent chaque jour le taux annuel divisé par le nombre de jours de l'année.</p><h3>Les explications à portée de main</h3><p>Dans l'appli, touchez les boutons <span class="k">?</span> à côté des titres : votre saisie en cours est conservée.</p></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>8</span></div>
 </section>
-
-<!-- ======================= 04 IMPORT BANQUE ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>06 · Importer vos relevés</span></div>
-  <div class="chap"><span class="n">06</span><div><span class="kick">Module · Import de relevés</span><h2>Importer vos relevés</h2></div></div>
-  <p class="lead">Plutôt que de tout saisir, importez le relevé de votre banque : Invest.co reconnaît automatiquement le format du fichier et classe chaque opération.</p>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Relevé bancaire</h3>
-      <ol class="steps">
-        <li>Depuis votre espace client bancaire, exportez vos opérations au format <b>CSV</b> (rubrique « Exporter » ou « Télécharger »).</li>
-        <li>Dans Invest.co : <span class="path">+ Ajouter › Importer un relevé › Fichier CSV</span>.</li>
-        <li>Vérifiez l'aperçu : chaque ligne reçoit un type (dépense, revenu, transfert) et une catégorie, modifiables avant validation.</li>
-        <li>Touchez <b>Importer</b>.</li>
-      </ol>
-      <p>Compatible avec les exports CSV des principales banques et néobanques : colonnes Débit / Crédit, montant signé ou colonne de sens, formats de dates et de montants français ou anglais. Si une colonne est mal identifiée, corrigez-la dans la liste : l'aperçu se met à jour instantanément.</p>
-      <div class="note tip"><b class="t">Aucun doublon</b>Vous pouvez importer des relevés qui se chevauchent : les opérations déjà présentes sont automatiquement ignorées.</div>
-      <div class="note info"><b class="t">Investissements identifiés</b>Les virements vers vos plateformes d'investissement (crypto, courtiers, assurance-vie en ligne, crowdfunding) sont classés dans la catégorie <b>Investissement</b>, distincte de vos dépenses courantes.</div>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/import_banque.png"></div><figcaption><b>Figure 7</b> — Aperçu avant import</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>10</span></div>
+<section class="page open">
+  <div class="band"></div><div class="n">05</div><div class="mod">Modules Bourse et Crypto</div><h2>Bourse<br>et crypto</h2><p class="lead">Vos titres regroupés par enveloppe, avec la variation du jour et le gain depuis l'achat.</p>
+  <div class="phone "><div class="scr"><img src="img/pea.png"></div></div>
+  <div class="flow" style="top:122mm;--h:0mm"><div style="height:26mm"></div><div class="figs "><div class="fig"><div class="big">150 000 €</div><p>Plafond de versements du PEA, suivi automatiquement.</p></div><div class="fig alt"><div class="big">5 ans</div><p>Avant 5 ans, un retrait clôture le PEA.</p></div><div class="fig alt"><div class="big">En direct</div><p>Les cours crypto se mettent à jour en continu.</p></div></div><div class="cols"><div><h3 class="first">Ajouter un titre</h3><p><span class="path">Placements › Bourse › + Actif</span> : nom, symbole et enveloppe. Un ETF parisien se saisit avec son code Euronext, par exemple <b>CW8</b>.</p><h3>Suivre vos titres</h3><p>Touchez une ligne pour le prix de revient, les <b>seuils de revente</b> et les opérations. Actions et ETF s'actualisent avec <b>Actualiser</b>.</p></div><div><h3 class="first">La fiche PEA</h3><p>Renseignez l'ouverture et vos versements : plafond restant, liquidités et ancienneté s'affichent seuls.</p><h3>Dividendes</h3><p><span class="path">Ajouter › Opération › Dividende</span>, montant net reçu. Le total apparaît dans votre récap fiscal.</p></div></div><div class="tip "><b>Astuce</b><p>Seulement des cryptos ? Masquez la Bourse dans Réglages › Modules : l'onglet devient « Crypto ».</p></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>9</span></div>
 </section>
-
-<!-- ======================= 04 bis IMPORT CRYPTO ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>06 · Importer vos relevés</span></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Export d'une plateforme crypto (exemple : Bitstack)</h3>
-      <ol class="steps">
-        <li>Dans l'application Bitstack : <span class="path">Compte › Documents › Déclaration fiscale</span>. L'historique vous est envoyé par e-mail.</li>
-        <li>Enregistrez le fichier <b>CSV</b> reçu sur votre appareil.</li>
-        <li>Dans Invest.co : <span class="path">+ Ajouter › Importer un relevé › Fichier CSV</span>. L'onglet <b>Plateforme</b> s'ouvre automatiquement.</li>
-        <li>Vérifiez l'actif de destination (créé automatiquement s'il n'existe pas) et le type de chaque ligne, puis <b>Importer</b>.</li>
-      </ol>
-      <table>
-        <tr><th>Type</th><th>Traitement</th></tr>
-        <tr><td>Achat</td><td>Achats ponctuels, programmés ou arrondis : ajoutés à votre prix de revient.</td></tr>
-        <tr><td>Gratuit</td><td>Parrainages et bonus : crypto reçue à coût nul.</td></tr>
-        <tr><td>Vente</td><td>Cession : plus-value calculée au prix de revient moyen.</td></tr>
-        <tr><td>Ignorer</td><td>Retrait vers votre propre portefeuille ou dépôt d'euros : ni achat ni vente.</td></tr>
-      </table>
-      <div class="note imp"><b class="t">Frais de plateforme</b>Par défaut, le montant en euros est considéré comme frais inclus. Si votre plateforme facture ses frais en supplément, décochez l'option correspondante avant d'importer. Utilisez toujours le fichier CSV, et non un relevé PDF.</div>
-      <h3>Relevé d'un livret ou d'un compte d'épargne</h3>
-      <p>Choisissez l'onglet <b>Épargne</b> et le compte concerné : versements, retraits, intérêts et virements avec votre compte courant y sont rattachés, sans double comptage. Le solde au début du relevé aligne l'historique, puis Invest.co compare son solde avec celui du relevé. Les intérêts de l'année sont alors recalculés sur vos vrais mouvements.</p>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:160mm"><img src="img/import_bitstack.png"></div><figcaption><b>Figure 8</b> — Import d'un export crypto</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>11</span></div>
+<section class="page open">
+  <div class="band"></div><div class="n">06</div><div class="mod">Module Import de relevés</div><h2>Importer<br>vos relevés</h2><p class="lead">Plutôt que de tout saisir, importez le relevé de votre banque : le format est reconnu tout seul.</p>
+  <div class="phone "><div class="scr"><img src="img/import_banque.png"></div></div>
+  <div class="flow" style="top:120mm;--h:30mm"><div class="steps"><div class="st"><span class="num">1</span><div><b>Exporter</b><p>Depuis votre banque, exportez vos opérations en CSV.</p></div></div><div class="st"><span class="num">2</span><div><b>Importer</b><p><span class="path">Ajouter › Importer un relevé › Fichier CSV</span>.</p></div></div><div class="st"><span class="num">3</span><div><b>Vérifier</b><p>Chaque ligne reçoit un type et une catégorie, modifiables.</p></div></div><div class="st"><span class="num">4</span><div><b>Valider</b><p>Touchez Importer.</p></div></div></div><div class="figs "><div class="fig"><div class="big">Zéro doublon</div><p>Les relevés qui se chevauchent sont dédoublonnés.</p></div><div class="fig alt"><div class="big">Investi ≠ dépensé</div><p>Les virements vers vos plateformes vont en « Investissement ».</p></div><div class="fig alt"><div class="big">Tous formats</div><p>Débit / crédit, montant signé, dates françaises ou anglaises.</p></div></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>10</span></div>
 </section>
-
-<!-- ======================= 05 BUDGET ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>07 · Budget</span></div>
-  <div class="chap"><span class="n">07</span><div><span class="kick">Module · Budget</span><h2>Budget</h2></div></div>
-  <div class="two">
-    <div>
-      <p class="lead">L'espace Budget suit votre compte courant mois par mois : où part l'argent, ce qui revient chaque mois, et l'écart avec ce que vous aviez prévu.</p>
-      <h3 style="margin-top:0">Fixer vos budgets</h3>
-      <p>Touchez <b>Budgets</b> et attribuez un montant mensuel à chaque catégorie. La liste <b>Prévu vs réel</b> montre, pour chaque catégorie, une barre de progression, ce qu'il reste ou le dépassement, et le mois précédent. Un budget dépassé s'affiche en rouge en haut de l'écran.</p>
-      <h3>Dépenses récurrentes</h3>
-      <p>Loyer, abonnements, assurances : ajoutez-les via <b>+ Récurrente</b>, ils sont enregistrés automatiquement à chaque échéance. Invest.co repère aussi les dépenses qui reviennent chaque mois et vous propose de les ajouter en un appui.</p>
-      <h3>Catégorisation automatique</h3>
-      <p>Les libellés sont classés automatiquement. Ajoutez vos propres règles dans <span class="path">Réglages › Règles de catégories</span>, par exemple « boulangerie » vers Courses ; elles s'appliquent en priorité.</p>
-      <div class="note info"><b class="t">Investir n'est pas dépenser</b>Le solde du mois distingue la part investie (« dont X € investis ») de vos dépenses courantes.</div>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/budget.png"></div><figcaption><b>Figure 9</b> — Budget du mois</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>12</span></div>
+<section class="page cont">
+  <div class="hd"><b>06</b>Importer vos relevés</div><div class="phone "><div class="scr"><img src="img/import_bitstack.png"></div></div>
+  <div class="flow" style="top:30mm;--h:126mm"><h3>Export d'une plateforme crypto</h3><p>Exemple avec Bitstack :</p><div class="steps"><div class="st"><span class="num">1</span><div><b>Demander l'export</b><p>Compte › Documents › Déclaration fiscale : le fichier arrive par e-mail.</p></div></div><div class="st"><span class="num">2</span><div><b>Importer le CSV</b><p>L'onglet Plateforme s'ouvre tout seul.</p></div></div><div class="st"><span class="num">3</span><div><b>Vérifier et valider</b><p>L'actif est créé s'il n'existe pas encore.</p></div></div></div><div class="rows"><div class="r"><b>Achat</b><span>Ponctuel, programmé ou arrondi : ajouté au prix de revient.</span></div><div class="r"><b>Gratuit</b><span>Parrainage, bonus : crypto reçue à coût nul.</span></div><div class="r"><b>Vente</b><span>Plus-value calculée au prix de revient moyen.</span></div><div class="r"><b>Ignorer</b><span>Retrait vers votre portefeuille, dépôt d'euros.</span></div></div><div class="tip "><b>Frais</b><p>Le montant est compté frais inclus. Décochez l'option si votre plateforme les facture en plus.</p></div><h3>Relevé d'un livret</h3><p>Onglet <b>Épargne</b> de l'import, puis le compte concerné : versements, retraits, intérêts et virements sont rattachés sans double comptage, et le solde est comparé à celui du relevé.</p></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>11</span></div>
 </section>
-
-<!-- ======================= 06 IMMOBILIER ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>08 · Immobilier et crowdfunding</span></div>
-  <div class="chap"><span class="n">08</span><div><span class="kick">Modules · Immobilier et crédits · Crowdfunding</span><h2>Immobilier et crowdfunding</h2></div></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Ajouter un bien</h3>
-      <p><span class="path">Placements › Immo › + Bien</span>, puis choisissez le <b>régime</b> :</p>
-      <table>
-        <tr><th>Régime</th><th>Ce qui est calculé</th></tr>
-        <tr><td>Résidence principale</td><td>Valeur, plus-value latente et crédit. Pas de loyer ni de rendement.</td></tr>
-        <tr><td>Location nue</td><td>Rendement brut et net, cash-flow mensuel, plus-value latente.</td></tr>
-        <tr><td>LMNP (meublé)</td><td>Mêmes indicateurs que la location nue.</td></tr>
-      </table>
-      <h3>Coût d'acquisition</h3>
-      <p>Indiquez séparément le <b>prix d'achat</b>, les <b>frais de notaire</b> et le montant des <b>travaux</b>. Leur somme forme le coût de revient, base du rendement et de la plus-value latente (valeur estimée moins coût de revient).</p>
-      <h3>Loyers et charges</h3>
-      <ul class="dots">
-        <li><b>Loyer mensuel</b> hors charges et <b>vacance locative</b> en mois par an (par exemple 0,5).</li>
-        <li><b>Frais de gestion</b> en pourcentage des loyers encaissés, si vous passez par une agence.</li>
-        <li>Charges annuelles : <b>taxe foncière</b>, assurance <b>PNO</b>, entretien ; charges mensuelles : <b>copropriété</b> non récupérable et autres charges.</li>
-      </ul>
-      <p>Le <b>rendement net</b> rapporte les loyers encaissés, diminués de toutes les charges, au coût de revient. Le <b>cash-flow</b> déduit en plus la mensualité du crédit associé.</p>
-      <div class="note info"><b class="t">Avant impôt</b>Le cash-flow et le rendement net sont calculés avant impôt sur les revenus fonciers ou BIC.</div>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/immo.png"></div><figcaption><b>Figure 10</b> — Bien locatif et crédit associé</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>13</span></div>
+<section class="page open">
+  <div class="band"></div><div class="n">07</div><div class="mod">Module Budget</div><h2>Budget</h2><p class="lead">Où part votre argent chaque mois, ce qui revient, et l'écart avec ce que vous aviez prévu.</p>
+  <div class="phone "><div class="scr"><img src="img/budget.png"></div></div>
+  <div class="flow" style="top:122mm;--h:28mm"><h3>Fixer vos budgets</h3><p>Touchez <b>Budgets</b> et donnez un montant à chaque catégorie. Un budget dépassé s'affiche en rouge en haut de l'écran.</p><div class="figs "><div class="fig"><div class="big">Prévu et réel</div><p>Une barre par catégorie, avec le reste ou le dépassement.</p></div><div class="fig alt"><div class="big">Récurrentes</div><p>Loyer, abonnements : enregistrés à chaque échéance.</p></div><div class="fig alt"><div class="big">Automatique</div><p>Les libellés sont classés seuls ; vos règles passent en priorité.</p></div></div><div class="cols"><div><h3 class="first">Dépenses récurrentes</h3><p>Ajoutez-les avec <b>+ Récurrente</b>. L'appli repère aussi celles qui reviennent chaque mois et vous propose de les ajouter.</p></div><div><h3 class="first">Vos règles</h3><p><span class="path">Réglages › Règles de catégories</span> : par exemple « boulangerie » vers Courses.</p></div></div><div class="tip "><b>Investir n'est pas dépenser</b><p>Le solde du mois isole la part investie (« dont X € investis ») de vos dépenses courantes.</p></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>12</span></div>
 </section>
-
-<!-- ======================= 06 bis CRÉDITS / CROWDFUNDING ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>08 · Immobilier et crowdfunding</span></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Crédits</h3>
-      <p><span class="path">+ Crédit</span> : capital emprunté, taux nominal, durée, date de déblocage et assurance, puis rattachez le crédit à son bien. Vous obtenez la mensualité, le <b>tableau d'amortissement</b> année par année et le capital restant dû, déduit automatiquement de votre <b>patrimoine net</b>.</p>
-      <div class="note tip"><b class="t">Vérifiez avec votre banque</b>Comparez le capital restant dû affiché avec le tableau d'amortissement remis par votre établissement : les deux doivent concorder au centime près.</div>
-      <h3>Valeur estimée</h3>
-      <p>Ajoutez une nouvelle estimation datée lorsque vous en obtenez une (agence, notaire, données de ventes). Les estimations précédentes sont conservées et la plus récente est utilisée pour votre patrimoine.</p>
-      <h3>Crowdfunding</h3>
-      <p>Vos projets ont leur propre onglet, <span class="path">Placements › Crowdfunding</span> : capital placé, revenus mensuels nets, portefeuille de la plateforme, puis une fiche compacte par projet avec sa progression et le prochain versement.</p>
-      <p>Une pastille signale ce qui demande votre attention : versements <b>à pointer</b> ou <b>capital à récupérer</b> à l'échéance.</p>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/bricks.png"></div><figcaption><b>Figure 11</b> — Onglet Crowdfunding</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>14</span></div>
+<section class="page open">
+  <div class="band"></div><div class="n">08</div><div class="mod">Modules Immobilier et Crowdfunding</div><h2>Immobilier et<br>crowdfunding</h2><p class="lead">Vos biens, leurs loyers et leurs crédits, puis vos projets de financement participatif.</p>
+  <div class="phone "><div class="scr"><img src="img/immo.png"></div></div>
+  <div class="flow" style="top:122mm;--h:28mm"><h3>Ajouter un bien</h3><p><span class="path">Placements › Immobilier › + Bien</span>, puis le régime : résidence principale, location nue ou LMNP.</p><div class="figs "><div class="fig"><div class="big">Rendement net</div><p>Loyers encaissés moins toutes les charges, sur le coût de revient.</p></div><div class="fig alt"><div class="big">Cash-flow</div><p>Le même, mensualité du crédit déduite.</p></div><div class="fig alt"><div class="big">Plus-value</div><p>Valeur estimée moins le coût de revient.</p></div></div><div class="cols"><div><h3 class="first">Coût d'acquisition</h3><p>Prix d'achat, frais de notaire et travaux, saisis séparément : leur somme forme le coût de revient.</p></div><div><h3 class="first">Loyers et charges</h3><p>Loyer hors charges, vacance en mois par an, gestion, taxe foncière, assurance PNO, entretien, copropriété.</p></div></div><div class="tip "><b>Avant impôt</b><p>Rendement et cash-flow sont calculés avant impôt sur les revenus fonciers ou BIC.</p></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>13</span></div>
 </section>
-
-<!-- ======================= 06 ter CROWDFUNDING : ÉCHÉANCIER ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>08 · Crowdfunding</span></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">L'échéancier d'un projet</h3>
-      <p>Touchez un projet : son échéancier s'affiche en liste, du plus récent au plus ancien, avec le <b>montant net</b> de chaque versement (intérêts bruts moins le prélèvement à la source).</p>
-      <h3>Versements reçus automatiquement</h3>
-      <p>Activez l'option dans l'onglet Crowdfunding : chaque échéance d'un projet « En cours » est comptée reçue à sa date et créditée sur le portefeuille. À l'activation, les échéances passées sont marquées reçues sans être recréditées. Un projet « Retard » ou « Défaut » reste à pointer à la main ; sinon, <b>Tout pointer</b> règle tous les versements en un geste.</p>
-      <h3>Un mois différent</h3>
-      <p>Touchez la ligne du mois pour saisir le <b>montant réellement reçu</b> ou indiquer qu'il n'est <b>pas encore reçu</b>. Seul ce mois change ; l'échéancier reste intact.</p>
-      <h3>Remboursement anticipé</h3>
-      <ul class="dots">
-        <li><b>Partiel</b> : le capital remboursé est crédité sur le portefeuille et les intérêts sont recalculés sur le capital restant dès l'échéance suivante.</li>
-        <li><b>Total</b> : le projet passe en « Remboursé » à cette date et les échéances suivantes disparaissent.</li>
-      </ul>
-      <h3>Le portefeuille de la plateforme</h3>
-      <p>L'argent non investi reste sur votre portefeuille, rémunéré <b>au jour le jour</b>. Les nouveaux projets y sont payés, les versements et le capital y reviennent ; <b>+ Intérêts reçus</b> enregistre sa rémunération. Rien n'est ajouté pour le passé : le solde saisi contient déjà vos opérations antérieures.</p>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/bricks_detail.png"></div><figcaption><b>Figure 12</b> — Échéancier d'un projet</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>15</span></div>
+<section class="page cont">
+  <div class="hd"><b>08</b>Immobilier et crowdfunding</div><div class="phone "><div class="scr"><img src="img/bricks.png"></div></div>
+  <div class="flow" style="top:30mm;--h:124mm"><h3>Crédits</h3><p><b>+ Crédit</b> : capital, taux nominal, durée, date de déblocage et assurance, puis rattachez-le à son bien. Vous obtenez la mensualité, le tableau d'amortissement et le capital restant dû, déduit de votre patrimoine net.</p><div class="tip "><b>À vérifier</b><p>Le capital restant dû doit concorder avec le tableau de votre banque.</p></div><h3>Valeur estimée</h3><p>Ajoutez une estimation datée à chaque nouvelle évaluation : les précédentes sont conservées, la plus récente compte.</p><h3>Crowdfunding</h3><p><span class="path">Placements › Crowdfunding</span> : capital placé, revenus mensuels nets, portefeuille de la plateforme et une fiche par projet avec sa progression.</p><p>Une pastille signale ce qui demande votre attention : versements à pointer, capital à récupérer.</p></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>14</span></div>
 </section>
-
-<!-- ======================= 07 PILOTAGE ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>09 · Accueil, analyse et sécurité</span></div>
-  <div class="chap"><span class="n">09</span><div><span class="kick">Socle · Analyse et fiscalité · Achat-revente</span><h2>Accueil, analyse et sécurité</h2></div></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">L'accueil</h3>
-      <p>En tête, votre <b>patrimoine net</b>, sa variation depuis le 1<sup>er</sup> janvier et la <b>variation du jour</b> de vos titres. Puis trois chiffres :</p>
-      <div class="g3" style="gap:2.5mm;margin:2mm 0 3mm">
-        <div class="card" style="padding:3mm"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div><h4>Disponible</h4><p>Livrets et comptes, en mois de dépenses.</p></div>
-        <div class="card" style="padding:3mm"><div class="ic"><svg viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></div><h4>Revenus passifs</h4><p>Intérêts, crowdfunding, dividendes.</p></div>
-        <div class="card" style="padding:3mm"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div><h4>Épargné</h4><p>Ce mois-ci, face à votre moyenne.</p></div>
-      </div>
-      <p><b>Où est votre argent</b> répartit vos actifs par classe ; touchez une ligne pour l'ouvrir. <b>À surveiller</b> garde les trois alertes utiles, avec leur action, puis viennent vos <b>objectifs</b>.</p>
-      <h3>L'écran Analyse</h3>
-      <p>Gains de l'année, évolution du patrimoine, répartition <b>brute</b> ou <b>nette de crédits</b>, performance, cash-flow sur douze mois et <b>récap fiscal</b>.</p>
-      <p><b>Achat-revente</b> suit le même modèle : marge nette, chiffre d'affaires, stock et montant imposable de l'année.</p>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/tableau.png"></div><figcaption><b>Figure 13</b> — Accueil</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>16</span></div>
+<section class="page cont">
+  <div class="hd"><b>08</b>Crowdfunding</div><div class="phone "><div class="scr"><img src="img/bricks_detail.png"></div></div>
+  <div class="flow" style="top:30mm;--h:124mm"><h3>L'échéancier d'un projet</h3><p>Touchez un projet : ses versements, du plus récent au plus ancien, avec le montant net de chacun.</p><h3>Versements automatiques</h3><p>Activez l'option : chaque échéance d'un projet « En cours » est comptée reçue à sa date et créditée sur le portefeuille. Un projet en retard reste à pointer ; <b>Tout pointer</b> règle tout en un geste.</p><h3>Un mois différent</h3><p>Touchez la ligne du mois pour saisir le montant reçu, ou « pas encore reçu ». Seul ce mois change.</p><div class="figs two"><div class="fig"><div class="big">Partiel</div><p>Le capital remboursé revient au portefeuille ; les intérêts sont recalculés.</p></div><div class="fig alt"><div class="big">Total</div><p>Le projet passe en « Remboursé » ; les échéances suivantes disparaissent.</p></div></div><h3>Le portefeuille</h3><p>L'argent non investi y reste, rémunéré au jour le jour. Les projets y sont payés, les versements y reviennent.</p></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>15</span></div>
 </section>
-
-<!-- ======================= 07 · COMPRENDRE VOS CHIFFRES ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>09 · Accueil, analyse et sécurité</span></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Comprendre vos chiffres</h3>
-      <ul class="dots">
-        <li><b>Valeur au 1<sup>er</sup> janvier</b> : reconstituée seule (soldes au 31 décembre, cours de clôture, biens estimés, moins les crédits). Modifiable dans <span class="path">Réglages › Avancé</span>.</li>
-        <li><b>Épargne versée</b> : ce que vous avez mis de côté dans l'année. Le reste de la variation est un <b>gain</b> ou une perte.</li>
-        <li><b>Reprise d'existant</b> : un compte que vous aviez déjà ; ni épargne, ni gain.</li>
-        <li><b>Performance</b> : vos placements financiers seulement, affichée après trois mois, annualisée après un an.</li>
-        <li><b>Plus-values crypto</b> : calculées sur tout le portefeuille (formulaire 2086) ; non imposables si vos ventes de l'année ne dépassent pas 305 €.</li>
-      </ul>
-      <h3>Cash-flow</h3>
-      <p>Revenus, dépenses courantes et montant épargné, mois par mois sur un an.</p>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:200mm"><img src="img/cashflow.png"></div><figcaption><b>Figure 14</b> — Analyse : cash-flow</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>17</span></div>
+<section class="page open">
+  <div class="band"></div><div class="n">09</div><div class="mod">Socle · Analyse · Achat-revente</div><h2>Accueil, analyse<br>et sécurité</h2><p class="lead">Votre patrimoine net, sa variation du jour et depuis le 1<sup>er</sup> janvier, en un coup d'œil.</p>
+  <div class="phone "><div class="scr"><img src="img/tableau.png"></div></div>
+  <div class="flow" style="top:122mm;--h:0mm"><div style="height:26mm"></div><div class="figs "><div class="fig"><div class="big">Disponible</div><p>Livrets et comptes, exprimés en mois de dépenses.</p></div><div class="fig alt"><div class="big">Revenus passifs</div><p>Intérêts, crowdfunding et dividendes, par mois.</p></div><div class="fig alt"><div class="big">Épargné</div><p>Ce mois-ci, face à votre moyenne.</p></div></div><div class="cols"><div><h3 class="first">Où est votre argent</h3><p>Vos actifs par classe, avec une barre de couleur ; touchez une ligne pour l'ouvrir. <b>À surveiller</b> garde les trois alertes utiles, puis vos <b>objectifs</b>.</p></div><div><h3 class="first">L'écran Analyse</h3><p>Gains de l'année, évolution, répartition brute ou nette de crédits, performance, cash-flow et <b>récap fiscal</b>. L'<b>Achat-revente</b> suit le même modèle.</p></div></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>16</span></div>
 </section>
-
-<!-- ======================= 07 bis SÉCURITÉ / SAUVEGARDES ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>09 · Accueil, analyse et sécurité</span></div>
-  <div class="two">
-    <div>
-      <h3 style="margin-top:0">Verrouiller l'application</h3>
-      <ol class="steps">
-        <li>Ouvrez <span class="path">⚙ Réglages › Verrouillage</span> puis <b>Activer le verrouillage par code</b>.</li>
-        <li>Choisissez un code de 4 à 6 chiffres et confirmez-le.</li>
-        <li>Si votre appareil le permet, touchez <b>Activer l'empreinte</b> pour déverrouiller par empreinte digitale ou reconnaissance faciale.</li>
-        <li>Le code est demandé à l'ouverture de l'application, puis plus jusqu'à sa fermeture (une actualisation ou une mise à jour ne le redemandent pas). Vous pouvez aussi le faire redemander après 1, 5 ou 15 minutes passées hors de l'application.</li>
-      </ol>
-      <p>Après cinq codes erronés, la saisie est bloquée 30 secondes. Votre code n'est jamais enregistré en clair.</p>
-      <div class="note imp"><b class="t">Un écran de protection</b>Le verrouillage empêche une personne qui tient votre téléphone de consulter vos chiffres. Il ne chiffre pas vos données : protégez aussi votre appareil par un code.</div>
-      <h3>Sauvegarder vos données</h3>
-      <table>
-        <tr><th>Moyen</th><th>Usage</th></tr>
-        <tr><td>Export manuel</td><td><span class="path">Réglages › Exporter mes données</span> : un fichier à conserver. Un rappel est affiché toutes les deux semaines.</td></tr>
-        <tr><td>Google Drive</td><td>Synchronisation optionnelle dans un dossier privé de votre propre Drive.</td></tr>
-        <tr><td>Copies automatiques</td><td>Réalisées avant chaque mise à jour, restaurables dans <span class="path">Réglages › Sauvegardes de sécurité</span>.</td></tr>
-      </table>
-      <div class="note tip"><b class="t">Changer d'appareil</b>Exportez vos données sur l'ancien appareil, puis utilisez <b>Importer</b> sur le nouveau (ou activez la synchronisation Google Drive sur les deux).</div>
-    </div>
-    <figure class="fig"><div class="ph" style="max-height:170mm"><img src="img/verrou.png"></div><figcaption><b>Figure 15</b> — Écran de verrouillage</figcaption></figure>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>18</span></div>
+<section class="page cont">
+  <div class="hd"><b>09</b>Accueil, analyse et sécurité</div><div class="phone "><div class="scr"><img src="img/cashflow.png"></div></div>
+  <div class="flow" style="top:30mm;--h:124mm"><h3>Comprendre vos chiffres</h3><div class="rows"><div class="r"><b>Valeur au 1<sup>er</sup> janvier</b><span>Reconstituée seule ; modifiable dans Réglages › Avancé.</span></div><div class="r"><b>Épargne versée</b><span>Ce que vous avez mis de côté dans l'année.</span></div><div class="r"><b>Gain</b><span>Le reste de la variation de votre patrimoine.</span></div><div class="r"><b>Reprise d'existant</b><span>Un compte que vous aviez déjà : ni épargne, ni gain.</span></div><div class="r"><b>Performance</b><span>Placements financiers seuls, après trois mois de recul.</span></div></div><h3>Plus-values crypto</h3><p>Calculées sur tout le portefeuille (formulaire 2086). Si vos ventes de l'année ne dépassent pas 305 €, rien n'est imposable.</p><h3>Cash-flow</h3><p>Revenus, dépenses courantes et montant épargné, mois par mois sur un an.</p></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>17</span></div>
 </section>
-
-<!-- ======================= 08 FAQ ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>10 · Questions fréquentes</span></div>
-  <div class="chap"><span class="n">10</span><div><span class="kick">Aide</span><h2>Questions fréquentes</h2></div></div>
-  <div class="g2" style="gap:5mm 9mm">
-    <div>
-      <div class="qa"><h4>Où sont stockées mes données ?</h4><p>Uniquement sur votre appareil, dans l'espace de stockage de l'application. Elles ne transitent par aucun serveur Invest.co. Si vous activez la synchronisation, une copie est placée dans un dossier privé de votre propre Google Drive.</p></div>
-      <div class="qa"><h4>Quelles informations quittent mon appareil ?</h4><p>Seuls les symboles de vos actifs (par exemple « CW8 » ou « BTC/EUR ») sont envoyés aux services de cotation. Aucun montant ni aucune information personnelle n'est transmis, et l'application ne peut contacter aucun autre site que ses sources de cours, ses bibliothèques techniques et votre Google Drive.</p></div>
-      <div class="qa"><h4>Les cours sont-ils en temps réel ?</h4><p>Oui pour les cryptomonnaies, tant que l'application est ouverte. Pour les actions et les ETF, le cours est différé d'environ 15 minutes, ou correspond à la dernière clôture.</p></div>
-      <div class="qa"><h4>J'ai oublié mon code de verrouillage</h4><p>Touchez <b>Code oublié ?</b> sur l'écran de verrouillage. Pour protéger vos informations, la seule issue est d'effacer les données de l'application sur cet appareil, puis de les restaurer depuis un export ou Google Drive.</p></div>
-      <div class="qa"><h4>Puis-je utiliser Invest.co sur plusieurs appareils ?</h4><p>Oui. Chaque appareil possède ses propres données ; utilisez l'export / import ou la synchronisation Google Drive pour les retrouver partout.</p></div>
-    </div>
-    <div>
-      <div class="qa"><h4>Mon relevé n'est pas reconnu correctement</h4><p>Vérifiez qu'il s'agit bien d'un fichier CSV, puis corrigez les colonnes proposées dans l'écran d'import. Les relevés PDF sont lus ligne par ligne : contrôlez attentivement le sens de chaque montant.</p></div>
-      <div class="qa"><h4>Puis-je partager un appareil avec un proche ?</h4><p>Deux personnes utilisant le même appareil et le même navigateur partagent les mêmes données. Chaque utilisateur doit disposer de son propre appareil ou de son propre profil de navigateur.</p></div>
-      <div class="qa"><h4>Comment supprimer toutes mes données ?</h4><p><span class="path">Réglages › Réinitialiser</span>, puis choisissez une base vide. Pour un effacement complet, supprimez également les données du site dans les réglages de votre navigateur — après avoir exporté une sauvegarde si nécessaire.</p></div>
-      <div class="qa"><h4>Que faire si je perds mon téléphone ?</h4><p>Vos données ne sont récupérables que depuis une sauvegarde exportée ou la synchronisation Google Drive. Nous vous recommandons de sauvegarder régulièrement.</p></div>
-    </div>
-  </div>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>19</span></div>
+<section class="page cont">
+  <div class="hd"><b>09</b>Accueil, analyse et sécurité</div><div class="phone "><div class="scr"><img src="img/verrou.png"></div></div>
+  <div class="flow" style="top:30mm;--h:120mm"><h3>Verrouiller l'appli</h3><div class="steps"><div class="st"><span class="num">1</span><div><b>Activer</b><p><span class="path">Réglages › Verrouillage</span> › Activer le verrouillage par code.</p></div></div><div class="st"><span class="num">2</span><div><b>Choisir un code</b><p>De 4 à 6 chiffres, à confirmer.</p></div></div><div class="st"><span class="num">3</span><div><b>Empreinte ou visage</b><p>Si votre appareil le permet.</p></div></div></div><p style="margin-top:2mm">Le code est demandé à l'ouverture, puis plus jusqu'à la fermeture de l'appli. Après cinq erreurs, la saisie est bloquée 30 secondes.</p><h3 style="clear:both">Sauvegarder vos données</h3><div class="figs "><div class="fig"><div class="big">Export</div><p>Réglages › Exporter mes données : un fichier à garder.</p></div><div class="fig alt"><div class="big">Google Drive</div><p>Synchronisation dans un dossier privé de votre Drive.</p></div><div class="fig alt"><div class="big">Automatique</div><p>Une copie avant chaque mise à jour, restaurable.</p></div></div><div class="tip "><b>Changer d'appareil</b><p>Exportez sur l'ancien, importez sur le nouveau, ou activez Google Drive sur les deux.</p></div><p class="small">Le verrouillage protège l'écran, il ne chiffre pas les données : protégez aussi votre téléphone par un code.</p></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>18</span></div>
 </section>
-
-<!-- ======================= 09 INFORMATIONS IMPORTANTES ======================= -->
-<section class="page">
-  <div class="run"><span>Invest.co <span class="dot">•</span> Guide utilisateur</span><span>11 · Informations importantes</span></div>
-  <div class="chap"><span class="n">11</span><div><span class="kick">À lire</span><h2>Informations importantes</h2></div></div>
-  <div class="card" style="margin-bottom:4mm"><h4 style="margin-top:0">Outil de suivi, non de conseil</h4><p>Invest.co est un outil de suivi et d'organisation de vos finances personnelles. Il ne constitue ni un conseil en investissement, ni un conseil fiscal, juridique ou patrimonial, et ne recommande aucun produit financier. Les performances passées ne préjugent pas des performances futures ; tout investissement comporte un risque de perte en capital.</p></div>
-  <div class="card" style="margin-bottom:4mm"><h4 style="margin-top:0">Estimations fiscales</h4><p>Les montants « nets d'impôt », le récapitulatif fiscal et les régimes proposés sont des estimations établies à partir des règles en vigueur à la date de publication et des réglages que vous renseignez. Ils ne se substituent pas à votre déclaration de revenus : vérifiez toujours vos montants sur impots.gouv.fr et, en cas de doute, consultez un professionnel.</p></div>
-  <div class="card" style="margin-bottom:4mm"><h4 style="margin-top:0">Exactitude des données</h4><p>Les calculs reposent sur les informations que vous saisissez ou importez. Les cours de bourse et de crypto sont fournis par des sources tierces, sans garantie d'exactitude ni de disponibilité. Les taux et plafonds réglementaires sont mis à jour avec l'application ; vous pouvez les consulter et les compléter dans les Réglages.</p></div>
-  <div class="card" style="margin-bottom:4mm"><h4 style="margin-top:0">Confidentialité et sécurité</h4><p>Vos données financières sont conservées localement sur votre appareil et ne sont pas collectées par Invest.co. Les seules destinations réseau autorisées sont les sources de cours, les bibliothèques techniques et votre Google Drive. Protégez l'accès à votre appareil (code, biométrie) et conservez vos sauvegardes exportées dans un endroit sûr : elles contiennent l'ensemble de vos informations financières en clair.</p></div>
-  <div class="card"><h4 style="margin-top:0">Marques</h4><p>Les noms de banques, de plateformes et de services cités dans ce guide (notamment Bitstack, Google Drive, Chrome, Safari) sont des marques de leurs propriétaires respectifs. Leur mention a un caractère uniquement informatif et n'implique aucun partenariat.</p></div>
-  <p class="small" style="margin-top:6mm">Guide utilisateur Invest.co — édition {{EDITION}}, correspondant à la version {{VERSION}} de l'application. Les écrans présentés utilisent des données fictives et peuvent différer légèrement selon votre appareil et la version installée.</p>
-  <div class="foot"><span>Invest.co — Guide utilisateur · v{{VERSION}}</span><span>20</span></div>
+<section class="page open">
+  <div class="band" style="height:80mm"></div><div class="n">10</div><h2 style="top:50mm">Questions<br>fréquentes</h2><div class="flow" style="top:94mm"><div class="qcols"><div class="qa"><h4>Où sont mes données ?</h4><p>Uniquement sur votre appareil. Si vous activez la synchronisation, une copie va dans un dossier privé de votre Google Drive.</p></div><div class="qa"><h4>Que quitte mon appareil ?</h4><p>Seulement les symboles de vos actifs (« CW8 », « BTC/EUR ») envoyés aux services de cours. Aucun montant, aucune donnée personnelle.</p></div><div class="qa"><h4>Les cours sont-ils en temps réel ?</h4><p>Oui pour les cryptos, tant que l'appli est ouverte. Actions et ETF : environ 15 minutes de différé.</p></div><div class="qa"><h4>J'ai oublié mon code</h4><p>Touchez « Code oublié ? ». La seule issue est d'effacer les données de l'appli, puis de les restaurer depuis un export ou Google Drive.</p></div><div class="qa"><h4>Plusieurs appareils ?</h4><p>Oui. Chacun a ses données ; utilisez l'export ou Google Drive pour les retrouver partout.</p></div><div class="qa"><h4>Mon relevé est mal lu</h4><p>Vérifiez qu'il s'agit d'un CSV, puis corrigez les colonnes dans l'écran d'import. Pour un PDF, contrôlez le sens de chaque montant.</p></div><div class="qa"><h4>Partager un appareil ?</h4><p>Même appareil et même navigateur = mêmes données. Chacun doit avoir son appareil ou son profil de navigateur.</p></div><div class="qa"><h4>Tout supprimer ?</h4><p>Réglages › Réinitialiser, puis une base vide. Exportez d'abord une sauvegarde si besoin.</p></div><div class="qa"><h4>Téléphone perdu ?</h4><p>Vos données se récupèrent depuis une sauvegarde exportée ou Google Drive. Sauvegardez régulièrement.</p></div></div></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>19</span></div>
+</section>
+<section class="page open">
+  <div class="band" style="height:80mm"></div><div class="n">11</div><h2 style="top:50mm">Informations<br>importantes</h2><div class="flow" style="top:94mm"><h3>Un outil de suivi, pas de conseil</h3><p style="max-width:160mm">Invest.co organise vos finances personnelles. Ce n'est ni un conseil en investissement, ni un conseil fiscal, juridique ou patrimonial, et aucun produit n'est recommandé. Les performances passées ne préjugent pas des performances futures ; tout investissement comporte un risque de perte en capital.</p><h3>Des estimations fiscales</h3><p style="max-width:160mm">Montants nets d'impôt et récap fiscal sont estimés d'après les règles en vigueur et vos réglages. Ils ne remplacent pas votre déclaration : vérifiez sur impots.gouv.fr et consultez un professionnel en cas de doute.</p><h3>L'exactitude des données</h3><p style="max-width:160mm">Les calculs reposent sur ce que vous saisissez ou importez. Les cours viennent de sources tierces, sans garantie. Taux et plafonds sont mis à jour avec l'appli et consultables dans les Réglages.</p><h3>Confidentialité</h3><p style="max-width:160mm">Vos données restent sur votre appareil et ne sont pas collectées. Protégez l'accès à votre téléphone et gardez vos exports en lieu sûr : ils contiennent toutes vos informations en clair.</p><h3>Marques</h3><p style="max-width:160mm">Bitstack, Google Drive, Chrome, Safari et les autres noms cités sont des marques de leurs propriétaires. Leur mention est informative et n'implique aucun partenariat.</p><p class="small" style="margin-top:8mm">Guide utilisateur Invest.co, édition {{EDITION}}, version {{VERSION}} de l'appli. Les écrans présentés utilisent des données fictives.</p></div>
+  <div class="foot"><span>Invest.co · Guide utilisateur · v{{VERSION}}</span><span>20</span></div>
 </section>
 </body></html>

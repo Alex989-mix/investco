@@ -2,6 +2,29 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "27.4",
+      "date": "2026-11-03",
+      "title": "Un guide entièrement redessiné",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Nouveau guide utilisateur, dans l'esprit d'un rapport de néobanque : couverture orange, police Sora pour les titres, une grande capture dans un téléphone pour chaque chapitre."
+        },
+        {
+          "type": "improved",
+          "text": "Moins de cadres et de petits textes : les repères importants deviennent des chiffres clés en blocs, les explications tiennent en étapes numérotées et en deux colonnes courtes."
+        },
+        {
+          "type": "improved",
+          "text": "Sommaire en une page avec votre parcours de lecture selon votre profil. L'application elle-même ne change pas."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "Toutes les pages : nouvelle mise en page"
+      ]
+    },
+    {
       "version": "27.3",
       "date": "2026-11-03",
       "title": "Un guide plus visuel, plus court",
