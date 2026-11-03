@@ -17,7 +17,7 @@ const sel = (page) => page.evaluate(() => [...document.querySelectorAll('#sheet 
   log('Installation neuve : écran de bienvenue', N(await page.textContent('#sheet h2')) === 'Bienvenue sur Invest.co');
   await page.locator('#sheet button', { hasText: 'Partir de mes données' }).click(); await sleep(200);
   log('« Partir de mes données » ouvre « Composez votre appli » (étape 2 sur 2)', N(await page.textContent('#sheet h2')) === 'Composez votre appli' && N(await page.textContent('#sheet')).includes('Étape 2 sur 2'));
-  log('Point de départ « Épargnant » : Épargne, Budget, Import ; bouton « Continuer · 3 modules »', J(await sel(page)) === J(['Épargne réglementée', 'Budget', 'Import de relevés']) && N(await page.textContent('#sheet .btn.wide')) === 'Continuer · 3 modules', await sel(page));
+  log('Point de départ « Épargnant » : Épargne, Assurance-vie, Budget, Import ; bouton « Continuer · 4 modules »', J(await sel(page)) === J(['Épargne réglementée', 'Assurance-vie', 'Budget', 'Import de relevés']) && N(await page.textContent('#sheet .btn.wide')) === 'Continuer · 4 modules', await sel(page));
   await page.locator('#sheet .obp button', { hasText: 'Immobilier' }).click(); await sleep(150);
   log('Raccourci « Immobilier » : Épargne, Immobilier, Crowdfunding, Analyse, Import', J(await sel(page)) === J(['Épargne réglementée', 'Immobilier et crédits', 'Crowdfunding', 'Analyse et fiscalité', 'Import de relevés']), await sel(page));
   await page.locator('#sheet .mtile', { hasText: 'Épargne réglementée' }).click(); await sleep(150);
@@ -25,7 +25,7 @@ const sel = (page) => page.evaluate(() => [...document.querySelectorAll('#sheet 
   await page.locator('#sheet .mtile', { hasText: 'Crowdfunding' }).click(); await sleep(150);
   log('Ajouter le Crowdfunding rajoute l\'Épargne', (await sel(page)).includes('Épargne réglementée') && (await sel(page)).includes('Crowdfunding'));
   await page.locator('#sheet .obp button', { hasText: 'Tout' }).click(); await sleep(150);
-  log('Raccourci « Tout » : les 9 modules', (await sel(page)).length === 9 && N(await page.textContent('#sheet .btn.wide')) === 'Continuer · 9 modules');
+  log('Raccourci « Tout » : les 10 modules', (await sel(page)).length === 10 && N(await page.textContent('#sheet .btn.wide')) === 'Continuer · 10 modules');
   for (let k = 0; k < 10 && (await sel(page)).length; k++) { await page.locator('#sheet .mtile.on').first().click(); await sleep(80); }
   await sleep(150);
   log('Aucun module coché : « Continuer » désactivé', await page.evaluate(() => document.querySelector('#sheet .btn.wide').disabled) && N(await page.textContent('#sheet .btn.wide')) === 'Continuer · 0 module');

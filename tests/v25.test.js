@@ -20,10 +20,10 @@ const TU = /(?<!\p{L})(tu|ton|ta|tes|toi|Ajoute|Touche|Choisis|Masque|Active)(?!
 
   // ===== 1. Entrée dans les Réglages =====
   await page.evaluate(() => openSettings()); await sleep(150);
-  log('Réglages : entrée « Modules » en tête, « 9 actifs sur 9 »', N(await page.textContent('#sheet .fiche')).includes('Modules') && N(await page.textContent('#sheet')).includes('9 actifs sur 9'));
+  log('Réglages : entrée « Modules » en tête, « 10 actifs sur 10 »', N(await page.textContent('#sheet .fiche')).includes('Modules') && N(await page.textContent('#sheet')).includes('10 actifs sur 10'));
   await page.locator('#sheet .fiche', { hasText: 'Modules' }).click(); await sleep(150);
   const s0 = await page.evaluate(() => ({ rows: [...document.querySelectorAll('#sheet .mrow .n')].map((x) => x.textContent), tiles: document.querySelectorAll('#sheet .mtile:not(.soon)').length, soon: document.querySelectorAll('#sheet .mtile.soon').length }));
-  log('Modules : 9 modules dans « Dans votre appli » (Crypto comprise), catalogue vide, 6 modules prévus', s0.rows.length === 9 && s0.tiles === 0 && s0.soon === 6 && s0.rows.includes('Crypto'), s0);
+  log('Modules : 10 modules dans « Dans votre appli » (Crypto et Assurance-vie comprises), catalogue vide, 5 modules prévus', s0.rows.length === 10 && s0.tiles === 0 && s0.soon === 5 && s0.rows.includes('Crypto') && s0.rows.includes('Assurance-vie'), s0);
 
   // ===== 2. Masquer au doigt =====
   await page.locator('#sheet .mrow', { hasText: 'Crowdfunding' }).locator('button', { hasText: 'Masquer' }).click(); await sleep(200);
@@ -54,7 +54,7 @@ const TU = /(?<!\p{L})(tu|ton|ta|tes|toi|Ajoute|Touche|Choisis|Masque|Active)(?!
   const before = await page.evaluate(() => Mods.placeTabs(DB.settings.modules).map((t) => t.label));
   await page.locator('#sheet .mrow', { hasText: 'Crowdfunding' }).locator('button[aria-label^="Monter"]').click(); await sleep(150);
   const after = await page.evaluate(() => [...document.querySelectorAll('#v-placements .subtab')].map((t) => t.textContent.trim()));
-  log('Flèche « Monter » : Crowdfunding passe avant Immobilier dans Placements', J(before) === J(['Bourse', 'Épargne', 'Immobilier', 'Crowdfunding']) && J(after) === J(['Bourse', 'Épargne', 'Crowdfunding', 'Immobilier']), { before, after });
+  log('Flèche « Monter » : Crowdfunding passe avant Immobilier dans Placements', J(before) === J(['Bourse', 'Épargne', 'Assurance-vie', 'Immobilier', 'Crowdfunding']) && J(after) === J(['Bourse', 'Épargne', 'Assurance-vie', 'Crowdfunding', 'Immobilier']), { before, after });
   log('Premier onglet : sa flèche « Monter » est désactivée', await page.evaluate(() => document.querySelector('#sheet .mrow button[aria-label="Monter Bourse"]').disabled));
 
   // ===== 5. Barre du bas, zones tactiles, persistance =====
@@ -66,7 +66,7 @@ const TU = /(?<!\p{L})(tu|ton|ta|tes|toi|Ajoute|Touche|Choisis|Masque|Active)(?!
   log('Écran Modules au vouvoiement', !TU.test(txt), (txt.match(TU) || [])[0]);
   await page.reload(); await sleep(900);
   const per = await page.evaluate(() => ({ resale: modOn('resale'), tabs: Mods.placeTabs(DB.settings.modules).map((t) => t.tab), n: DB.resale.length }));
-  log('Après rechargement : choix et ordre conservés, articles toujours là', !per.resale && J(per.tabs) === J(['bourse', 'epargne', 'crowd', 'immo']) && per.n === 1, per);
+  log('Après rechargement : choix et ordre conservés, articles toujours là', !per.resale && J(per.tabs) === J(['bourse', 'epargne', 'life', 'crowd', 'immo']) && per.n === 1, per);
 
   log('Aucune violation de la politique de sécurité', (await page.evaluate(() => window.__csp.length)) === 0, await page.evaluate(() => window.__csp));
   log('Aucune erreur JavaScript', errors.length === 0, errors);

@@ -399,7 +399,7 @@ const DEF={
     {name:'iPhone 13 reconditionné',buyD:'2026-08-01',buy:280,fees:8,sellD:'2026-08-20',sell:410,st:'Vendu'},
     {name:'Nike Dunk Low',buyD:'2026-09-05',buy:110,fees:5,sellD:null,sell:null,st:'En vente'},
   ],
-  settings:{crowdTax:'pfu',tmi:0,cryptoRegime:'pfu',resaleRegime:'occasionnel',catRules:[],objNet:0.10,
+  settings:{crowdTax:'pfu',tmi:0,foyer:'seul',cryptoRegime:'pfu',resaleRegime:'occasionnel',catRules:[],objNet:0.10,
     snapshots:{2026:48000},dismissY:{},theme:'dark',stockKey:'',liveCrypto:true,eurusd:0.92,lastProc:null,
     catBudgets:{},lastBackup:null,goal:null,
     gdriveClientId:'',gdriveFileId:null,lastSync:null,autoSync:false,
@@ -430,11 +430,12 @@ function findSaving(name){return DB.savings.find(s=>s.name===name);}
 // Effet d'une opération sur le solde d'un compte d'épargne / courant (+ entrée, − sortie)
 // « Intérêts » et « Ajustement » modifient le solde sans compter comme un versement.
 function movEffect(m,name){const v=+m.m||0;
-  if(m.p===name){if(m.t==='Dépôt'||m.t==='Reprise'||m.t==='Intérêts'||m.t==='Ajustement')return v;if(m.t==='Retrait'||m.t==='Transfert')return -v;}
-  if(m.t==='Transfert'&&m.p2===name)return v;return 0;}
+  if(m.p===name){if(m.t==='Dépôt'||m.t==='Reprise'||m.t==='Intérêts'||m.t==='Ajustement')return v;if(m.t==='Retrait'||m.t==='Transfert'||m.t==='Frais')return -v;}
+  if(m.t==='Transfert'&&m.p2===name)return v;return 0;} // « Arbitrage » (assurance-vie) : neutre pour le contrat
 // Le solde n'est jamais saisi en dur : il est recalculé depuis les opérations (et les dépenses pour le compte courant).
 // Supprimer toutes les opérations d'un livret ramène donc son solde à 0.
-function savingBalance(s){let b=DB.movements.reduce((a,m)=>a+movEffect(m,s.name),0);
+function savingBalance(s){if(s.life)return Fin.lifeValue(s.life,DB.movements,s.name).total; // v28 : contrat multisupport (UC valorisées)
+  let b=DB.movements.reduce((a,m)=>a+movEffect(m,s.name),0);
   if(s.type==='Compte courant')b-=(DB.expenses||[]).reduce((a,e)=>a+(+e.amt||0),0);return r2(b);}
 function recalcBalances(){(DB.savings||[]).forEach(s=>{s.cap=savingBalance(s);});}
 
@@ -508,7 +509,7 @@ function savingInterestBetween(s,from,to){const t=ymd(today()),ev=savingEvents(s
   const opening=ev.filter(x=>x.d<from).reduce((a,x)=>a+x.e,0);
   return Fin.dailyInterest(opening,ev.filter(x=>x.d>=from&&x.d<=t),savingRates(s),from,to);}
 function savingYearInterest(s){const y=today().getFullYear();return savingInterestBetween(s,y+'-01-01',y+'-12-31');}
-function savingCalc(s){
+function savingCalc(s){if(s.life)return lifeCalc(s);
   const versed=DB.movements.reduce((a,m)=>{
     if((m.t==='Dépôt'||m.t==='Reprise')&&m.p===s.name)return a+(m.m||0);if(m.t==='Retrait'&&m.p===s.name)return a-(m.m||0);
     if(m.t==='Transfert'&&m.p===s.name)return a-(m.m||0);if(m.t==='Transfert'&&m.p2===s.name)return a+(m.m||0);return a;},0);
@@ -525,13 +526,23 @@ function savingCalc(s){
   const cat=s.type==='Assurance-vie'?'Assurance-vie':(s.type==='Compte courant'||s.type===WALLET?'Liquidités':'Épargne réglementée');
   return {versed,rate,brut,net,gains,received,cat,av8,auto};
 }
+// v28 : contrat d'assurance-vie multisupport. Intérêts estimés sur le seul fonds en euros, au jour le jour,
+// nets des prélèvements sociaux (prélevés chaque année sur le fonds en euros ; l'impôt n'est dû qu'au rachat).
+function lifeCalc(s){const L=Fin.lifeValue(s.life,DB.movements,s.name),y=today().getFullYear(),from=y+'-01-01',to=y+'-12-31',t=ymd(today());
+  let brut=0,rate=0;(s.life.funds||[]).filter(f=>f.kind==='euro').forEach(f=>{const R=(f.rates&&f.rates.length)?f.rates:[];if(!R.length)return;
+    const ev=Fin.lifeLines(s.life,DB.movements,s.name).filter(x=>x.fund===f.id).map(x=>({d:x.d,e:x.e}));
+    const opening=ev.filter(x=>x.d<from).reduce((a,x)=>a+x.e,0);brut+=Fin.dailyInterest(opening,ev.filter(x=>x.d>=from&&x.d<=t),R,from,to);
+    if(!rate)rate=Fin.rateOn(R,t);});
+  const net=r2(brut*(1-taxPSr())),av8=!!(s.open&&Fin.life8(s.open)<=t);
+  const received=r2(DB.movements.reduce((a,m)=>a+(m.p===s.name&&m.t==='Intérêts'?(+m.m||0):0),0));
+  return {versed:L.versed,rate,brut:r2(brut),net,gains:L.gains,received,cat:'Assurance-vie',av8,auto:false,life:L};}
 // ---- Bricks / crowdfunding
 // Taux d'imposition des intérêts (réglage ; PFU par défaut)
 // ---- Version, migrations de données et sauvegardes locales
 const APP_V=self.APP_VERSION||'?';
 // Schéma des données : à incrémenter quand une version change la structure stockée,
 // en ajoutant la migration correspondante dans MIGRATIONS (ne jamais modifier une migration existante).
-const SCHEMA=9;
+const SCHEMA=10;
 const MIGRATIONS={
   // v16 → v16.1 : en v16, la case du versement n°k portait le libellé du mois k-1
   // (mois de souscription compté à tort). On décale chaque case pointée vers le bon mois.
@@ -580,6 +591,10 @@ const MIGRATIONS={
   // v22 → v24 : appli modulable. Tous les modules d'aujourd'hui restent actifs : rien ne change à l'écran.
   // Désactiver un module (à venir dans les Réglages) masquera ses écrans sans jamais supprimer ses données.
   9(){DB.settings=DB.settings||{};DB.settings.modules=Mods.normalize(DB.settings.modules);},
+  // v27 → v28 : module Assurance-vie. Actif seulement si vous suivez déjà une assurance-vie ; vos produits restent des produits
+  // d'épargne simples tant que vous ne les convertissez pas en contrat complet. Foyer fiscal : personne seule par défaut.
+  10(){const st=DB.settings=DB.settings||{};st.modules=Mods.normalize(st.modules);
+    st.modules.life.on=(DB.savings||[]).some(s=>s.type==='Assurance-vie');if(!st.foyer)st.foyer='seul';},
 };
 function migrate(){DB.meta=DB.meta||{updatedAt:0};let v=DB.meta.schema||1;if(v>=SCHEMA)return;
   if(!isFresh)backupLocal('Avant migration des données (schéma '+v+' → '+SCHEMA+')');
@@ -658,7 +673,9 @@ function costAt(a,R){const mv=DB.movements.filter(m=>m.p===a.name&&String(m.d)<R
     if(m.t==='Achat'){cost+=g+(m.f||0);qty+=q;}else if(m.t==='Vente'){const u=qty?cost/qty:0,qs=Math.min(q,qty);cost-=u*qs;qty-=qs;}});return Math.max(0,cost);}
 function yearRef(y){const R=y+'-01-01',eve=ymd(new Date(y-1,11,31)),man=(DB.settings.refManual||{})[y];
   let sav=0,ast=0,crowd=0,re=0,debt=0,approx=[];
-  DB.savings.forEach(s=>{DB.movements.forEach(m=>{const e=movEffect(m,s.name);if(!e)return;if(String(m.d)<R||m.t==='Reprise')sav+=e;});
+  DB.savings.forEach(s=>{if(s.life){const L=Fin.lifeValue(s.life,DB.movements.filter(m=>String(m.d)<R),s.name,eve);sav+=L.total;if(L.funds.some(f=>f.approx))approx.push(s.name);
+      sav+=DB.movements.filter(m=>m.p===s.name&&m.t==='Reprise'&&!(String(m.d)<R)).reduce((a,m)=>a+(+m.m||0),0);return;} // v28 : UC au dernier cours connu à cette date
+    DB.movements.forEach(m=>{const e=movEffect(m,s.name);if(!e)return;if(String(m.d)<R||m.t==='Reprise')sav+=e;});
     if(s.type==='Compte courant')sav-=(DB.expenses||[]).filter(e=>String(e.d)<R).reduce((a,e)=>a+(+e.amt||0),0);});
   DB.assets.forEach(a=>{const q=qtyAt(a,R);if(q<=1e-12)return;const px=refPrice(a,y);if(px!=null)ast+=q*px;else{ast+=costAt(a,R);approx.push(a.name);}});
   const P=DB.pea||{};if((P.versements||[]).length){const ops=peaOps().filter(m=>String(m.d)<R),st=Fin.peaStatus({open:P.open,bank:P.bank,versements:P.versements.filter(v=>String(v.d)<R)},ops,param('ceil.PEA')||0,eve);if(st.real&&st.cash>0)ast+=st.cash;}
@@ -676,7 +693,7 @@ function consolidate(){
   const invested=bI+iI+sI+RE.cost,value=bV+iV+sV+RE.value,net=r2(value-RE.debt); // patrimoine net = actifs − capital restant dû
   const immoMonthly=DB.crowd.filter(c=>c.st==='En cours').reduce((a,c)=>{const k=crowdCalc(c);return a+(k.next?k.monthly:0)*(1-crowdTaxRate());},0);
   const y=today().getFullYear(),jan=new Date(y,0,1);let apports=0;
-  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.link||m.t==='Reprise'||m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
+  DB.movements.forEach(m=>{if(new Date(m.d)>=jan){if(m.link||m.t==='Reprise'||m.t==='Transfert'||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende'||m.t==='Arbitrage'||m.t==='Frais')return;const g=(m.q!=null&&m.pu!=null)?m.q*m.pu:(m.m||0);const amt=g+(m.f||0);if(m.t==='Achat'||m.t==='Dépôt')apports+=amt;else apports-=amt;}});
   DB.crowd.forEach(c=>{if(new Date(c.sub)>=jan&&!crowdLink(c,'sub'))apports+=c.amt;}); // projet payé depuis le portefeuille : pas d'argent nouveau
   apports+=RE.principalYTD; // le capital de crédit déjà remboursé cette année est un effort d'épargne, pas un gain
   // bien acheté cette année : l'apport personnel (coût − emprunt) est de l'argent investi, pas un gain
@@ -788,10 +805,12 @@ function fiscalData(){
   let revRevenue=0,revCount=0;DB.resale.forEach(r=>{if(r.st==='Vendu'&&r.sellD&&new Date(r.sellD)>=jan){revRevenue+=r.sell||0;revCount++;}});
   const revBase=Fin.resaleYear(DB.resale,y,{regime:DB.settings.resaleRegime,abattement:param('revente.microbic.abattement')}).taxable;
   let avRachat=0,avTaxable=0,avAbat=0,avOver8=false;
+  // v28 : abattement de 4 600 € (seul) ou 9 200 € (couple) par an, partagé entre tous les contrats de plus de 8 ans
+  let abLeft=Fin.lifeAbattement(DB.settings.foyer,ymd(today()),DB.params);
   DB.savings.filter(s=>s.type==='Assurance-vie').forEach(s=>{
     const rachat=DB.movements.filter(m=>m.t==='Retrait'&&m.p===s.name&&new Date(m.d)>=jan).reduce((a,m)=>a+(m.m||0),0);
-    if(rachat>0){avRachat+=rachat;const sc=savingCalc(s);const base=(s.cap||0)+rachat;const ratio=base>0?Math.max(0,sc.gains)/base:0;let g=rachat*ratio;
-      const o8=s.open&&monthsBetween(s.open,today())>=96;if(o8){avOver8=true;const ab=param('tax.av.abattement')||0;avAbat+=Math.min(g,ab);g=Math.max(0,g-ab);}avTaxable+=g;}
+    if(rachat>0){avRachat+=rachat;const sc=savingCalc(s);let g=Fin.lifeGainPart(rachat,(s.cap||0)+rachat,sc.versed+rachat);
+      const o8=s.open&&Fin.life8(s.open)<=ymd(today());if(o8){avOver8=true;const ab=Math.min(g,abLeft);abLeft-=ab;avAbat+=ab;g=Math.max(0,g-ab);}avTaxable+=g;}
   });
   let avNext=null;DB.savings.filter(s=>s.type==='Assurance-vie'&&s.open).forEach(s=>{const yr=new Date(s.open).getFullYear()+8;if(avNext==null||yr<avNext)avNext=yr;});
   const rate=taxBareme();
@@ -886,7 +905,7 @@ function maybeOnboard(force){
    <div class="field" style="margin-top:4px"><button class="btn" style="width:100%" onclick="closeSheet();openGuide()">${svgI('book')} Guide : cours en direct & synchro Drive</button><div class="hint" style="text-align:center">Facultatif — l'appli marche aussi sans.</div></div>`);}
 function onboardDemo(){DB.settings.onboarded=true;save();closeSheet();toast('Bon tour !');}
 // ---- v26 : premier écran « Composez votre appli » (piste 2 « Catalogue ») : raccourcis de profil + tuiles à cocher
-const OB_PRESETS=[['saver','Épargnant',['savings','budget','import']],['stocks','Bourse',['savings','stocks','crypto','analyse','import']],
+const OB_PRESETS=[['saver','Épargnant',['savings','life','budget','import']],['stocks','Bourse',['savings','stocks','crypto','analyse','import']],
   ['realty','Immobilier',['savings','realty','crowd','analyse','import']],['all','Tout',null]];
 let obSel=null;
 function obPreset(k){const P=OB_PRESETS.find(x=>x[0]===k);const o={};Mods.ids().forEach(id=>{o[id]={on:!P[2]||P[2].includes(id),order:Mods.defaults()[id].order};});obSel=o;onboardCompose();}
@@ -984,9 +1003,11 @@ function renderDash(){
   const H=homeStats(),c=H.c,R=c.ref,delta=R&&R.value!=null?r2(c.net-R.value):null,mo=today().toLocaleDateString('fr-FR',{month:'long'});
   const gainTxt=c.yearGain==null?'':(c.yearGain>=0?`+${eur0(c.yearGain)} de gains`:`${eur0(c.yearGain)} de pertes`);
   const A=alertsList(),Y=today().getFullYear();
+  const lifeC=DB.savings.filter(x=>x.life),lifeV=lifeC.reduce((a,x)=>a+(+x.cap||0),0),nSav=DB.savings.length-lifeC.length,lifeN=lifeC.reduce((a,x)=>a+savingCalc(x).net,0); // v28 : contrats complets à part
   const nCrowd=DB.crowd.filter(x=>x.st==='En cours').length,nProps=(DB.properties||[]).length,bpv=c.bV-c.bI;
   const CL0=[['Immobilier',c.reValue,'immo','var(--orange)',c.debt>0?'net de crédit '+eur0(c.reValue-c.debt):nProps+' bien'+(nProps>1?'s':''),''],
-    ['Épargne',c.sV,'epargne','var(--pos)',DB.savings.length+' compte'+(DB.savings.length>1?'s':''),c.sN?eur0(c.sN)+' d\'intérêts en '+Y:''],
+    ['Épargne',c.sV-lifeV,'epargne','var(--pos)',nSav+' compte'+(nSav>1?'s':''),c.sN-lifeN>0.5?eur0(c.sN-lifeN)+' d\'intérêts en '+Y:''],
+    ['Assurance-vie',lifeV,'life','#2E8C83',lifeC.length+' contrat'+(lifeC.length>1?'s':''),lifeN>0.5?eur0(lifeN)+' d\'intérêts en '+Y:'',null,'life'],
     ['Bourse et crypto',c.bV,'bourse','#6BA3C6',DB.assets.length+' ligne'+(DB.assets.length>1?'s':''),c.bI?`<span class="${bpv>=0?'pos':'neg'}">${bpv>=0?'+':''}${eur0(bpv)}</span> depuis l'achat`:''],
     ['Crowdfunding',c.iV,'crowd','var(--warn)',nCrowd+' projet'+(nCrowd>1?'s':'')+' en cours',c.immoMonthly?eur(c.immoMonthly)+'/mois':'']].filter(x=>x[1]>0.5);
   // v25 : la valeur des modules masqués reste dans le total, regroupée sur une ligne « Masqué »
@@ -1058,7 +1079,7 @@ function finValue(){const cc=compteCourant(),c=consolidate();return r2(c.bV+c.iV
 function cashFlows(){
   const cf=[],cc=compteCourant(),ccn=cc?cc.name:'\u0000';
   DB.movements.forEach(m=>{
-    if(m.link||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende')return;
+    if(m.link||m.t==='Intérêts'||m.t==='Ajustement'||m.t==='Dividende'||m.t==='Arbitrage'||m.t==='Frais')return; // arbitrage et frais : ni entrée ni sortie d'argent
     if(m.p===ccn&&m.t!=='Transfert')return; // compte courant hors périmètre
     if(m.t==='Transfert'){const v=+m.m||0,d=new Date(m.d);if(!v||isNaN(d))return;if(m.p===ccn&&m.p2!==ccn)cf.push({d,a:-v});else if(m.p2===ccn&&m.p!==ccn)cf.push({d,a:+v});return;}
     const g=(m.q!=null&&m.pu!=null&&m.q!==''&&m.pu!=='')?(+m.q)*(+m.pu):(+m.m||0);
@@ -1274,7 +1295,7 @@ function renderPlacements(){const T=Mods.placeTabs(DB.settings.modules);
   $('#v-placements').innerHTML=`<div class="subtabs">
     ${T.map(t=>`<div class="subtab ${placeTab===t.tab?'on':''}" onclick="setPlace('${t.tab}')">${t.label}</div>`).join('\n    ')}</div>
     <div id="place-body"></div>`;
-  if(placeTab==='bourse')placeBourse();else if(placeTab==='epargne')placeEpargne();else if(placeTab==='crowd')placeCrowd();else placeImmo();
+  if(placeTab==='bourse')placeBourse();else if(placeTab==='epargne')placeEpargne();else if(placeTab==='crowd')placeCrowd();else if(placeTab==='life')placeLife();else placeImmo();
 }
 // ---- v24 : modules (registre dans js/modules.js). Les réglages manquants valent « actif ».
 const modOn=(id)=>Mods.isOn(DB.settings.modules,id);
@@ -1286,7 +1307,7 @@ function renderNav(){const cur=(document.querySelector('.view.on')||{}).id||'v-d
 function setPlace(t){placeTab=t;renderPlacements();viewSave();}
 // ---- v25 : Réglages ▸ Modules (piste 2 « Catalogue ») : modules actifs à réordonner, catalogue en tuiles.
 // Masquer un module ne supprime rien : ses données restent comptées dans le patrimoine et le récap fiscal.
-const MOD_SOON=[['shield','Assurance-vie complète','Fonds en euros et unités de compte'],['sun','PER','Plafond de déduction, économie d\'impôt'],['build','SCPI','Parts, dividendes trimestriels'],
+const MOD_SOON=[['sun','PER','Plafond de déduction, économie d\'impôt'],['build','SCPI','Parts, dividendes trimestriels'],
   ['gem','Or et métaux','Pièces, lingots, taxe ou plus-value'],['globe','Comptes à l\'étranger','Devise, rappel déclaration 3916'],['box','Autres actifs et dettes','Véhicule, prêt à un proche…']];
 function openModules(){const st=Mods.normalize(DB.settings.modules),MA=Mods.MODULES.filter(m=>m.toggle!==false);
   const on=MA.filter(m=>modOn(m.id)).sort((a,b)=>st[a.id].order-st[b.id].order),off=MA.filter(m=>!modOn(m.id)),tabs=Mods.placeTabs(DB.settings.modules).map(t=>t.module);
@@ -1315,6 +1336,7 @@ function opsFor(name){return DB.movements.map((m,gi)=>({m,gi})).filter(({m})=>m.
 function addOpFor(name,type){dupTemplate={d:ymd(today()),p:name,p2:'',t:type,q:'',pu:'',m:'',f:'',n:''};editMov(-1);dupTemplate=null;}
 function productDetail(name){
   const asset=DB.assets.find(a=>a.name===name),sav=DB.savings.find(s=>s.name===name),ops=opsFor(name);
+  if(sav&&sav.life){lifeDetail(DB.savings.indexOf(sav));return;}
   let sum='';
   const ai=asset?DB.assets.indexOf(asset):-1,si=sav?DB.savings.indexOf(sav):-1;
   if(asset){const c=assetCalc(asset),dc=dayChgHtml(asset);sum=`<div class="t-sub" style="margin-top:-4px">${esc(asset.ticker||'')} · ${esc(assetGroup(asset))}${liveAssetPair(asset)&&LIVE.status==='on'?' · <span class="pos">● direct</span>':''}</div>
@@ -1327,7 +1349,8 @@ function productDetail(name){
   else if(sav){const c=savingCalc(sav);sum=`<div class="t-sub" style="margin-top:-4px">${esc(sav.bank||'')} · ${esc(sav.type)}</div>
     <div style="margin-top:12px"><div class="tot" style="font-size:28px">${eur0(sav.cap||0)}</div><div class="t-sub">${c.rate?fin(r2(c.rate*10000)/100)+' % · ':''}intérêts ${today().getFullYear()} estimés : ${eur(c.net)} nets</div></div>
     <div class="g2k"><div><div class="k-l">Versé net</div><b>${eur0(c.versed)}</b></div><div><div class="k-l">Intérêts perçus</div><b>${eur0(c.received)}</b></div></div>
-    <div class="row" style="gap:8px;margin-top:12px"><button class="btn sm" style="flex:1" onclick="editSaving(${si})">✎ Modifier le produit</button></div>`;}
+    <div class="row" style="gap:8px;margin-top:12px"><button class="btn sm" style="flex:1" onclick="editSaving(${si})">✎ Modifier le produit</button>${sav.type==='Assurance-vie'?`<button class="btn sm primary" style="flex:1" onclick="convertLife(${si})">Convertir en contrat complet</button>`:''}</div>
+    ${sav.type==='Assurance-vie'?`<div class="hint" style="margin-top:6px">Contrat complet : fonds en euros et unités de compte, arbitrages, frais, cours automatiques. Votre solde reste identique.</div>`:''}`;}
   const defType=asset?'Achat':(sav&&sav.type==='Compte courant'?'Dépôt':(sav?'Dépôt':'Achat'));
   openSheet(`<div class="spread"><h2>${name}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
     ${sum}
@@ -1377,6 +1400,11 @@ function savingWhen(s,c){const t=ymd(today());
 // ---- Aide : chaque explication est derrière un « ? » ; la fenêtre d'aide se superpose sans fermer la saisie en cours
 const hq=(k)=>`<button type="button" class="hq" aria-label="Explication" title="Explication" onclick="event.stopPropagation();event.preventDefault();showHelp('${k}')">?</button>`;
 const HELP={
+  life:['Assurance-vie',()=>`<p>Un contrat regroupe des <b>supports</b> : le fonds en euros (capital garanti, intérêts crédités chaque année, prélèvements sociaux de ${fin(r2(taxPSr()*100))} % déjà retenus) et des <b>unités de compte</b> (ETF, fonds, SCPI) dont la valeur varie.</p>
+    <p><b>Valeur d'une UC</b> : parts détenues × dernier cours (automatique avec un symbole Yahoo Finance), sinon la dernière valeur relevée sur votre relevé, sinon le montant investi.</p>
+    <p><b>Versement</b> = argent nouveau. <b>Arbitrage</b> = déplacement entre supports, sans effet sur la valeur ni sur votre épargne. <b>Frais</b> = prélevés par l'assureur, ils réduisent la valeur sans être un retrait.</p>
+    <p><b>Rachat</b> : seule la part de gains est imposable, rachat × (valeur − versements) ÷ valeur. Après 8 ans, abattement annuel de ${eur0(Fin.lifeAbattement('seul',ymd(today()),DB.params))} (seul) ou ${eur0(Fin.lifeAbattement('couple',ymd(today()),DB.params))} (couple), puis ${fin(r2((param('tax.av.ir8')||0)*100))} % d'impôt jusqu'à ${eur0(param('tax.av.seuil')||0)} de versements.</p>`],
+  foyer:['Foyer fiscal',()=>`<p>L'abattement sur les gains des rachats d'assurance-vie de plus de 8 ans est de ${eur0(Fin.lifeAbattement('seul',ymd(today()),DB.params))} par an pour une personne seule, ${eur0(Fin.lifeAbattement('couple',ymd(today()),DB.params))} pour un couple marié ou pacsé soumis à imposition commune. Il est partagé entre tous vos contrats.</p>`],
   jour:['Variation du jour',()=>`<p>Somme des variations de chaque ligne de bourse et de crypto : <b>valeur actuelle − valeur à la clôture de la veille</b>. Le pourcentage est calculé sur la valeur de la veille des lignes concernées.</p>
     <p><b>Actions et ETF</b> : depuis la clôture de la séance précédente, au dernier « Actualiser » (cours différé d'environ 15 min). Le week-end et les jours fériés, c'est la variation de la dernière séance.</p>
     <p><b>Crypto</b> : sur 24 heures glissantes (flux Kraken en direct, sinon dernière actualisation de moins de 6 heures).</p>
@@ -1440,7 +1468,7 @@ function showHelp(k){const h=HELP[k];if(!h)return;$('#hlp-t').textContent=h[0];$
 function hideHelp(){$('#hlp').classList.remove('on');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#hlp').classList.contains('on'))hideHelp();});
 function placeEpargne(){
-  const rows=DB.savings.map((s,i)=>({s,c:savingCalc(s),i}));
+  const rows=DB.savings.map((s,i)=>({s,c:savingCalc(s),i})).filter(r=>!r.s.life); // v28 : les contrats complets ont leur onglet Assurance-vie
   const tCap=rows.reduce((a,r)=>a+(r.s.cap||0),0),tNet=rows.reduce((a,r)=>a+r.c.net,0),Y=today().getFullYear();
   const ORD=['Épargne réglementée','Assurance-vie','Liquidités'],G={};rows.forEach(r=>{(G[r.c.cat]=G[r.c.cat]||[]).push(r);});
   const keys=Object.keys(G).sort((x,y)=>{const ix=ORD.indexOf(x),iy=ORD.indexOf(y);return (ix<0?9:ix)-(iy<0?9:iy);});
@@ -1459,6 +1487,165 @@ function placeEpargne(){
    ${tmi()===0?`<div class="memo">${svgI('info')}<div><div class="t">Vous êtes non imposable (TMI 0 %)</div>
      <div class="d">L'option pour le barème (case 2OP) vous fait payer ${fin(r2(taxBareme()*100))} % au lieu de ${fin(r2(taxPFU()*100))} % (PFU) sur les intérêts et plus-values. LEP ${fin(r2((param('rate.LEP')||0)*100))} % net, plafond ${eur0(param('ceil.LEP'))} ; Livret A ${fin(r2((param('rate.Livret A')||0)*100))} %, plafond ${eur0(param('ceil.Livret A'))}. Taux et plafonds à jour dans Réglages ▸ Paramètres réglementaires.</div></div></div>`:''}`;
 }
+// ---- v28 : Assurance-vie complète (module « life »). Un contrat = produit d'épargne de type « Assurance-vie » avec
+// life.funds (fonds en euros, unités de compte). Ses opérations restent dans DB.movements : fund = support concerné,
+// fund2 = support d'arrivée d'un arbitrage. Calculs purs : Fin.lifeValue, Fin.lifeLines, Fin.life8, Fin.lifeGainPart.
+const LIFE_T={'Dépôt':'Versement','Retrait':'Rachat','Arbitrage':'Arbitrage','Frais':'Frais','Intérêts':'Intérêts','Ajustement':'Ajustement','Reprise':'Reprise d\'existant','Transfert':'Transfert'};
+const lifeContracts=()=>DB.savings.map((s,i)=>({s,i})).filter(x=>x.s.life);
+const lifeFund=(s,id)=>((s.life&&s.life.funds)||[]).find(f=>f.id===id)||null;
+const lifeFundName=(s,id)=>{const f=lifeFund(s,id)||lifeFund(s,Fin.lifeDefaultFund(s.life));return f?f.name:'—';};
+function lifeFundLine(s,F){const f=lifeFund(s,F.id)||{};
+  if(F.kind==='euro'){const r=(f.rates&&f.rates.length)?Fin.rateOn(f.rates,ymd(today())):null;return (f.name==='Fonds en euros'?'':'Fonds en euros · ')+(r!=null?'Taux '+fin(r2(r*10000)/100)+' % par an':'Taux non renseigné');}
+  if(F.src==='px')return `${QTY(F.units)} parts × ${eur(f.px)}${f.pxD?' · cours du '+pd(f.pxD).toLocaleDateString('fr-FR'):''}`;
+  if(F.src==='val')return 'Valeur relevée le '+pd(F.at).toLocaleDateString('fr-FR');
+  return F.cost?'Estimée au montant investi':'Unité de compte';}
+function placeLife(){
+  const C=lifeContracts(),plain=DB.savings.map((s,i)=>({s,i})).filter(x=>x.s.type==='Assurance-vie'&&!x.s.life);
+  const L=C.map(x=>({...x,c:savingCalc(x.s)})),tot=L.reduce((a,x)=>a+x.c.life.total,0),eu=L.reduce((a,x)=>a+x.c.life.euro,0),uc=L.reduce((a,x)=>a+x.c.life.uc,0),
+    vers=L.reduce((a,x)=>a+x.c.versed,0),g=r2(tot-vers),t=ymd(today());
+  $('#place-body').innerHTML=heroCard({label:'Assurance-vie',labelExtra:' '+hq('life'),value:eur0(tot),
+      pill:L.length&&vers?{t:`${g>=0?'+':''}${eur0(g)}`,tone:g>=0?'pos':'neg',arrow:g>=0?'up':'down'}:null,sub:L.length?`depuis l'ouverture, pour ${eur0(vers)} versés nets`:'',
+      stats:L.length?[{l:'Fonds en euros',v:eur0(eu)},{l:'Unités de compte',v:eur0(uc),s:tot?PCT1(uc/tot)+' du total':''},{l:'Contrats',v:String(L.length)}]:[]})+`
+   <div class="acts"><button class="btn" onclick="lifeRefresh()">${svgI('refresh')}Cours des UC</button><button class="btn primary" onclick="editLife(-1)">${svgI('plus')}Contrat</button></div>
+   ${L.length?`<div class="grp"><span>Mes contrats</span><b>${eur0(tot)}</b></div><div class="lgrp">${L.map(({s,i,c})=>{const d8=Fin.life8(s.open),pg=c.life.total-c.versed;
+     return `<div class="fiche" onclick="lifeDetail(${i})"><div class="spread" style="align-items:flex-start;gap:10px"><div style="min-width:0"><div class="t-name">${esc(s.name)}</div>
+       <div class="t-sub">${esc(s.bank||'Assurance-vie')} · ${(s.life.funds||[]).length} support${(s.life.funds||[]).length>1?'s':''}${d8?(d8<=t?' · plus de 8 ans':' · 8 ans le '+pd(d8).toLocaleDateString('fr-FR')):''}</div></div><div class="fv">${eur0(c.life.total)}</div></div>
+       <div class="spread" style="margin-top:6px;font-size:12.5px"><span class="muted">Euros ${eur0(c.life.euro)} · UC ${eur0(c.life.uc)}</span><span class="${pg>=0?'pos':'neg'}">${pg>=0?'+':''}${eur0(pg)}</span></div></div>`;}).join('')}</div>`:''}
+   ${plain.length?`<div class="grp"><span>À convertir en contrat complet</span></div><div class="lgrp">${plain.map(({s,i})=>`<div class="fiche" onclick="productDetail(DB.savings[${i}].name)"><div class="spread"><div style="min-width:0"><div class="t-name">${esc(s.name)}</div><div class="t-sub">Produit d'épargne simple · ajoutez supports et arbitrages</div></div><div class="fv">${eur0(s.cap||0)}</div></div>
+       <div style="margin-top:8px"><button class="btn sm" onclick="event.stopPropagation();convertLife(${i})">Convertir en contrat complet</button></div></div>`).join('')}</div>`:''}
+   ${!L.length&&!plain.length?`<div class="card" style="margin-top:12px"><div class="emptybox">Aucun contrat d'assurance-vie. Ajoutez-en un avec « Contrat ».</div></div>`:''}`;
+}
+// Contrat : nouveau ou modification (nom, assureur, ouverture ; à la création : fonds en euros, son taux et le montant déjà détenu)
+function editLife(i){const s=i>=0?DB.savings[i]:{name:'',bank:'',open:ymd(today())};const isNew=!(i>=0);
+  openSheet(`<div class="spread"><h2>${isNew?'Nouveau contrat':'Modifier le contrat'}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   <div class="two"><div class="field"><label>Nom du contrat</label><input id="l_name" value="${esc(s.name)}" placeholder="Linxea Spirit 2…"></div><div class="field"><label>Assureur</label><input id="l_bank" value="${esc(s.bank||'')}"></div></div>
+   <div class="field"><label>Date d'ouverture (fiscalité des 8 ans)</label><input type="date" id="l_open" value="${s.open||''}"></div>
+   ${isNew?`<div class="two"><div class="field"><label>Fonds en euros : valeur actuelle (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="l_cap" placeholder="0"></div><div class="field"><label>Taux du fonds en euros (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="l_rate" placeholder="ex. 2,5"></div></div>
+   <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);margin:-4px 0 10px"><input type="checkbox" id="l_held" checked style="width:auto"> Argent déjà détenu (pas un nouveau versement) ${hq('reprise')}</label>
+   <div class="hint">Les unités de compte s'ajoutent ensuite depuis la fiche du contrat (« + Support »).</div>`:''}
+   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveLife(${isNew?-1:i})">Enregistrer</button>${isNew?'':`<button class="btn" onclick="delSaving(${i})" style="color:var(--neg)">Supprimer</button>`}</div>`);}
+function saveLife(i){const name=$('#l_name').value.trim();if(!name){toast('Nom du contrat ?',true);return;}
+  if(DB.savings.some((x,k)=>k!==i&&x.name===name)){toast('Un produit porte déjà ce nom',true);return;}
+  const open=val('l_open'),bank=$('#l_bank').value.trim();
+  if(i>=0){const s=DB.savings[i],old=s.name;
+    if(old!==name)DB.movements.forEach(m=>{if(m.p===old)m.p=name;if(m.p2===old)m.p2=name;}); // les opérations suivent le nouveau nom
+    Object.assign(s,{name,bank,open});save();closeSheet();renderAll();lifeDetail(i);toast('Contrat enregistré');return;}
+  const r=num('l_rate'),cap=num('l_cap');if(r!=null&&(r<0||r>30)){toast('Taux entre 0 et 30 %',true);return;}
+  const rates=r!=null?[{from:open||ymd(today()),rate:Math.round(r*1e4)/1e6}]:[];
+  const s={name,type:'Assurance-vie',bank,cap:0,open,rate:null,rates:[],tax:'PFU assurance-vie',ceil:null,life:{since:ymd(today()),funds:[{id:'f1',kind:'euro',name:'Fonds en euros',rates}]}};
+  DB.savings.push(s);
+  if(cap)DB.movements.push({d:open||ymd(today()),p:name,t:($('#l_held')&&!$('#l_held').checked)?'Dépôt':'Reprise',q:null,pu:null,m:r2(cap),f:0,n:'Solde à l\'ouverture',fund:'f1'});
+  if(!modOn('life'))DB.settings.modules=Mods.setOn(DB.settings.modules,'life',true);
+  save();closeSheet();renderAll();lifeDetail(DB.savings.length-1);toast('Contrat créé');}
+// Conversion d'un produit « Assurance-vie » simple : un fonds en euros reprend le taux et toutes les opérations.
+// Copie de sécurité avant ; le patrimoine doit rester identique au centime, sinon on annule.
+function convertLife(i){const s=DB.savings[i];if(!s||s.life||s.type!=='Assurance-vie')return;
+  if(!confirm('Convertir « '+s.name+' » en contrat complet ?\nSon solde devient le fonds en euros ; vous pourrez ensuite ajouter des unités de compte. Une copie de sécurité est faite avant.'))return;
+  backupLocal('Avant conversion du contrat « '+s.name+' » (v28)');
+  const before=r2(+s.cap||0),net0=consolidate().net,snap=JSON.stringify({s,m:DB.movements.filter(m=>m.p===s.name||m.p2===s.name)});
+  const rates=(Array.isArray(s.rates)&&s.rates.length)?s.rates.map(x=>Object.assign({},x)):(rateFor(s)?[{from:s.open||'2000-01-01',rate:rateFor(s)}]:[]);
+  s.life={since:ymd(today()),funds:[{id:'f1',kind:'euro',name:'Fonds en euros',rates}]};
+  const touched=[];DB.movements.forEach(m=>{if(m.p===s.name&&m.fund==null){m.fund='f1';touched.push(m);}});
+  recalcBalances();
+  if(Math.abs(r2(+s.cap||0)-before)>=0.005||Math.abs(r2(consolidate().net-net0))>=0.005){ // ne devrait jamais arriver : on revient en arrière
+    delete s.life;touched.forEach(m=>delete m.fund);recalcBalances();toast('Conversion annulée : le solde ne correspondait pas',true);return;}
+  if(!modOn('life'))DB.settings.modules=Mods.setOn(DB.settings.modules,'life',true);
+  save();closeSheet();renderAll();lifeDetail(i);toast('Contrat converti, solde inchangé ('+eur0(before)+')');}
+// Fiche du contrat : valeur, supports, opérations
+function lifeDetail(i){const s=DB.savings[i];if(!s||!s.life){if(s)productDetail(s.name);return;}
+  const c=savingCalc(s),L=c.life,t=ymd(today()),d8=Fin.life8(s.open),pg=r2(L.total-c.versed);
+  const ops=opsFor(s.name);
+  openSheet(`<div class="spread"><h2>${esc(s.name)}</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   <div class="t-sub" style="margin-top:-4px">${esc(s.bank||'Assurance-vie')}${s.open?' · ouvert le '+pd(s.open).toLocaleDateString('fr-FR'):''}${d8?(d8<=t?' · plus de 8 ans':' · 8 ans le '+pd(d8).toLocaleDateString('fr-FR')):''}</div>
+   <div style="margin-top:12px"><div class="tot" style="font-size:28px">${eur0(L.total)}</div><div style="font-size:13px"><span class="${pg>=0?'pos':'neg'}">${pg>=0?'+':''}${eur0(pg)}</span> <span class="muted">depuis l'ouverture${c.net?' · intérêts '+today().getFullYear()+' estimés : '+eur(c.net)+' nets':''}</span></div></div>
+   <div class="g2k"><div><div class="k-l">Versé net</div><b>${eur0(c.versed)}</b></div><div><div class="k-l">Intérêts perçus</div><b>${eur0(c.received)}</b></div>
+     <div><div class="k-l">Fonds en euros</div><b>${eur0(L.euro)}</b></div><div><div class="k-l">Unités de compte</div><b>${eur0(L.uc)}${L.total?' <span class="muted" style="font-weight:500">· '+PCT1(L.uc/L.total)+'</span>':''}</b></div></div>
+   <div class="row" style="gap:8px;margin-top:12px"><button class="btn sm primary" style="flex:1" onclick="editLifeOp(${i},-1,'Dépôt')">+ Versement</button><button class="btn sm" style="flex:1" onclick="editLifeOp(${i},-1,'Retrait')">+ Rachat</button><button class="btn sm" style="flex:1" onclick="editLifeOp(${i},-1,'Arbitrage')">Arbitrage</button></div>
+   <div class="spread" style="margin:16px 0 8px"><span style="font-weight:600">Supports (${L.funds.length})</span><button class="btn sm" onclick="editFund(${i},'')">+ Support</button></div>
+   <div class="lgrp">${L.funds.map(F=>`<div class="fiche" onclick="editFund(${i},'${F.id}')"><div class="spread" style="gap:10px"><div style="min-width:0"><div class="t-name">${esc(F.name||'Support')}</div><div class="t-sub">${lifeFundLine(s,F)}</div></div><div class="fv">${eur0(F.value)}</div></div>
+     ${F.kind!=='euro'&&F.cost?`<div class="spread" style="margin-top:4px;font-size:12.5px"><span class="muted">Investi net ${eur0(F.cost)}</span><span class="${F.value-F.cost>=0?'pos':'neg'}">${F.value-F.cost>=0?'+':''}${eur0(F.value-F.cost)}</span></div>`:''}</div>`).join('')}</div>
+   ${L.funds.some(f=>f.approx)?`<div class="hint" style="margin-top:6px">Une unité de compte sans cours ni valeur relevée est estimée à son montant investi. Indiquez son symbole ou sa valeur dans le support.</div>`:''}
+   <div class="spread" style="margin:16px 0 8px"><span style="font-weight:600">Opérations (${ops.length})</span><span class="row" style="gap:6px"><button class="btn sm" onclick="editLifeOp(${i},-1,'Frais')">+ Frais</button><button class="btn sm" onclick="editLifeOp(${i},-1,'Intérêts')">+ Intérêts</button></span></div>
+   <div class="card"><div class="twrap"><table><tbody>
+   ${ops.map(({m,gi})=>{const out=m.t==='Retrait'||m.t==='Frais'||(m.t==='Transfert'&&m.p===s.name)||(m.t==='Ajustement'&&m.m<0);
+      const where=m.t==='Arbitrage'?esc(lifeFundName(s,m.fund))+' → '+esc(lifeFundName(s,m.fund2)):m.t==='Transfert'?(m.p===s.name?'vers '+esc(m.p2||''):'depuis '+esc(m.p||'')):esc(lifeFundName(s,m.fund));
+      return `<tr><td><div class="t-name">${LIFE_T[m.t]||esc(m.t)}</div><div class="t-sub">${pd(m.d).toLocaleDateString('fr-FR')} · ${where}${m.n?' · '+esc(m.n):''}</div></td>
+        <td class="${out?'neg':''}">${eur0(m.m)}${m.q!=null&&m.q!==''?`<div class="t-sub">${QTY(m.q)} parts</div>`:''}</td><td><span class="del" onclick="editLifeOp(${i},${gi})">✎</span></td></tr>`;}).join('')
+      ||`<tr><td class="emptybox" colspan="3">Aucune opération enregistrée.</td></tr>`}
+   </tbody></table></div></div>
+   <div class="row" style="gap:8px;margin-top:12px"><button class="btn sm" style="flex:1" onclick="editLife(${i})">✎ Modifier le contrat</button></div>`);}
+// Support : fonds en euros (taux datés) ou unité de compte (symbole Yahoo pour le cours automatique, sinon valeurs relevées datées)
+function editFund(i,fid){const s=DB.savings[i],f=fid?lifeFund(s,fid):{id:'',kind:'uc',name:'',sym:'',px:'',pxD:'',vals:[],rates:[]};if(!f)return;
+  const used=fid&&DB.movements.some(m=>(m.p===s.name||m.p2===s.name)&&(m.fund===fid||m.fund2===fid));
+  const F=fid?Fin.lifeValue(s.life,DB.movements,s.name).funds.find(x=>x.id===fid):null;
+  openSheet(`<div class="spread"><h2>${fid?esc(f.name||'Support'):'Nouveau support'}</h2><button class="btn sm" onclick="lifeDetail(${i})">Retour</button></div>
+   <div class="two"><div class="field"><label>Nom du support</label><input id="u_name" value="${esc(f.name||'')}" placeholder="ETF MSCI World, SCPI…"></div>
+     <div class="field"><label>Type</label><select id="u_kind" onchange="fundFields()" ${used?'disabled':''}><option value="uc" ${f.kind!=='euro'?'selected':''}>Unité de compte</option><option value="euro" ${f.kind==='euro'?'selected':''}>Fonds en euros</option></select></div></div>
+   <div id="u_euro"><div class="two"><div class="field"><label>Taux annuel (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="u_rate" value="${(f.rates||[]).length?fin(r2(Fin.rateOn(f.rates,ymd(today()))*10000)/100):''}"></div><div class="field"><label>En vigueur depuis le</label><input type="date" id="u_rated" value="${ymd(today())}"></div></div>
+     <div class="hint">${(f.rates||[]).length?'Historique : '+f.rates.slice().sort((a,b)=>a.from<b.from?1:-1).map(x=>fin(r2(x.rate*10000)/100)+' % depuis le '+pd(x.from).toLocaleDateString('fr-FR')).join(' · '):'Le taux sert à estimer les intérêts de l\'année. Un nouveau taux s\'ajoute à l\'historique.'}</div></div>
+   <div id="u_uc"><div class="two"><div class="field"><label>Symbole (cours automatique)</label><input id="u_sym" value="${esc(f.sym||'')}" placeholder="CW8.PA, 0P0000…" autocapitalize="characters"></div>
+       <div class="field"><label>Dernier cours (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="u_px" value="${fin(f.px??'')}"></div></div>
+     <div class="hint" style="margin-top:-4px">${f.pxD?'Cours du '+pd(f.pxD).toLocaleDateString('fr-FR')+' · ':''}Avec un symbole Yahoo Finance, le cours se met à jour avec « Cours des UC ». La valeur = parts détenues × cours (saisissez les parts dans les opérations).</div>
+     <div class="two" style="margin-top:10px"><div class="field"><label>Ou valeur relevée sur le relevé (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="u_val"></div><div class="field"><label>À la date du</label><input type="date" id="u_vald" value="${ymd(today())}"></div></div>
+     <div class="hint">${(f.vals||[]).length?'Valeurs relevées : '+f.vals.slice().sort((a,b)=>a.d<b.d?1:-1).slice(0,4).map(x=>eur0(x.v)+' le '+pd(x.d).toLocaleDateString('fr-FR')).join(' · ')+'. ':''}Pour une UC sans cours (SCPI, fonds maison) : la valeur relevée, puis les opérations suivantes s'y ajoutent.</div></div>
+   ${F?`<div class="t-sub" style="margin-top:10px">Valeur aujourd'hui : <b>${eur0(F.value)}</b>${F.units!=null?' · '+QTY(F.units)+' parts':''}</div>`:''}
+   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveFund(${i},'${fid||''}')">Enregistrer</button>${fid&&!used&&s.life.funds.length>1?`<button class="btn" onclick="delFund(${i},'${fid}')" style="color:var(--neg)">Supprimer</button>`:''}</div>`);
+  fundFields();}
+function fundFields(){const k=$('#u_kind')&&$('#u_kind').value;if(!k)return;$('#u_euro').style.display=k==='euro'?'':'none';$('#u_uc').style.display=k==='euro'?'none':'';}
+function saveFund(i,fid){const s=DB.savings[i],name=$('#u_name').value.trim();if(!name){toast('Nom du support ?',true);return;}
+  const kind=$('#u_kind').value,F=s.life.funds;let f=fid?lifeFund(s,fid):null;
+  if(!f){let n=1;while(F.some(x=>x.id==='f'+n))n++;f={id:'f'+n,kind,name,rates:[],vals:[]};F.push(f);}
+  if(!$('#u_kind').disabled)f.kind=kind;f.name=name;
+  if(f.kind==='euro'){const r=num('u_rate');if(r!=null){if(r<0||r>30){toast('Taux entre 0 et 30 %',true);return;}const from=val('u_rated')||ymd(today()),nr=Math.round(r*1e4)/1e6;
+      f.rates=(f.rates||[]).filter(x=>x.from!==from);if(!f.rates.length||Math.abs(Fin.rateOn(f.rates,from)-nr)>1e-9)f.rates.push({from:f.rates.length?from:(s.open&&s.open<from?s.open:from),rate:nr});}} // historique jamais écrasé
+  else{f.sym=$('#u_sym').value.trim().toUpperCase()||'';const px=num('u_px');if(px!=null&&px!==+f.px){if(px<0){toast('Cours invalide',true);return;}f.px=px;f.pxD=ymd(today());}
+    const v=num('u_val');if(v!=null){const d=val('u_vald')||ymd(today());f.vals=(f.vals||[]).filter(x=>x.d!==d);f.vals.push({d,v:r2(v)});}}
+  save();renderAll();lifeDetail(i);toast('Support enregistré');}
+function delFund(i,fid){const s=DB.savings[i];if(DB.movements.some(m=>(m.p===s.name||m.p2===s.name)&&(m.fund===fid||m.fund2===fid))){toast('Ce support a des opérations',true);return;}
+  s.life.funds=s.life.funds.filter(f=>f.id!==fid);save();renderAll();lifeDetail(i);toast('Support supprimé');}
+// Opération du contrat : versement, rachat, arbitrage, frais, intérêts, ajustement (montant en €, parts facultatives pour une UC)
+function editLifeOp(i,gi,t){const s=DB.savings[i],m=gi>=0?DB.movements[gi]:{d:ymd(today()),t:t||'Dépôt',m:'',q:'',q2:'',n:'',fund:Fin.lifeDefaultFund(s.life),fund2:''};
+  if(gi>=0&&m.t==='Transfert'){editMov(gi);return;} // transfert entre comptes : éditeur général
+  lifeOpI=i;
+  const T=['Dépôt','Retrait','Arbitrage','Frais','Intérêts','Ajustement','Reprise'],opt=(sel)=>s.life.funds.map(f=>`<option value="${f.id}" ${sel===f.id?'selected':''}>${esc(f.name)}</option>`).join('');
+  const f2=m.fund2||((s.life.funds.find(f=>f.id!==m.fund)||{}).id||'');
+  openSheet(`<div class="spread"><h2>${gi>=0?'Modifier l\'opération':(LIFE_T[m.t]||m.t)}</h2><button class="btn sm" onclick="lifeDetail(${i})">Retour</button></div>
+   <div class="two"><div class="field"><label>Date</label><input type="date" id="o_d" value="${String(m.d).slice(0,10)}"></div><div class="field"><label>Type</label><select id="o_t" onchange="lifeOpFields()">${T.map(x=>`<option value="${x}" ${m.t===x?'selected':''}>${LIFE_T[x]}</option>`).join('')}</select></div></div>
+   <div class="two"><div class="field"><label id="o_fl">Support</label><select id="o_f" onchange="lifeOpFields()">${opt(m.fund||Fin.lifeDefaultFund(s.life))}</select></div><div class="field" id="o_w2"><label>Vers le support</label><select id="o_f2" onchange="lifeOpFields()">${opt(f2)}</select></div></div>
+   <div class="two"><div class="field"><label id="o_ml">Montant (€)</label><input type="text" inputmode="decimal" autocomplete="off" id="o_m" value="${fin(m.m??'')}"></div><div class="field" id="o_wq"><label id="o_ql">Parts (facultatif)</label><input type="text" inputmode="decimal" autocomplete="off" id="o_q" value="${fin(m.q??'')}"></div></div>
+   <div class="field" id="o_wq2"><label>Parts reçues sur le support d'arrivée (facultatif)</label><input type="text" inputmode="decimal" autocomplete="off" id="o_q2" value="${fin(m.q2??'')}"></div>
+   <div class="field"><label>Note</label><input id="o_n" value="${esc(m.n||'')}"></div>
+   <div class="hint" id="o_h"></div>
+   <div class="row" style="margin-top:16px;gap:8px"><button class="btn primary" style="flex:1" onclick="saveLifeOp(${i},${gi})">Enregistrer</button>${gi>=0?`<button class="btn" onclick="delLifeOp(${i},${gi})" style="color:var(--neg)">Supprimer</button>`:''}</div>`);
+  lifeOpFields();}
+let lifeOpI=-1;
+function lifeOpFields(){const t=$('#o_t').value,s=DB.savings[lifeOpI];if(!s)return;
+  const uc=id=>{const f=lifeFund(s,id);return !!f&&f.kind!=='euro';},arb=t==='Arbitrage';
+  $('#o_w2').style.display=arb?'':'none';$('#o_wq').style.display=uc($('#o_f').value)?'':'none';$('#o_wq2').style.display=arb&&uc($('#o_f2').value)?'':'none';
+  $('#o_fl').textContent=arb?'Depuis le support':'Support';$('#o_ql').textContent=t==='Dépôt'||t==='Reprise'?'Parts achetées (facultatif)':'Parts vendues (facultatif)';
+  $('#o_h').textContent={Dépôt:'Argent nouveau versé sur le contrat : compte dans votre épargne de l\'année.',Retrait:'Argent sorti du contrat. La part de gains est imposable (récap fiscal).',
+    Arbitrage:'Déplacement entre supports : la valeur du contrat ne change pas, ce n\'est ni un versement ni un rachat.',Frais:'Frais de gestion ou d\'arbitrage prélevés par l\'assureur : ils réduisent la valeur, sans être un retrait.',
+    Intérêts:'Intérêts du fonds en euros crédités (nets de prélèvements sociaux) : un gain, pas un versement.',Ajustement:'Corrige la valeur d\'un support : montant positif ou négatif.',Reprise:'Argent déjà détenu au début du suivi : ni versement ni gain.'}[t]||'';}
+function saveLifeOp(i,gi){const s=DB.savings[i],t=$('#o_t').value,d=val('o_d'),m=num('o_m'),fund=$('#o_f').value;
+  if(!d){toast('Date ?',true);return;}if(m==null||(t!=='Ajustement'&&!(m>0))){toast('Montant ?',true);return;}
+  const fund2=t==='Arbitrage'?$('#o_f2').value:null;if(t==='Arbitrage'&&fund2===fund){toast('Choisissez deux supports différents',true);return;}
+  const isUc=id=>{const f=lifeFund(s,id);return !!f&&f.kind!=='euro';};
+  const q=isUc(fund)?num('o_q'):null,q2=t==='Arbitrage'&&isUc(fund2)?num('o_q2'):null;
+  if((q!=null&&q<0)||(q2!=null&&q2<0)){toast('Nombre de parts invalide',true);return;}
+  const o={d,p:s.name,t,q,pu:null,m:r2(m),f:0,n:($('#o_n').value||'').trim(),fund};if(fund2)o.fund2=fund2;if(q2!=null)o.q2=q2;
+  if(gi>=0){const old=DB.movements[gi];if(old.p2)o.p2=old.p2;if(old.link)o.link=old.link;DB.movements[gi]=o;}else DB.movements.push(o);
+  save();renderAll();lifeDetail(i);toast('Opération enregistrée');}
+function delLifeOp(i,gi){if(!confirm('Supprimer cette opération ?'))return;DB.movements.splice(gi,1);save();renderAll();lifeDetail(i);toast('Opération supprimée');}
+// Cours des unités de compte qui ont un symbole (Yahoo, déjà autorisé par la CSP)
+async function lifeUcPrices(fx,rep){let n=0;
+  for(const {s} of lifeContracts())for(const f of (s.life.funds||[]).filter(f=>f.kind!=='euro'&&f.sym)){
+    const q=await quoteVia(f.sym);
+    if(q&&+q.price>0){f.px=+toEUR(q.price,q.cur,fx).toFixed(4);f.pxD=ymd(today());n++;rep.push([s.name+' · '+f.name,1,'Yahoo '+f.sym]);}
+    else rep.push([s.name+' · '+f.name,0,'cours indisponible pour '+f.sym]);}
+  return n;}
+async function lifeRefresh(){if(!lifeContracts().some(({s})=>s.life.funds.some(f=>f.kind!=='euro'&&f.sym))){toast('Aucune unité de compte avec un symbole',true);return;}
+  toast('Actualisation des cours des UC…');const rep=[];let fx=DB.settings.eurusd||0.92;const q=await quoteVia('EURUSD=X');if(q&&q.price)fx=1/q.price;
+  const n=await lifeUcPrices(fx,rep);save();renderAll();const bad=rep.filter(x=>x[1]===0).length;toast(n?n+' cours à jour'+(bad?' · '+bad+' en échec':''):'Aucun cours trouvé',!n);}
 function nextPayDate(c){const n=crowdCalc(c).next;return n?n.d:null;}
 // ---- Portefeuille de plateforme (ex. Bricks) : les projets y sont payés, les intérêts et le capital y reviennent.
 // Chaque opération créée automatiquement porte un lien « crowd:<projet>:<sub|AAAA-MM|cap> » : jamais de doublon,
@@ -1980,6 +2167,7 @@ function impDoOps(){
 
 let dupTemplate=null;
 function editMov(i){
+  if(i>=0){const m=DB.movements[i],ls=m&&findSaving(m.p);if(ls&&ls.life&&m.t!=='Transfert'){editLifeOp(DB.savings.indexOf(ls),i);return;}}
   const m=i>=0?DB.movements[i]:(dupTemplate||{d:ymd(today()),p:'',p2:'',t:'Achat',q:'',pu:'',m:'',f:'',n:''});
   const opts=[...assetNames(),...savingNames()],savo=savingNames();
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouvelle'} opération</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
@@ -2046,7 +2234,7 @@ function saveAsset(i){const name=$('#a_name').value.trim();if(!name){toast('Nom 
   save();closeSheet();renderAll();toast('Actif enregistré');}
 function delAsset(i){DB.assets.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
-function editSaving(i,wallet){const s=i>=0?DB.savings[i]:(wallet?{name:'Portefeuille Bricks',type:WALLET,bank:'Bricks',cap:'',open:ymd(today()),rate:0.024,tax:'PFU standard',ceil:''}:{name:'',type:'Livret A',bank:'',cap:'',open:ymd(today()),rate:'',tax:'Exonéré',ceil:''});
+function editSaving(i,wallet){if(i>=0&&DB.savings[i]&&DB.savings[i].life){editLife(i);return;}const s=i>=0?DB.savings[i]:(wallet?{name:'Portefeuille Bricks',type:WALLET,bank:'Bricks',cap:'',open:ymd(today()),rate:0.024,tax:'PFU standard',ceil:''}:{name:'',type:'Livret A',bank:'',cap:'',open:ymd(today()),rate:'',tax:'Exonéré',ceil:''});
   const types=['Livret A','LDDS','LEP','Livret Jeune','PEL','CEL','Livret bancaire',WALLET,'Assurance-vie','Compte courant','Autre'],taxes=['Exonéré','PFU standard','PFU assurance-vie','Barème'];
   openSheet(`<div class="spread"><h2>${i>=0?'Modifier':'Nouveau'} produit</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
    <div class="two"><div class="field"><label>Nom</label><input id="s_name" value="${esc(s.name)}"></div><div class="field"><label>Type</label><select id="s_type">${types.map(t=>`<option ${s.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
@@ -2068,6 +2256,7 @@ function saveSaving(i){const name=$('#s_name').value.trim();if(!name){toast('Nom
   const o={name,type:$('#s_type').value,bank:$('#s_bank').value.trim(),cap:0,open:val('s_open'),rate:r==null?null:Fin.rateOn(rates,ymd(today())),rates,tax:$('#s_tax').value,ceil};
   if(i>=0){const old=DB.savings[i].name;
     if(old!==name){DB.movements.forEach(m=>{if(m.p===old)m.p=name;if(m.p2===old)m.p2=name;});(DB.crowd||[]).forEach(c=>{if(c.wallet===old)c.wallet=name;});} // opérations et projets suivent le nouveau nom
+    if(DB.savings[i].life)o.life=DB.savings[i].life; // jamais perdre les supports d'un contrat
     DB.savings[i]=o;}else DB.savings.push(o);
   // Capital saisi : on n'écrase pas le solde, on enregistre l'écart comme une opération datée
   // (produit sans aucune opération → dépôt d'ouverture ; sinon → ajustement daté d'aujourd'hui)
@@ -2255,6 +2444,7 @@ function openSettings(){const s=DB.settings,y=today().getFullYear();
    <div class="field" style="border-top:1px solid var(--line);padding-top:14px"><div class="sh-h" style="margin-bottom:8px">${svgI('receipt')} Ma situation fiscale</div>
      <div class="two"><div class="field"><label>Tranche marginale d'imposition (TMI)</label><select id="set_tmi">${[0,0.11,0.30,0.41,0.45].map(t=>`<option value="${t}" ${Math.abs((+s.tmi||0)-t)<1e-9?'selected':''}>${Math.round(t*100)} %</option>`).join('')}</select></div>
        <div class="field"><label>Objectif net de revente (%)</label><input type="text" inputmode="decimal" autocomplete="off" id="set_obj" value="${fin(s.objNet*100)}"></div></div>
+     <div class="field"><label>Foyer fiscal (assurance-vie) ${hq('foyer')}</label><select id="set_foyer"><option value="seul" ${s.foyer!=='couple'?'selected':''}>Personne seule : abattement ${eur0(Fin.lifeAbattement('seul',ymd(today()),DB.params))}</option><option value="couple" ${s.foyer==='couple'?'selected':''}>Couple marié ou pacsé : abattement ${eur0(Fin.lifeAbattement('couple',ymd(today()),DB.params))}</option></select></div>
      <div class="field"><label>Plus-values crypto / CTO</label><select id="set_crypto"><option value="pfu" ${s.cryptoRegime!=='bareme'?'selected':''}>PFU (flat tax)</option><option value="bareme" ${s.cryptoRegime==='bareme'?'selected':''}>Barème (TMI + prélèvements sociaux)</option></select></div>
      <div class="field"><label>Intérêts Bricks / crowdfunding</label><select id="set_crowdtax"><option value="pfu" ${(s.crowdTax||'pfu')==='pfu'?'selected':''}>PFU (flat tax)</option><option value="bareme" ${s.crowdTax==='bareme'?'selected':''}>Barème (TMI + prélèvements sociaux)</option></select></div>
      <div class="field"><label>Achat-revente ${hq('resaleRegime')}</label><select id="set_resale"><option value="occasionnel" ${s.resaleRegime!=='microbic'?'selected':''}>Ventes occasionnelles d'objets personnels (non imposables)</option><option value="microbic" ${s.resaleRegime==='microbic'?'selected':''}>Activité d'achat-revente (micro-BIC)</option></select>
@@ -2301,7 +2491,7 @@ function saveSettings(doSync){const y=today().getFullYear(),s=DB.settings;
   const snap=num('set_snap'),vObj=num('set_obj');
   s.refManual=s.refManual||{};if(snap==null)delete s.refManual[y];else s.refManual[y]=snap;
   s.theme=$('#set_theme').value;s.stockKey=$('#set_key').value.trim();s.objNet=(vObj||0)/100;
-  s.tmi=+$('#set_tmi').value;s.cryptoRegime=$('#set_crypto').value;s.crowdTax=$('#set_crowdtax').value;s.resaleRegime=$('#set_resale').value;
+  s.tmi=+$('#set_tmi').value;s.cryptoRegime=$('#set_crypto').value;s.crowdTax=$('#set_crowdtax').value;s.resaleRegime=$('#set_resale').value;if($('#set_foyer'))s.foyer=$('#set_foyer').value;
   s.gdriveClientId=($('#set_gid')?$('#set_gid').value.trim():s.gdriveClientId)||'';
   if($('#set_auto'))s.autoSync=$('#set_auto').checked;if($('#set_live'))s.liveCrypto=$('#set_live').checked;
   if($('#set_bmsci'))s.benchSym={MSCI:$('#set_bmsci').value.trim()||'URTH',CAC:($('#set_bcac').value.trim()||'CAC')};
@@ -2355,7 +2545,7 @@ async function refreshPrices(){
   toast('Actualisation des cours…');
   const rep=[];let n=0;let fx=DB.settings.eurusd||0.92;
   // taux EUR/USD via Yahoo (sinon on garde le dernier connu)
-  const needFx=DB.assets.some(a=>a.type!=='Crypto'&&a.cur==='USD');
+  const needFx=DB.assets.some(a=>a.type!=='Crypto'&&a.cur==='USD')||lifeContracts().some(({s})=>s.life.funds.some(f=>f.kind!=='euro'&&f.sym));
   if(needFx){const q=await quoteVia('EURUSD=X');if(q&&q.price)fx=1/q.price;}
   // 1) Crypto -> CoinGecko (sans clé)
   const cr=DB.assets.filter(a=>a.type==='Crypto'&&(a.src||'auto')!=='manuel');
@@ -2390,6 +2580,7 @@ async function refreshPrices(){
       rep.push([a.name,0,src==='twelvedata'?'Twelve Data sans clé API':'cours indisponible (Yahoo bloqué ?)']);
     }
   }
+  n+=await lifeUcPrices(fx,rep); // v28 : unités de compte avec un symbole
   DB.settings.eurusd=fx;DB.settings.lastPriceReport={t:Date.now(),rep};
   try{await fetchRefPrices(today().getFullYear());}catch(e){}
   save();renderAll();

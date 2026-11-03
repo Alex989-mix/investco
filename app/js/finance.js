@@ -29,6 +29,8 @@
   };
   // Champs monétaires dans des sous-listes : properties[].values[].v
   const NESTED_MONEY = { properties: { values: ['v'] }, crowd: { reps: ['m'], recv: ['m'] } };
+  // v28 : supports d'un contrat d'assurance-vie : savings[].life.funds[].px (cours de l'UC) et .vals[].v (valeurs relevées)
+  const LIFE_MONEY = { fund: ['px'], vals: ['v'] };
   const SETTINGS_MONEY = ['goal'];
   const SETTINGS_MONEY_MAPS = ['snapshots', 'catBudgets', 'snapFin', 'refManual'];
 
@@ -39,6 +41,10 @@
         fields.forEach((f) => { if (f in row) row[f] = fn(row[f]); });
         const nested = NESTED_MONEY[coll];
         if (nested) for (const [sub, sf] of Object.entries(nested)) (row[sub] || []).forEach((x) => sf.forEach((f) => { if (f in x) x[f] = fn(x[f]); }));
+        if (coll === 'savings' && row.life && Array.isArray(row.life.funds)) row.life.funds.forEach((f) => {
+          LIFE_MONEY.fund.forEach((k) => { if (k in f) f[k] = fn(f[k]); });
+          (f.vals || []).forEach((x) => LIFE_MONEY.vals.forEach((k) => { if (k in x) x[k] = fn(x[k]); }));
+        });
       });
     }
     const s = out.settings || {};
@@ -98,6 +104,8 @@
     P('tax.ps.reduit', '2018-01-01', 0.172, '%', 'Prélèvements sociaux (assurance-vie, PEL, immobilier)', SRC_PS),
     P('tax.av.abattement', '2018-01-01', 4600, '€', 'Abattement assurance-vie > 8 ans (personne seule)', 'CGI art. 125-0 A'),
     P('tax.av.ir8', '2018-01-01', 0.075, '%', 'Taux d\'impôt assurance-vie > 8 ans (≤ 150 000 €)', 'CGI art. 125-0 A'),
+    P('tax.av.abattement.couple', '2018-01-01', 9200, '€', 'Abattement assurance-vie > 8 ans (couple soumis à imposition commune)', 'CGI art. 125-0 A'),
+    P('tax.av.seuil', '2018-01-01', 150000, '€', 'Assurance-vie : versements au-delà desquels le taux de 12,8 % s\'applique après 8 ans (tous contrats)', 'CGI art. 125-0 A'),
     // Achat-revente
     P('revente.microbic.abattement', '2018-01-01', 0.71, '%', 'Abattement micro-BIC (vente de marchandises)', 'CGI art. 50-0'),
     P('revente.dac7.ventes', '2023-01-01', 30, '', 'Seuil DAC7 : nombre de ventes par plateforme et par an', 'Directive (UE) 2021/514 (DAC7)'),
@@ -459,6 +467,68 @@
   function quinzStart(date) { const { y, m, d } = parseYmd(date); return d <= 15 ? fmtYmd(y, m, 16) : addMonthsYmd(fmtYmd(y, m, 1), 1); }
   function quinzStop(date) { const { y, m, d } = parseYmd(date); return d <= 15 ? fmtYmd(y, m, 1) : fmtYmd(y, m, 16); }
 
+  // ---------- Assurance-vie (v28) : contrat multisupport (fonds en euros + unités de compte) ----------
+  // Un contrat = un produit d'épargne de type « Assurance-vie » avec life.funds = [{id, kind:'euro'|'uc', name, rates, sym, px, pxD, vals:[{d,v}]}].
+  // Ses opérations sont des mouvements (p = nom du contrat) avec fund = support concerné, fund2 = support d'arrivée d'un arbitrage.
+  // Effet sur le support : + Dépôt, Reprise, Intérêts, Ajustement ; − Retrait, Frais ; Arbitrage : − source, + arrivée (neutre pour le contrat).
+  const LIFE_PLUS = new Set(['Dépôt', 'Reprise', 'Intérêts', 'Ajustement']), LIFE_MINUS = new Set(['Retrait', 'Frais']);
+  const lifeDefaultFund = (life) => { const F = (life && life.funds) || []; const e = F.find((f) => f.kind === 'euro'); return e ? e.id : (F[0] ? F[0].id : null); };
+  const d10 = (x) => String(x || '').slice(0, 10);
+  // Lignes de chaque support à une date (incluse) : [{fund, d, e (€), u (parts ou null)}]
+  function lifeLines(life, movements, name, date) {
+    const def = lifeDefaultFund(life), ids = new Set(((life && life.funds) || []).map((f) => f.id)), out = [], D = date || '9999-12-31';
+    const fid = (x) => (x && ids.has(x) ? x : def);
+    (movements || []).forEach((m) => {
+      const d = d10(m.d); if (d > D) return; const v = +m.m || 0, q = (m.q == null || m.q === '') ? null : +m.q;
+      if (m.t === 'Transfert') { if (m.p === name) out.push({ fund: fid(m.fund), d, e: -v, u: null }); else if (m.p2 === name) out.push({ fund: fid(m.fund2 || m.fund), d, e: v, u: null }); return; }
+      if (m.p !== name) return;
+      if (LIFE_PLUS.has(m.t)) out.push({ fund: fid(m.fund), d, e: v, u: q });
+      else if (LIFE_MINUS.has(m.t)) out.push({ fund: fid(m.fund), d, e: -v, u: q == null ? null : -q });
+      else if (m.t === 'Arbitrage') { const q2 = (m.q2 == null || m.q2 === '') ? null : +m.q2;
+        out.push({ fund: fid(m.fund), d, e: -v, u: q == null ? null : -q }); out.push({ fund: fid(m.fund2), d, e: v, u: q2 }); }
+    });
+    return out.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
+  }
+  // Valeur d'un contrat à une date. Fonds en euros : somme des opérations. Unité de compte, dans l'ordre :
+  // parts détenues × dernier cours connu (si des parts sont saisies et le cours daté au plus tard ce jour-là),
+  // sinon dernière valeur relevée (vals) + opérations postérieures, sinon montant net investi (estimation : approx = true).
+  function lifeValue(life, movements, name, date) {
+    const D = date || '9999-12-31', L = lifeLines(life, movements, name, D);
+    let versed = 0;
+    (movements || []).forEach((m) => { const d = d10(m.d); if (d > D) return; const v = +m.m || 0;
+      if (m.p === name && (m.t === 'Dépôt' || m.t === 'Reprise')) versed += v; else if (m.p === name && (m.t === 'Retrait' || m.t === 'Transfert')) versed -= v;
+      else if (m.t === 'Transfert' && m.p2 === name) versed += v; });
+    const funds = ((life && life.funds) || []).map((f) => {
+      const mine = L.filter((x) => x.fund === f.id), cost = round2(mine.reduce((a, x) => a + x.e, 0));
+      const hasUnits = mine.some((x) => x.u != null), units = Math.round(mine.reduce((a, x) => a + (x.u || 0), 0) * 1e6) / 1e6;
+      let value = cost, src = f.kind === 'euro' ? 'ops' : 'cost', at = null;
+      if (f.kind !== 'euro') {
+        const cands = [];
+        if (hasUnits && +f.px > 0 && (!f.pxD || f.pxD <= D)) cands.push({ d: f.pxD || D, v: units * +f.px, src: 'px' });
+        const vv = (f.vals || []).filter((x) => x && x.d && x.d <= D && Number.isFinite(+x.v)).sort((a, b) => (a.d < b.d ? -1 : 1)).pop();
+        if (vv) cands.push({ d: vv.d, v: +vv.v + mine.filter((x) => x.d > vv.d).reduce((a, x) => a + x.e, 0), src: 'val' });
+        cands.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : (a.src === 'px' ? 1 : -1)));
+        const best = cands.pop(); if (best) { value = round2(best.v); src = best.src; at = best.d; }
+      }
+      return { id: f.id, kind: f.kind, name: f.name, value: round2(value), cost, units: hasUnits ? units : null, src, at, approx: f.kind !== 'euro' && src === 'cost' && Math.abs(cost) > 0.005 };
+    });
+    const euro = round2(funds.filter((f) => f.kind === 'euro').reduce((a, f) => a + f.value, 0));
+    const uc = round2(funds.filter((f) => f.kind !== 'euro').reduce((a, f) => a + f.value, 0));
+    const total = round2(euro + uc);
+    return { total, euro, uc, versed: round2(versed), gains: round2(total - versed), funds };
+  }
+  // Événements de trésorerie du fonds en euros ({d, e}) : base du calcul des intérêts au jour le jour
+  function lifeEuroEvents(life, movements, name) { const F = new Set(((life && life.funds) || []).filter((f) => f.kind === 'euro').map((f) => f.id));
+    return lifeLines(life, movements, name).filter((x) => F.has(x.fund)).map((x) => ({ d: x.d, e: x.e })); }
+  // Date des 8 ans du contrat (fiscalité allégée des rachats) : date d'ouverture + 96 mois
+  const life8 = (open) => (open ? addMonthsYmd(d10(open), 96) : null);
+  // Part de gains d'un rachat : rachat × (V − P) / V, V = valeur du contrat juste avant, P = versements nets restants (jamais négatif)
+  function lifeGainPart(rachat, valueBefore, versedBefore) {
+    const R = +rachat || 0, V = +valueBefore || 0, P = +versedBefore || 0; if (!(R > 0) || !(V > 0)) return 0;
+    return round2(Math.min(R, R * Math.max(0, V - P) / V)); }
+  // Abattement annuel des rachats > 8 ans selon le foyer (« couple » = imposition commune)
+  const lifeAbattement = (foyer, date, userParams) => getParam(foyer === 'couple' ? 'tax.av.abattement.couple' : 'tax.av.abattement', date, userParams) || 0;
+
   // Variation du jour d'une action / d'un ETF : écart du dernier cours avec la clôture de la veille,
   // en points de pourcentage arrondis au centième ; null si l'une des deux valeurs est invalide ou aberrante.
   function dayChange(price, prevClose) {
@@ -488,7 +558,8 @@
 
   const api = { round2, budgetVsActual, detectRecurring, sameExpense, toCents, fromCents, MONEY_FIELDS, serialize, deserialize, PARAM_DEFAULTS, getParam, paramHistory, paramKeys,
     addMonthsYmd, monthsDiff, loanPayment, amortization, loanStatus, propertyValue, propertyStats, resaleItem, resaleYear,
-    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange, rateOn, dailyInterest, quinzStart, quinzStop, crowdDues, crowdCapitalAt, cryptoTax, portfolioDayChange };
+    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange, rateOn, dailyInterest, quinzStart, quinzStop, crowdDues, crowdCapitalAt, cryptoTax, portfolioDayChange,
+    lifeLines, lifeValue, lifeEuroEvents, lifeDefaultFund, life8, lifeGainPart, lifeAbattement };
   root.Fin = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

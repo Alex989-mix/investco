@@ -134,9 +134,9 @@ pages.append(('cover', f'''<div class="top"></div>
     <div class="v">Version {{{{VERSION}}}}<br>Édition {{{{EDITION}}}}</div></div>'''))
 # 2 · sommaire
 TOC = [('01', "Installer l'appli", 'Android, iPhone, ordinateur', 3), ('02', 'Votre appli à la carte', 'Modules et profils', 4), ('03', 'Premiers réglages', 'Données, fiscalité', 6),
-       ('04', 'Épargne et livrets', 'Quinzaines, plafonds', 7), ('05', 'Bourse et crypto', 'PEA, dividendes, direct', 9), ('06', 'Importer vos relevés', 'Banques, plateformes', 10),
-       ('07', 'Budget', 'Prévu et réel, récurrentes', 12), ('08', 'Immobilier et crowdfunding', 'Biens, crédits, projets', 13), ('09', 'Accueil, analyse et sécurité', 'Chiffres clés, verrouillage', 16),
-       ('10', 'Questions fréquentes', 'Confidentialité, appareils', 19), ('11', 'Informations importantes', 'Limites et avertissements', 20)]
+       ('04', 'Épargne et assurance-vie', 'Quinzaines, plafonds, contrats', 7), ('05', 'Bourse et crypto', 'PEA, dividendes, direct', 11), ('06', 'Importer vos relevés', 'Banques, plateformes', 12),
+       ('07', 'Budget', 'Prévu et réel, récurrentes', 14), ('08', 'Immobilier et crowdfunding', 'Biens, crédits, projets', 15), ('09', 'Accueil, analyse et sécurité', 'Chiffres clés, verrouillage', 18),
+       ('10', 'Questions fréquentes', 'Confidentialité, appareils', 21), ('11', 'Informations importantes', 'Limites et avertissements', 22)]
 pages.append(('tocp', '<div class="toc"><h2>Sommaire</h2><p class="intro">Onze chapitres courts. Commencez par les deux premiers, puis lisez ceux de vos modules.</p><div class="list">'
   + ''.join(f'<div class="it"><span class="num">{n}</span><div><b>{t}</b><span>{d}</span></div><span class="pg">{p}</span></div>' for n, t, d, p in TOC) + '''</div></div>
   <div class="prof"><h3>Votre parcours</h3><div class="p"><b>Épargnant</b><span>02 · 04 · 07</span></div><div class="p"><b>Bourse</b><span>02 · 05 · 06</span></div><div class="p"><b>Immobilier</b><span>02 · 08</span></div><div class="p"><b>Tout</b><span>Tout le guide</span></div></div>'''))
@@ -148,22 +148,22 @@ opener('01', 'Socle commun', "Installer<br>l'appli", "Une application web qui s'
   '<div class="os" style="clear:both;margin-top:30mm">' + ''.join(f'<div class="o"><span class="ico">{I("card" if i == 2 else "lock")}</span><h4>{a}</h4><p class="small" style="margin-bottom:3mm">{b}</p><ol>' + ''.join(f'<li>{x}</li>' for x in L) + '</ol></div>' for i, (a, b, L) in enumerate(OS)) + '</div>'
   + figs([('Hors ligne', "L'appli s'ouvre sans réseau ; seuls les cours ont besoin d'une connexion."), ('Mises à jour', 'Un bandeau orange « Nouvelle version », un appui suffit.'), ('Sauvegarde', 'Une copie de vos données est faite avant chaque mise à jour.')]), h=0, short=True)
 # 4 · 02 à la carte
-MODS = [('bank', 'Épargne', '04'), ('chart', 'Bourse', '05'), ('bolt', 'Crypto', '05'), ('home', 'Immobilier', '08'), ('build', 'Crowdfunding', '08'), ('wallet', 'Budget', '07'), ('bag', 'Achat-revente', '09'), ('pie', 'Analyse', '09'), ('upload', 'Import', '06')]
+MODS = [('bank', 'Épargne', '04'), ('shield', 'Assurance-vie', '04'), ('chart', 'Bourse', '05'), ('bolt', 'Crypto', '05'), ('home', 'Immobilier', '08'), ('build', 'Crowdfunding', '08'), ('wallet', 'Budget', '07'), ('bag', 'Achat-revente', '09'), ('pie', 'Analyse', '09'), ('upload', 'Import', '06')]
 opener('02', 'Démarrer · modules', 'Votre appli<br>à la carte', "N'affichez que ce que vous suivez. Le reste se rajoute en un geste, sans rien perdre.", 'composer.png',
   st([('Partir de vos données', 'Au premier lancement, touchez « Partir de mes données ».'), ('Choisir un point de départ', 'Épargnant, Bourse, Immobilier ou Tout.'), ('Ajuster', 'Touchez les tuiles pour ajouter ou retirer un module.'), ('Continuer', "L'appli s'ouvre avec vos seuls onglets.")])
-  + '<h3 style="clear:both;margin-top:9mm">Neuf modules au choix</h3><div class="mods">' + ''.join(f'<div class="m"><span class="ico">{I(k)}</span><div>{n}<span>Chapitre {c}</span></div></div>' for k, n, c in MODS) + '</div>'
-  + '<p class="small" style="margin-top:4mm">En préparation : assurance-vie complète, PER, SCPI, or, comptes à l\'étranger, autres actifs.</p>', top=120, h=30)
+  + '<h3 style="clear:both;margin-top:9mm">Dix modules au choix</h3><div class="mods">' + ''.join(f'<div class="m"><span class="ico">{I(k)}</span><div>{n}<span>Chapitre {c}</span></div></div>' for k, n, c in MODS) + '</div>'
+  + '<p class="small" style="margin-top:4mm">En préparation : PER, SCPI, or, comptes à l\'étranger, autres actifs.</p>', top=120, h=30)
 # 5 · 02 suite
 cont('02', 'Votre appli à la carte', 'modules.png',
   '<h3>Changer de modules à tout moment</h3><p>Ouvrez <span class="path">Réglages › Modules</span>.</p><ul><li><b>Dans votre appli</b> : touchez Masquer pour retirer un module ; les flèches règlent l\'ordre des onglets.</li><li><b>Catalogue</b> : touchez une tuile pour la rajouter.</li><li><b>Prévus</b> : les modules à venir.</li></ul>'
   + '<h3>Modules liés</h3><p><b>Crowdfunding et Épargne</b> : masquer l\'Épargne masque aussi le Crowdfunding, dont le portefeuille est un compte d\'épargne.</p><p><b>Bourse et Crypto</b> partagent un onglet, « Crypto » si vous ne gardez que la Crypto.</p>'
   + figs([('Rien supprimé', 'Un module masqué garde toutes ses données.'), ('Total juste', 'Sa valeur reste dans votre patrimoine, ligne « Modules masqués ».'), ('Fiscalité', 'Le récap fiscal compte toujours tout.')])
-  + '<h3>Vous ne trouvez pas un écran ?</h3>' + rows([("L'onglet Budget", 'Activez le module Budget'), ("L'onglet Revente", 'Activez Achat-revente'), ('Le lien Analyse', 'Activez Analyse et fiscalité'), ('Un onglet de Placements', 'Activez Épargne, Bourse, Crypto, Immobilier ou Crowdfunding'), ('Importer un relevé', 'Activez Import de relevés')]), h=124)
+  + '<h3>Vous ne trouvez pas un écran ?</h3>' + rows([("L'onglet Budget", 'Activez le module Budget'), ("L'onglet Revente", 'Activez Achat-revente'), ('Le lien Analyse', 'Activez Analyse et fiscalité'), ('Un onglet de Placements', 'Activez Épargne, Assurance-vie, Bourse, Crypto, Immobilier ou Crowdfunding'), ('Importer un relevé', 'Activez Import de relevés')]), h=124)
 # 6 · 03 premiers réglages
 opener('03', 'Socle commun', 'Premiers<br>réglages', "Deux minutes pour des chiffres justes : votre point de départ et votre situation fiscale.", 'reglages.png',
   "<h3>Partir de vos données</h3><p>Avec <b>Partir de mes données</b>, l'appli démarre avec un simple compte courant ; les exemples sont effacés.</p>"
   + '<h3 style="clear:both;margin-top:10mm">Votre situation fiscale</h3><p>Ouvrez <span class="path">Réglages › Ma situation fiscale</span> pour des revenus nets d\'impôt fiables :</p>'
-  + rows([("Tranche d'imposition", 'Votre TMI, sur votre avis d\'impôt : 0, 11, 30, 41 ou 45 %.'), ('Crypto, compte-titres', 'Prélèvement forfaitaire unique (PFU) ou barème.'), ('Crowdfunding', 'PFU ou barème pour les intérêts.'), ('Achat-revente', 'Ventes occasionnelles ou activité (micro-BIC).')])
+  + rows([("Tranche d'imposition", 'Votre TMI, sur votre avis d\'impôt : 0, 11, 30, 41 ou 45 %.'), ('Crypto, compte-titres', 'Prélèvement forfaitaire unique (PFU) ou barème.'), ('Crowdfunding', 'PFU ou barème pour les intérêts.'), ('Achat-revente', 'Ventes occasionnelles ou activité (micro-BIC).'), ('Foyer fiscal', 'Personne seule ou couple : abattement de l\'assurance-vie après 8 ans.')])
   + tip('Taux à jour', 'Taux des livrets, plafonds et prélèvements sont fournis avec leur date. À consulter dans Réglages › Paramètres réglementaires.'), h=30)
 # 7 · 04 épargne
 opener('04', 'Module Épargne réglementée', 'Épargne<br>et livrets', 'Vos livrets, PEL, assurance-vie et liquidités, avec les intérêts de l\'année.', 'epargne.png',
@@ -176,6 +176,19 @@ cont('04', 'Épargne et livrets', None,
   + tip('Le bon réflexe', 'Versez le 15 ou le dernier jour du mois, retirez le 1<sup>er</sup> ou le 16. Les intérêts sont versés le 31 décembre.')
   + '<h3>Comptes au jour le jour</h3><p>Livrets bancaires, assurance-vie et portefeuilles de plateforme rapportent chaque jour le taux annuel divisé par le nombre de jours de l\'année.</p>'
   + '<h3>Les explications à portée de main</h3><p>Dans l\'appli, touchez les boutons <span class="k">?</span> à côté des titres : votre saisie en cours est conservée.</p>')
+# 8 bis · 04 assurance-vie (v28)
+cont('04', 'Assurance-vie', 'assurance_vie.png',
+  '<h3>Un contrat, plusieurs supports</h3><p>Le module <b>Assurance-vie</b> suit chaque contrat support par support : le fonds en euros et vos unités de compte (ETF, fonds, SCPI).</p>'
+  + st([('Convertir ou créer', 'Sur la fiche de votre assurance-vie, touchez <b>Convertir en contrat complet</b> : le solde devient le fonds en euros, au centime près. Ou <span class="path">Ajouter › Contrat d\'assurance-vie</span>.'),
+        ('Ajouter les supports', '<b>+ Support</b> : fonds en euros avec son taux, ou unité de compte avec son symbole.'), ('Saisir les opérations', 'Versement, rachat, arbitrage, frais ou intérêts, depuis la fiche du contrat.')])
+  + '<h3>La valeur des unités de compte</h3>' + rows([('Avec un symbole', 'Parts détenues × cours, mis à jour par « Cours des UC » ou Actualiser.'), ('Sans symbole', 'La valeur lue sur votre relevé, avec sa date.'), ('Ni l\'un ni l\'autre', 'Estimée au montant investi, signalé sur la fiche.')]), h=128)
+cont('04', 'Assurance-vie', None,
+  '<h3>Chaque opération à sa place</h3>' + rows([('Versement', 'Argent nouveau : il compte dans votre épargne de l\'année.'), ('Rachat', 'Argent retiré : seule la part de gains est imposable.'), ('Arbitrage', 'Passage d\'un support à l\'autre : la valeur ne change pas, ce n\'est ni un versement ni un gain.'),
+    ('Frais', 'Prélevés par l\'assureur : ils réduisent la valeur sans être un retrait.'), ('Intérêts', 'Crédités sur le fonds en euros, nets de prélèvements sociaux : un gain.')])
+  + figs([('8 ans', 'La date figure sur chaque contrat : au-delà, les rachats sont moins imposés.'), ('4 600 €', 'Abattement annuel sur les gains rachetés, 9 200 € pour un couple, tous contrats confondus.'), ('Chaque année', 'Les prélèvements sociaux du fonds en euros sont déjà retenus.')])
+  + '<h3>Ce qui est imposé lors d\'un rachat</h3><p style="max-width:160mm">La part de gains : rachat × (valeur du contrat − versements) ÷ valeur. Avant 8 ans, elle relève du prélèvement forfaitaire. Après 8 ans, l\'abattement de votre foyer s\'applique d\'abord, puis un taux réduit jusqu\'à 150 000 € de versements. Choisissez votre foyer dans <span class="path">Réglages › Ma situation fiscale</span>.</p>'
+  + tip('Une unité de compte « estimée » ?', 'Sans cours ni valeur relevée, l\'appli retient le montant investi. Ouvrez le support et indiquez son symbole Yahoo Finance ou la valeur de votre dernier relevé.')
+  + tip('Masquer le module', 'Vos contrats restent comptés dans votre patrimoine net et votre récap fiscal, sur la ligne « Modules masqués ».'))
 # 9 · 05 bourse
 opener('05', 'Modules Bourse et Crypto', 'Bourse<br>et crypto', "Vos titres regroupés par enveloppe, avec la variation du jour et le gain depuis l'achat.", 'pea.png',
   '<div style="height:26mm"></div>' + figs([('150 000 €', 'Plafond de versements du PEA, suivi automatiquement.'), ('5 ans', 'Avant 5 ans, un retrait clôture le PEA.'), ('En direct', 'Les cours crypto se mettent à jour en continu.')])

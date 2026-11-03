@@ -123,7 +123,7 @@ const near = (a, b, e = 0.011) => Math.abs(a - b) < e;
   await page.evaluate(() => { closeSheet(); setPlace('epargne'); });
   const fLa = N(await page.locator('#place-body .fiche', { hasText: 'Livret A' }).textContent());
   log('Épargne : fiche Livret A (14 520 €, 1,7 %, intérêts 2026, versé ce jour : intérêts dès le 1 nov.)', fLa.includes('14 520 €') && fLa.includes('1,7 %') && fLa.includes('Intérêts 2026') && fLa.includes('intérêts dès le 1 nov.'), fLa);
-  log('Placements : 4 onglets (Bourse, Épargne, Immobilier, Crowdfunding)', JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('.subtab')].map((x) => x.textContent.trim()))) === JSON.stringify(['Bourse', 'Épargne', 'Immobilier', 'Crowdfunding']));
+  log('Placements : 5 onglets (Bourse, Épargne, Assurance-vie, Immobilier, Crowdfunding)', JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('.subtab')].map((x) => x.textContent.trim()))) === JSON.stringify(['Bourse', 'Épargne', 'Assurance-vie', 'Immobilier', 'Crowdfunding']));
 
   // ===== 5. Bricks : versements automatiques, mois modifié, remboursements anticipés =====
   await setDB({

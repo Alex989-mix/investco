@@ -9,9 +9,9 @@ log('Contrôle : un cycle de dépendances est refusé', M.validate([{ id: 'a', r
 log('Contrôle : une dépendance inconnue est refusée', M.validate([{ id: 'a', requires: ['z'], add: [], data: [] }]).some((e) => /inconnu/.test(e)));
 log('Par défaut, tous les modules d\'aujourd\'hui sont actifs', M.ids().every((id) => M.isOn({}, id)) && M.ids().every((id) => M.isOn(undefined, id)));
 log('Par défaut : barre Accueil, Placements, Budget, Revente, Ajouter (comme en v22)', J(M.navEntries({}).map((e) => e.label)) === J(['Accueil', 'Placements', 'Budget', 'Revente', 'Ajouter']), M.navEntries({}).map((e) => e.label));
-log('Par défaut : sous-onglets Bourse, Épargne, Immobilier, Crowdfunding (comme en v22)', J(M.placeTabs({}).map((t) => t.label)) === J(['Bourse', 'Épargne', 'Immobilier', 'Crowdfunding']));
+log('Par défaut : sous-onglets Bourse, Épargne, Assurance-vie (v28), Immobilier, Crowdfunding', J(M.placeTabs({}).map((t) => t.label)) === J(['Bourse', 'Épargne', 'Assurance-vie', 'Immobilier', 'Crowdfunding']));
 const add = M.addEntries({}).map((a) => a.label);
-log('Par défaut : 8 entrées dans « Ajouter », dans l\'ordre de la v22', J(add) === J(['Opération', 'Projet Bricks / crowdfunding', 'Bien immobilier', 'Crédit', 'Dépense du compte courant', 'Article d\'achat-revente', 'Dépense récurrente', 'Importer un relevé']), add);
+log('Par défaut : 9 entrées dans « Ajouter » (v28 : contrat d\'assurance-vie)', J(add) === J(['Opération', 'Projet Bricks / crowdfunding', 'Contrat d\'assurance-vie', 'Bien immobilier', 'Crédit', 'Dépense du compte courant', 'Article d\'achat-revente', 'Dépense récurrente', 'Importer un relevé']), add);
 const n = M.normalize({ crowd: { on: false, order: 99 }, future: { on: true, order: 5 } });
 log('Réglages complétés : un choix existant est conservé, un module inconnu (version plus récente) n\'est pas effacé', n.crowd.on === false && n.crowd.order === 99 && n.future && n.future.on === true && n.savings.on === true, n);
 log('Réglages abîmés (texte, null) : tout reste actif', M.isOn('x', 'budget') && M.isOn(null, 'resale') && M.isOn({ budget: null }, 'budget'));
@@ -20,7 +20,7 @@ log('Désactiver l\'Épargne désactive le Crowdfunding qui en dépend (portefeu
 s = M.setOn(s, 'crowd', true);
 log('Réactiver le Crowdfunding réactive l\'Épargne', M.isOn(s, 'crowd') && M.isOn(s, 'savings'));
 s = M.setOn({}, 'stocks', false);
-log('Crypto seule (v27) : un onglet « Crypto » à la place de « Bourse », « Opération » toujours proposée', M.isOn(s, 'crypto') && JSON.stringify(M.placeTabs(s).map((t) => t.label)) === JSON.stringify(['Crypto', 'Épargne', 'Immobilier', 'Crowdfunding']) && M.addEntries(s).filter((a) => a.id === 'mov').length === 1, M.placeTabs(s));
+log('Crypto seule (v27) : un onglet « Crypto » à la place de « Bourse », « Opération » toujours proposée', M.isOn(s, 'crypto') && JSON.stringify(M.placeTabs(s).map((t) => t.label)) === JSON.stringify(['Crypto', 'Épargne', 'Assurance-vie', 'Immobilier', 'Crowdfunding']) && M.addEntries(s).filter((a) => a.id === 'mov').length === 1, M.placeTabs(s));
 s = M.setOn({}, 'crypto', false);
 log('Bourse sans Crypto : onglet « Bourse » ; Bourse et Crypto ensemble : un seul onglet « Bourse » et une seule « Opération »', M.placeTabs(s)[0].label === 'Bourse' && M.placeTabs({}).filter((t) => t.tab === 'bourse').length === 1 && M.addEntries({}).filter((a) => a.id === 'mov').length === 1);
 s = M.setOn(M.setOn({}, 'crypto', false), 'stocks', false);
@@ -34,4 +34,5 @@ const ord = M.normalize({}); ord.crowd.order = 1;
 log('L\'ordre des sous-onglets suit les réglages', M.placeTabs(ord)[0].tab === 'crowd');
 log('Module utilisé = au moins une ligne dans ses données', M.hasData({ resale: [{}] }, 'resale') && !M.hasData({ resale: [] }, 'resale') && M.hasData({ loans: [{}] }, 'realty') && !M.hasData({}, 'crowd'));
 log('setOn ne modifie pas l\'objet reçu (pas d\'effet de bord)', (() => { const a = { budget: { on: true, order: 30 } }; M.setOn(a, 'budget', false); return a.budget.on === true; })());
+log('Assurance-vie (v28) : module utilisé dès qu\'un produit de type Assurance-vie existe', M.hasData({ savings: [{ type: 'Assurance-vie' }] }, 'life') && !M.hasData({ savings: [{ type: 'Livret A' }] }, 'life') && M.byId('life').place.tab === 'life');
 process.exitCode = out.every(Boolean) ? 0 : 1;

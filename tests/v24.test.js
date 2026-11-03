@@ -24,15 +24,15 @@ const J = (x) => JSON.stringify(x);
   await page.reload(); await sleep(900);
   await page.evaluate(() => { document.querySelector('#splash')?.remove(); closeSheet(); });
   const m = await page.evaluate(() => ({ schema: DB.meta.schema, mods: DB.settings.modules, ids: Mods.ids(), bak: listBackups().map((b) => b.reason) }));
-  log('Migration 8 → 9 : réglages des modules créés, tous les modules actifs', m.schema === 9 && m.ids.every((id) => m.mods[id] && m.mods[id].on === true), m);
-  log('… copie de sécurité faite avant la migration', m.bak.some((r) => /schéma 8 → 9/.test(r)), m.bak);
+  log('Migration 8 → 9 : réglages des modules créés, tous les modules actifs', m.schema >= 9 && m.ids.every((id) => m.mods[id] && m.mods[id].on === true), m);
+  log('… copie de sécurité faite avant la migration', m.bak.some((r) => /schéma 8 → \d+/.test(r)), m.bak);
   const ui = await page.evaluate(() => ({ nav: [...document.querySelectorAll('#nav a')].map((a) => a.textContent.trim()), on: document.querySelector('#nav a.on')?.dataset.v,
     tabs: (nav('placements'), [...document.querySelectorAll('#v-placements .subtab')].map((t) => t.textContent.trim())),
     add: (quickAdd(), [...document.querySelectorAll('#sheet .qadd .n')].map((x) => x.textContent)) }));
   await page.evaluate(() => { closeSheet(); nav('dash'); });
   log('Écran identique à la v22 : barre Accueil, Placements, Budget, Revente, Ajouter', J(ui.nav) === J(['Accueil', 'Placements', 'Budget', 'Revente', 'Ajouter']) && ui.on === 'dash', ui);
-  log('… sous-onglets Bourse, Épargne, Immobilier, Crowdfunding', J(ui.tabs) === J(['Bourse', 'Épargne', 'Immobilier', 'Crowdfunding']), ui.tabs);
-  log('… 8 entrées dans « Ajouter »', ui.add.length === 8 && ui.add[0] === 'Opération' && ui.add[7] === 'Importer un relevé', ui.add);
+  log('… sous-onglets Bourse, Épargne, Assurance-vie (v28, une assurance-vie existe), Immobilier, Crowdfunding', J(ui.tabs) === J(['Bourse', 'Épargne', 'Assurance-vie', 'Immobilier', 'Crowdfunding']), ui.tabs);
+  log('… 9 entrées dans « Ajouter » (v28 : contrat d\'assurance-vie)', ui.add.length === 9 && ui.add[0] === 'Opération' && ui.add[8] === 'Importer un relevé', ui.add);
   await page.locator('#nav a', { hasText: 'Budget' }).click(); await sleep(150);
   log('La barre générée fonctionne : « Budget » ouvre le Budget et s\'allume', await page.evaluate(() => document.querySelector('#v-budget').classList.contains('on') && document.querySelector('#nav a.on').dataset.v === 'budget'));
   await page.locator('#nav a', { hasText: 'Ajouter' }).click(); await sleep(150);
@@ -48,7 +48,7 @@ const J = (x) => JSON.stringify(x);
     const after = JSON.stringify(Object.assign({}, Fin.serialize(DB), { settings: null, meta: null }));
     return { ref, res, same: after === ref.data }; });
   const bad = R.res.filter((x) => Math.abs(x.net - R.ref.net) > 0.005 || Math.abs(x.tax - R.ref.tax) > 0.005);
-  log(`Patrimoine net identique quel que soit le module masqué (${R.res.length} cas, ${Math.round(R.ref.net)} €)`, bad.length === 0 && R.res.length === 9, bad);
+  log(`Patrimoine net identique quel que soit le module masqué (${R.res.length} cas, ${Math.round(R.ref.net)} €)`, bad.length === 0 && R.res.length === 10, bad);
   log('Récap fiscal identique quel que soit le module masqué', bad.length === 0);
   log('Masquer puis réactiver chaque module : données enregistrées identiques à l\'octet près', R.same);
 
@@ -67,7 +67,7 @@ const J = (x) => JSON.stringify(x);
     DB.settings.modules = Mods.defaults(); renderAll(); nav('dash'); return r; });
   log('Sans Budget ni Revente : barre Accueil, Placements, Ajouter', J(S.navNoBud) === J(['Accueil', 'Placements', 'Ajouter']), S.navNoBud);
   log('Onglet d\'un module masqué : on bascule sur le premier onglet actif, sans écran vide', !S.tabsNoCrowd.includes('Crowdfunding') && S.placeTab === 'bourse' && S.body, S);
-  log('« Ajouter » ne propose que les modules actifs (sans Crowdfunding, Budget ni Revente : 4 entrées)', !S.addNoCrowd.includes('Projet Bricks / crowdfunding') && S.addNoCrowd.length === 4, S.addNoCrowd);
+  log('« Ajouter » ne propose que les modules actifs (sans Crowdfunding, Budget ni Revente : 5 entrées)', !S.addNoCrowd.includes('Projet Bricks / crowdfunding') && S.addNoCrowd.length === 5, S.addNoCrowd);
   log('Aucun module : barre Accueil et Ajouter, message clair dans Placements', J(S.navNone) === J(['Accueil', 'Ajouter']) && /Aucun module de placement actif/.test(S.emptyPlace), S);
   log('Aucun module : le patrimoine net reste complet sur l\'accueil, sans lien vers l\'Analyse', S.noAnalyse && Math.abs(S.net - R.ref.net) < 0.005, { net: S.net, ref: R.ref.net });
   const tap = await page.evaluate(() => [...document.querySelectorAll('#nav a')].map((a) => Math.round(a.getBoundingClientRect().height)));
@@ -80,7 +80,7 @@ const J = (x) => JSON.stringify(x);
 
   // ===== 4. Sauvegarde et réimport =====
   const imp = await page.evaluate(() => { DB.settings.modules = Mods.setOn(Mods.defaults(), 'resale', false); save();
-    const raw = JSON.parse(localStorage.getItem('investco_v1')); DB.settings.modules = Mods.defaults(); return raw.settings.modules.resale.on === false && raw.meta.schema === 9; });
+    const raw = JSON.parse(localStorage.getItem('investco_v1')); DB.settings.modules = Mods.defaults(); return raw.settings.modules.resale.on === false && raw.meta.schema >= 9; });
   log('Le choix des modules est enregistré avec les données (et part donc dans l\'export et Google Drive)', imp);
 
   log('Aucune violation de la politique de sécurité', (await page.evaluate(() => window.__csp.length)) === 0, await page.evaluate(() => window.__csp));

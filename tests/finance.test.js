@@ -156,6 +156,35 @@ console.log(out.every(Boolean) ? '\n✓ finance.js : tout est bon' : '\n✗ fina
   log('Variation du jour : ligne sans variation comptée à part (1 ligne, 300 €), ligne à 0 € ignorée', PD.missing === 1 && PD.missingValue === 300, PD);
   log('Variation du jour : aucune ligne connue → montant et % nuls (null)', F.portfolioDayChange([{ value: 100, pct: null }]).amount === null && F.portfolioDayChange([]).pct === null);
   log('Variation du jour : valeurs aberrantes (≥ 100 %, texte) écartées', F.portfolioDayChange([{ value: 100, pct: 150 }, { value: 100, pct: 'x' }]).missing === 2);
+  // v28 : assurance-vie multisupport
+  const LF = { funds: [{ id: 'f1', kind: 'euro', name: 'Fonds euros', rates: [{ from: '2020-01-01', rate: 0.025 }] },
+    { id: 'f2', kind: 'uc', name: 'ETF Monde', sym: 'CW8.PA', px: 120, pxD: '2026-10-01', vals: [] },
+    { id: 'f3', kind: 'uc', name: 'SCPI', vals: [{ d: '2026-06-30', v: 5300 }] }] };
+  const LM = [
+    { d: '2020-03-01', p: 'AV', t: 'Reprise', m: 10000, fund: 'f1' },
+    { d: '2024-01-10', p: 'AV', t: 'Dépôt', m: 5000, fund: 'f2', q: 50 },
+    { d: '2025-12-31', p: 'AV', t: 'Intérêts', m: 300, fund: 'f1' },
+    { d: '2026-02-01', p: 'AV', t: 'Arbitrage', m: 5000, fund: 'f1', fund2: 'f3' },
+    { d: '2026-03-01', p: 'AV', t: 'Frais', m: 40, fund: 'f2', q: 0.3 },
+    { d: '2026-08-01', p: 'AV', t: 'Dépôt', m: 200, fund: 'f3' },
+    { d: '2026-09-01', p: 'AV', t: 'Retrait', m: 1000, fund: 'f1' },
+    { d: '2026-09-15', p: 'Livret A', t: 'Transfert', p2: 'AV', m: 500 },
+    { d: '2026-01-01', p: 'Autre', t: 'Dépôt', m: 999, fund: 'f1' }];
+  const LV = F.lifeValue(LF, LM, 'AV', '2026-10-31');
+  log('Assurance-vie : fonds en euros = 10 000 + 300 − 5 000 − 1 000 + 500 (transfert entrant) = 4 800 €', LV.funds[0].value === 4800, LV.funds[0]);
+  log('Assurance-vie : UC avec parts = 49,7 parts × 120 € = 5 964 € (frais prélevés en parts)', LV.funds[1].units === 49.7 && LV.funds[1].value === 5964 && LV.funds[1].src === 'px', LV.funds[1]);
+  log('Assurance-vie : UC sans parts = valeur relevée au 30/06 (5 300 €) + versement postérieur (200 €)', LV.funds[2].value === 5500 && LV.funds[2].src === 'val', LV.funds[2]);
+  log('Assurance-vie : total 16 264 €, versé net 10 000 + 5 000 + 200 − 1 000 + 500 = 14 700 € (arbitrage, frais, intérêts exclus)', LV.total === 16264 && LV.versed === 14700 && LV.gains === 1564, LV);
+  const LV0 = F.lifeValue(LF, LM, 'AV', '2025-12-31');
+  log('Assurance-vie au 31/12/2025 : cours d\'octobre 2026 non utilisé, UC estimée à son coût (approx)', LV0.funds[1].value === 5000 && LV0.funds[1].approx && LV0.total === 15300, LV0);
+  log('Assurance-vie : un arbitrage ne change pas la valeur du contrat', F.lifeValue({ funds: [{ id: 'a', kind: 'euro' }, { id: 'b', kind: 'uc' }] }, [{ d: '2026-01-01', p: 'X', t: 'Dépôt', m: 1000, fund: 'a' }, { d: '2026-02-01', p: 'X', t: 'Arbitrage', m: 400, fund: 'a', fund2: 'b' }], 'X').total === 1000);
+  log('Assurance-vie : opération sans support → fonds en euros', F.lifeValue(LF, [{ d: '2026-01-01', p: 'AV', t: 'Dépôt', m: 100 }], 'AV').euro === 100);
+  log('Assurance-vie : 8 ans le 01/03/2028 pour une ouverture le 01/03/2020', F.life8('2020-03-01') === '2028-03-01');
+  log('Assurance-vie : part de gains d\'un rachat de 2 000 € sur 20 000 € dont 15 000 € versés = 500 €', F.lifeGainPart(2000, 20000, 15000) === 500 && F.lifeGainPart(2000, 10000, 12000) === 0 && F.lifeGainPart(0, 1, 0) === 0);
+  log('Assurance-vie : abattement 4 600 € (seul), 9 200 € (couple), seuil de 150 000 € en paramètre daté', F.lifeAbattement('seul', '2026-06-01') === 4600 && F.lifeAbattement('couple', '2026-06-01') === 9200 && F.getParam('tax.av.seuil', '2026-06-01') === 150000);
+  log('Assurance-vie : intérêts du fonds en euros calculés sur ses seules opérations', F.lifeEuroEvents(LF, LM, 'AV').length === 5 && F.lifeEuroEvents(LF, LM, 'AV').every((x) => x.e !== 5000 || x.d !== '2024-01-10'));
+  const LS = F.serialize({ savings: [{ cap: 1, life: { funds: [{ id: 'f2', kind: 'uc', px: 120.456, vals: [{ d: '2026-06-30', v: 5300.25 }] }] } }], meta: {} });
+  log('Assurance-vie : cours et valeurs des supports stockés en centimes, relus sans perte', LS.savings[0].life.funds[0].px === 12046 && LS.savings[0].life.funds[0].vals[0].v === 530025 && F.deserialize(JSON.parse(JSON.stringify(LS))).savings[0].life.funds[0].vals[0].v === 5300.25);
   console.log(out.every(Boolean) ? '✓ hachage OK' : '✗ erreurs');
   process.exitCode = out.every(Boolean) ? 0 : 1;
 })();

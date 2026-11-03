@@ -21,6 +21,11 @@
       place: { tab: 'bourse', label: 'Crypto', order: 10, shared: true },
       add: [{ id: 'mov', label: 'Opération', sub: 'achat, vente, dépôt, retrait, transfert', icon: 'chart', fn: 'editMov', order: 10 }], data: [],
       has: (db) => (db.assets || []).some(isCryptoAsset) },
+    // v28 : contrats d'assurance-vie multisupports (fonds en euros, unités de compte, arbitrages, frais)
+    { id: 'life', label: 'Assurance-vie', desc: 'Fonds en euros et unités de compte, arbitrages, 8 ans', icon: 'shield', tier: 'plus', requires: [],
+      place: { tab: 'life', label: 'Assurance-vie', order: 25 },
+      add: [{ id: 'life', label: 'Contrat d\'assurance-vie', sub: 'fonds en euros, unités de compte', icon: 'shield', fn: 'editLife', order: 25 }], data: [],
+      has: (db) => (db.savings || []).some((s) => s && s.type === 'Assurance-vie') },
     { id: 'realty', label: 'Immobilier et crédits', desc: 'Résidence, locatif nu ou LMNP, emprunts', icon: 'home', tier: 'plus', requires: [],
       place: { tab: 'immo', label: 'Immobilier', order: 30 },
       add: [{ id: 'property', label: 'Bien immobilier', icon: 'home', fn: 'editProperty', order: 30 }, { id: 'loan', label: 'Crédit', icon: 'bank', fn: 'editLoan', order: 40 }],

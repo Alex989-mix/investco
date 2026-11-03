@@ -2,6 +2,44 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "28.0",
+      "date": "2026-11-04",
+      "title": "L'assurance-vie, support par support",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Module Assurance-vie : un onglet dédié dans Placements, une fiche par contrat avec sa valeur, ses gains depuis l'ouverture, la répartition entre fonds en euros et unités de compte, et la date de ses 8 ans."
+        },
+        {
+          "type": "new",
+          "text": "Bouton « Convertir en contrat complet » sur la fiche d'une assurance-vie suivie comme produit d'épargne : son solde devient le fonds en euros, au centime près, et une copie de sécurité est faite avant."
+        },
+        {
+          "type": "new",
+          "text": "Opérations propres à l'assurance-vie : versement, rachat, arbitrage entre supports, frais, intérêts. Un arbitrage ne change ni la valeur du contrat ni votre épargne de l'année ; des frais réduisent la valeur sans compter comme un retrait."
+        },
+        {
+          "type": "new",
+          "text": "Unités de compte : cours mis à jour automatiquement avec un symbole (bouton « Cours des UC » ou actualisation générale), sinon valeur relevée datée. Sans l'un ni l'autre, l'UC est estimée à son montant investi."
+        },
+        {
+          "type": "improved",
+          "text": "Réglages ▸ Ma situation fiscale : foyer « personne seule » ou « couple » ; le récap fiscal applique l'abattement de 4 600 € ou 9 200 € une seule fois par an, partagé entre tous vos contrats de plus de 8 ans."
+        },
+        {
+          "type": "improved",
+          "text": "Accueil : une ligne « Assurance-vie » à part dans « Où est votre argent » pour les contrats complets. Masquer le module ne change ni votre patrimoine net ni votre récap fiscal."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "Chapitre 02 : dix modules, nouvelle tuile Assurance-vie",
+        "Chapitre 03 : choix du foyer fiscal",
+        "Chapitre 04 : deux nouvelles pages Assurance-vie (supports, opérations, rachats)",
+        "Assurance-vie : que faire si une unité de compte est « estimée »"
+      ]
+    },
+    {
       "version": "27.4",
       "date": "2026-11-03",
       "title": "Un guide entièrement redessiné",

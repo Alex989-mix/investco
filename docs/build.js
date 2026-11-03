@@ -81,6 +81,14 @@ async function shots(browser) {
   // capture de l'élément entier : la barre de navigation fixe est masquée le temps de la capture
   await page.evaluate(() => { closeSheet(); nav('placements'); setPlace('epargne'); document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = 'hidden'; }); document.querySelector('.top').style.position = 'static'; window.scrollTo(0, 0); }); await shot('epargne', '#v-placements');
   await page.evaluate(() => { document.querySelectorAll('a[data-v]').forEach((a) => { a.parentElement.style.visibility = ''; }); document.querySelector('.top').style.position = ''; });
+  // v28 : contrat d'assurance-vie complet (fonds en euros + une unité de compte), après conversion
+  await page.evaluate(() => { const i = DB.savings.findIndex((s) => s.type === 'Assurance-vie'); const c0 = window.confirm; window.confirm = () => true; convertLife(i); window.confirm = c0; const s = DB.savings[i];
+    s.life.funds.push({ id: 'f2', kind: 'uc', name: 'ETF MSCI World', sym: 'CW8.PA', px: 112.5, pxD: ymd(today()), vals: [] });
+    DB.movements.push({ d: ymd(addMonths(today(), -8)), p: s.name, t: 'Arbitrage', q: null, pu: null, m: 3000, f: 0, n: '', fund: 'f1', fund2: 'f2', q2: 30 },
+      { d: ymd(addMonths(today(), -4)), p: s.name, t: 'Frais', q: null, pu: null, m: 18.4, f: 0, n: 'Frais de gestion', fund: 'f1' });
+    save(); renderAll(); closeSheet(); document.querySelector('#toast').style.visibility = 'hidden'; lifeDetail(i); document.querySelector('#sheet').scrollTop = 0; });
+  await shot('assurance_vie', '#sheet');
+  await page.evaluate(() => { closeSheet(); document.querySelector('#toast').style.visibility = ''; });
   await page.evaluate(() => { nav('budget'); window.scrollTo(0, 0); }); await shot('budget', null, top);
   // v21 : onglet Crowdfunding (fiches compactes) puis détail d'un projet (échéancier en liste)
   await page.evaluate(() => { nav('placements'); setPlace('crowd'); window.scrollTo(0, 0); }); await shot('bricks', null, top);

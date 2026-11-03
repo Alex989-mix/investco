@@ -44,7 +44,7 @@ const EMO = /[\u{1F300}-\u{1FAFF}\u{2705}\u{270B}\u{26A1}\u{FE0F}]/u;
   // ===== 3. Ajouter, Réglages, Import =====
   await page.evaluate(() => quickAdd()); await sleep(150);
   const qa = await page.evaluate(() => [...document.querySelectorAll('#sheet .qadd .rw')].map((b) => ({ t: b.querySelector('.n').textContent, h: b.getBoundingClientRect().height, ic: !!b.querySelector('.ricon svg') })));
-  log('Ajouter : 8 lignes avec icône, hauteur ≥ 44 px', qa.length === 8 && qa.every((x) => x.ic && x.h >= 44), qa);
+  log('Ajouter : 9 lignes avec icône, hauteur ≥ 44 px', qa.length === 9 && qa.every((x) => x.ic && x.h >= 44), qa);
   await page.locator('#sheet .rw', { hasText: 'Crédit' }).click(); await sleep(150);
   log('Ajouter ▸ Crédit ouvre le formulaire de crédit', N(await page.textContent('#sheet')).includes('Capital emprunté'), N(await page.textContent('#sheet')).slice(0, 120));
   await page.evaluate(() => { closeSheet(); openSettings(); }); await sleep(150);
