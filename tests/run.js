@@ -8,6 +8,7 @@ let failed = 0;
 for (const [name, args] of [
   ['Calculs (finance.js)', [path.join(__dirname, 'finance.test.js')]],
   ['Lecture CSV (csvimport.js)', [path.join(__dirname, 'csvimport.test.js')]],
+  ['Registre des modules (modules.js)', [path.join(__dirname, 'modules.test.js')]],
   ['Bricks', [path.join(__dirname, 'bricks.test.js'), APP]],
   ['Autres modules', [path.join(__dirname, 'others.test.js'), APP]],
   ['Parcours utilisateur', [path.join(__dirname, 'ui.test.js'), APP]],
@@ -20,6 +21,7 @@ for (const [name, args] of [
   ['Nouveau design et vouvoiement (v22)', [path.join(__dirname, 'v22.test.js'), APP]],
   ['Design des écrans restants, sans emoji (v22.1)', [path.join(__dirname, 'v221.test.js'), APP]],
   ['Variation du jour et actualisation sur place (v22.2)', [path.join(__dirname, 'v222.test.js'), APP]],
+  ['Appli modulable : registre des modules (v24)', [path.join(__dirname, 'v24.test.js'), APP]],
   ['Import de relevés', [path.join(__dirname, 'import.test.js'), APP]],
   ['Mises à jour', [path.join(__dirname, 'update.test.js'), path.join(__dirname, 'fixtures', 'v16'), APP, path.join(tmp, 'serve')]],
 ]) {

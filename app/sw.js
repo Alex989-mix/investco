@@ -3,7 +3,7 @@
 importScripts('version.js');
 const CACHE = 'investco-' + self.APP_VERSION;
 const ASSETS = [
-  './', './index.html', './version.js', './js/finance.js', './js/csvimport.js', './manifest.webmanifest',
+  './', './index.html', './version.js', './js/finance.js', './js/csvimport.js', './js/modules.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-180.png',
   './Inter.woff2', './SpaceGrotesk.woff2'
 ];

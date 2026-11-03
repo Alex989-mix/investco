@@ -1,0 +1,32 @@
+// Tests unitaires du registre des modules (app/js/modules.js) — sans navigateur : node tests/modules.test.js
+const M = require('../app/js/modules.js');
+const out = [];
+const log = (t, ok, d) => { out.push(ok); console.log((ok ? 'OK  ' : 'BUG ') + t + (d !== undefined && !ok ? '  →  ' + JSON.stringify(d) : '')); };
+const J = (x) => JSON.stringify(x);
+
+log('Registre valide : identifiants uniques, dépendances connues, sans cycle, onglets uniques', M.validate().length === 0, M.validate());
+log('Contrôle : un cycle de dépendances est refusé', M.validate([{ id: 'a', requires: ['b'], add: [], data: [] }, { id: 'b', requires: ['a'], add: [], data: [] }]).some((e) => /circulaire/.test(e)));
+log('Contrôle : une dépendance inconnue est refusée', M.validate([{ id: 'a', requires: ['z'], add: [], data: [] }]).some((e) => /inconnu/.test(e)));
+log('Par défaut, tous les modules d\'aujourd\'hui sont actifs', M.ids().every((id) => M.isOn({}, id)) && M.ids().every((id) => M.isOn(undefined, id)));
+log('Par défaut : barre Accueil, Placements, Budget, Revente, Ajouter (comme en v22)', J(M.navEntries({}).map((e) => e.label)) === J(['Accueil', 'Placements', 'Budget', 'Revente', 'Ajouter']), M.navEntries({}).map((e) => e.label));
+log('Par défaut : sous-onglets Bourse, Épargne, Immobilier, Crowdfunding (comme en v22)', J(M.placeTabs({}).map((t) => t.label)) === J(['Bourse', 'Épargne', 'Immobilier', 'Crowdfunding']));
+const add = M.addEntries({}).map((a) => a.label);
+log('Par défaut : 8 entrées dans « Ajouter », dans l\'ordre de la v22', J(add) === J(['Opération', 'Projet Bricks / crowdfunding', 'Bien immobilier', 'Crédit', 'Dépense du compte courant', 'Article d\'achat-revente', 'Dépense récurrente', 'Importer un relevé']), add);
+const n = M.normalize({ crowd: { on: false, order: 99 }, future: { on: true, order: 5 } });
+log('Réglages complétés : un choix existant est conservé, un module inconnu (version plus récente) n\'est pas effacé', n.crowd.on === false && n.crowd.order === 99 && n.future && n.future.on === true && n.savings.on === true, n);
+log('Réglages abîmés (texte, null) : tout reste actif', M.isOn('x', 'budget') && M.isOn(null, 'resale') && M.isOn({ budget: null }, 'budget'));
+let s = M.setOn({}, 'savings', false);
+log('Désactiver l\'Épargne désactive le Crowdfunding qui en dépend (portefeuille plateforme)', !M.isOn(s, 'savings') && !M.isOn(s, 'crowd') && M.isOn(s, 'stocks'), s);
+s = M.setOn(s, 'crowd', true);
+log('Réactiver le Crowdfunding réactive l\'Épargne', M.isOn(s, 'crowd') && M.isOn(s, 'savings'));
+s = M.setOn({}, 'stocks', false);
+log('Sans Bourse, la Crypto (rangée dans l\'onglet Bourse) est inactive', !M.isOn(s, 'crypto') && !M.placeTabs(s).some((t) => t.tab === 'bourse') && !M.addEntries(s).some((a) => a.id === 'mov'));
+const only = {}; M.ids().forEach((id) => { only[id] = { on: id === 'savings' || id === 'import' }; });
+log('Épargne seule : barre Accueil, Placements, Ajouter ; un seul sous-onglet ; « Ajouter » limité à l\'import', J(M.navEntries(only).map((e) => e.label)) === J(['Accueil', 'Placements', 'Ajouter']) && J(M.placeTabs(only).map((t) => t.tab)) === J(['epargne']) && J(M.addEntries(only).map((a) => a.id)) === J(['import']), { nav: M.navEntries(only), add: M.addEntries(only) });
+const none = {}; M.ids().forEach((id) => { none[id] = { on: false }; });
+log('Aucun module : Accueil et Ajouter seulement, aucun sous-onglet', J(M.navEntries(none).map((e) => e.v)) === J(['dash', 'add']) && M.placeTabs(none).length === 0 && M.addEntries(none).length === 0);
+const ord = M.normalize({}); ord.crowd.order = 1;
+log('L\'ordre des sous-onglets suit les réglages', M.placeTabs(ord)[0].tab === 'crowd');
+log('Module utilisé = au moins une ligne dans ses données', M.hasData({ resale: [{}] }, 'resale') && !M.hasData({ resale: [] }, 'resale') && M.hasData({ loans: [{}] }, 'realty') && !M.hasData({}, 'crowd'));
+log('setOn ne modifie pas l\'objet reçu (pas d\'effet de bord)', (() => { const a = { budget: { on: true, order: 30 } }; M.setOn(a, 'budget', false); return a.budget.on === true; })());
+process.exitCode = out.every(Boolean) ? 0 : 1;

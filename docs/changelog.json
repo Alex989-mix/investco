@@ -2,6 +2,27 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "24.0",
+      "date": "2026-11-03",
+      "title": "Les fondations de l'appli modulable",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Chaque famille de placements et de suivi devient un module : bourse, crypto, épargne, immobilier et crédits, crowdfunding, budget, achat-revente, analyse et import de relevés. La barre du bas, les onglets de Placements et la fenêtre « Ajouter » s'affichent désormais selon les modules actifs."
+        },
+        {
+          "type": "improved",
+          "text": "Pour vous, rien ne change : à la mise à jour, tous les modules sont activés et vos écrans restent identiques. Une copie de sécurité de vos données est faite juste avant."
+        },
+        {
+          "type": "improved",
+          "text": "Règle posée pour la suite : masquer un module ne supprimera jamais ses données, qui resteront comptées dans votre patrimoine net et dans votre récap fiscal. Le choix des modules arrivera dans les Réglages dans une prochaine version."
+        }
+      ],
+      "guide": false,
+      "guideChanges": []
+    },
+    {
       "version": "22.2",
       "date": "2026-11-03",
       "title": "La variation du jour de tout votre portefeuille",

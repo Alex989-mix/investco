@@ -35,7 +35,7 @@ const near = (a, b, e = 0.011) => Math.abs(a - b) < e;
     return { schema: DB.meta.schema, t: r && r.t, crowd: DB.crowd.every((c) => Array.isArray(c.reps) && Array.isArray(c.recv) && Array.isArray(c.hold)), auto: DB.settings.crowdAuto, manual: consolidate().ref.manual };
   });
   log('Migration : « Solde à l\'ouverture » → Reprise d\'existant ; échéanciers enrichis ; ancienne valeur au 1er janvier saisie non réutilisée ; versements auto désactivés',
-    mig.schema === 8 && mig.t === 'Reprise' && mig.crowd && mig.auto && mig.auto.on === false && mig.manual === false, mig);
+    mig.schema >= 8 && mig.t === 'Reprise' && mig.crowd && mig.auto && mig.auto.on === false && mig.manual === false, mig);
   await sleep(1500); await page.evaluate(() => closeSheet());
 
   // ===== 1. Valeur au 1er janvier reconstituée et gain de l'année =====
