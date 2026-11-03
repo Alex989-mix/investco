@@ -2,6 +2,25 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "27.2",
+      "date": "2026-11-03",
+      "title": "Un guide plus simple à lire",
+      "highlights": [
+        {
+          "type": "improved",
+          "text": "Chapitre 02 « Votre appli à la carte » : le tableau des modules est simplifié, avec le module, ce qu'il affiche et le chapitre correspondant. Les abréviations de profils (E, B, I) sont retirées."
+        },
+        {
+          "type": "improved",
+          "text": "L'application elle-même ne change pas."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "02 · Votre appli à la carte : tableau des modules simplifié"
+      ]
+    },
+    {
       "version": "27.1",
       "date": "2026-11-03",
       "title": "Un guide utilisateur organisé par modules",
