@@ -2,6 +2,31 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "27.1",
+      "date": "2026-11-03",
+      "title": "Un guide utilisateur organisé par modules",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Nouveau chapitre 02 « Votre appli à la carte » : le premier écran « Composez votre appli », la liste des neuf modules avec les profils qui les contiennent, Réglages › Modules, les modules liés et un tableau « Vous ne trouvez pas un écran ? »."
+        },
+        {
+          "type": "improved",
+          "text": "Chaque chapitre indique en tête le module qu'il concerne (ou « socle commun ») ; le sommaire propose les chapitres à lire selon votre profil : Épargnant, Bourse, Immobilier ou Tout."
+        },
+        {
+          "type": "improved",
+          "text": "Chapitres réorganisés (Épargne, Bourse et crypto, Import, Budget, Immobilier et crowdfunding, Accueil, analyse et sécurité) et nouvelles captures. L'application elle-même ne change pas."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "Sommaire : lire selon votre profil",
+        "02 · Votre appli à la carte (nouveau)",
+        "03 à 11 : chapitres renumérotés, module indiqué en tête"
+      ]
+    },
+    {
       "version": "27.0",
       "date": "2026-11-03",
       "title": "La Crypto, un module à part entière",

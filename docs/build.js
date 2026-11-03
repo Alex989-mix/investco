@@ -42,6 +42,7 @@ async function shots(browser) {
   const BANK = 'Date;Libellé;Débit euros;Crédit euros;\n14/10/2026;PRLV SEPA FREE MOBILE;19,99;;\n12/10/2026;VIREMENT SALAIRE OCTOBRE;;1 850,00;\n10/10/2026;CB CARREFOUR 09/10;82,40;;\n08/10/2026;PRLV SEPA BITSTACK;25,00;;\n';
   const CRYPTO = 'Date;Type;Montant (EUR);Quantité (BTC);Prix du BTC (EUR);Frais (EUR)\n14/10/2026;Achat récurrent;10,00;0,00016234;61 598,12;0,15\n13/10/2026;Arrondi;0,37;0,00000601;61 560,00;0,00\n10/10/2026;Parrainage;0,00;0,00002000;61 000,00;0\n09/10/2026;Retrait;0;0,00100000;;\n';
   await shot('accueil', '#sheet');
+  await page.evaluate(() => onboardCompose()); await shot('composer', '#sheet');
   await page.evaluate(() => {
     closeSheet(); document.querySelector('#splash')?.remove();
     DB.settings.onboarded = true; DB.settings.lastBackup = ymd(today());
@@ -69,8 +70,10 @@ async function shots(browser) {
     save(); renderAll(); nav('dash');
   });
   await page.waitForTimeout(1200); await shot('tableau', null, top);
-  await page.evaluate(() => { openSettings(); const l = [...document.querySelectorAll('#sheet label')].find((x) => x.textContent.includes('Ma situation fiscale')); l && l.scrollIntoView({ block: 'start' }); });
+  await page.evaluate(() => { openSettings(); const l = [...document.querySelectorAll('#sheet .sh-h, #sheet label')].find((x) => x.textContent.includes('Ma situation fiscale')); l && l.scrollIntoView({ block: 'start' }); });
   await shot('reglages', '#sheet');
+  await page.evaluate(() => { closeSheet(); DB.settings.modules = Mods.setOn(Mods.defaults(), 'resale', false); openModules(); document.querySelector('#sheet').scrollTop = 0; document.querySelector('#ov').scrollTop = 0; }); await shot('modules', '#sheet');
+  await page.evaluate(() => { closeSheet(); DB.settings.modules = Mods.defaults(); renderAll(); });
   await page.evaluate((t) => { closeSheet(); openImport(); document.querySelector('#imp_txt').value = t; impAnalyze(); document.querySelector('#imp_result').scrollIntoView({ block: 'start' }); }, BANK);
   await shot('import_banque', '#sheet');
   await page.evaluate((t) => { closeSheet(); openImport(); document.querySelector('#imp_txt').value = t; impAnalyze(); document.querySelector('#imp_result').scrollIntoView({ block: 'start' }); }, CRYPTO);
