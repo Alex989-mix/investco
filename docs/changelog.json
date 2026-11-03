@@ -2,6 +2,31 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "27.3",
+      "date": "2026-11-03",
+      "title": "Un guide plus visuel, plus court",
+      "highlights": [
+        {
+          "type": "improved",
+          "text": "Sommaire en cartes (chapitres et parcours de lecture par profil) et ouvertures de chapitre repensées : numéro en pastille, module concerné en étiquette."
+        },
+        {
+          "type": "improved",
+          "text": "Chapitre 02 : les neuf modules présentés en tuiles illustrées, avec le chapitre à lire, comme dans l'appli."
+        },
+        {
+          "type": "improved",
+          "text": "Textes allégés pour la Bourse, l'Accueil et l'Analyse ; les trois chiffres clés de l'accueil en cartes. L'application elle-même ne change pas."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "Sommaire en cartes",
+        "02 · Modules en tuiles",
+        "05 · Bourse et 09 · Accueil, analyse : textes allégés"
+      ]
+    },
+    {
       "version": "27.2",
       "date": "2026-11-03",
       "title": "Un guide plus simple à lire",
