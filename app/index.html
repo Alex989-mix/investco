@@ -256,6 +256,13 @@ input.bad{border-color:var(--neg)!important;box-shadow:0 0 0 2px var(--negbg)}
 .btn.wide svg{margin-right:6px}
 .sh-h{display:flex;align-items:center;gap:8px;font-weight:650;font-size:14.5px}.sh-h svg{width:17px;height:17px;stroke:var(--ink2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #sheet .btn{min-height:44px}#sheet .btn.sm{min-height:40px}#sheet .btn[style*="width:100%"]{justify-content:center}
+.mrow{cursor:default}.mrow .macts{display:flex;gap:6px;flex:none;align-items:center}.mrow .btn.sq{width:40px;padding:0;justify-content:center}.mrow .btn[disabled]{opacity:.35}
+.ricon.on{background:var(--orange-soft)}.ricon.on svg{stroke:var(--orange)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mtile{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;padding:12px;min-height:112px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--ink);font:inherit;cursor:pointer}
+.mtile .mt-top{display:flex;width:100%;justify-content:space-between;align-items:center}.mtile .mt-top>svg{width:18px;height:18px;stroke:var(--orange);fill:none;stroke-width:2.4;stroke-linecap:round}
+.mtile .mt-n{font-weight:600;font-size:13.5px;line-height:1.25}.mtile .mt-d{font-size:11.5px;color:var(--ink3);line-height:1.35}
+.mtile.soon{opacity:.55;cursor:default}
 .ico-i{display:inline-flex;vertical-align:-3px}.ico-i svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
@@ -937,7 +944,10 @@ const ICO={up:'<path d="M12 19V5M5 12l7-7 7 7"/>',down:'<path d="M12 5v14M5 12l7
   book:'<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5A2.5 2.5 0 0 1 6.5 19H20v3H6.5"/>',
   tag:'<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7.5 7.5h.01"/>',
   sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>',
-  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',hand:'<path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/>'};
+  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/>',
+  shield:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  gem:'<path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18M12 21 8 9l4-6 4 6z"/>',globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  box:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',hand:'<path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/>'};
 // Élision : « d'octobre », « de mars »
 const deMonth=(m)=>(/^[aeiouâéèêîôû]/i.test(m)?'d\'':'de ')+m;
 // Ligne d'une liste (icône, titre, détail, montant à droite)
@@ -955,20 +965,23 @@ function renderDash(){
   const gainTxt=c.yearGain==null?'':(c.yearGain>=0?`+${eur0(c.yearGain)} de gains`:`${eur0(c.yearGain)} de pertes`);
   const A=alertsList(),Y=today().getFullYear();
   const nCrowd=DB.crowd.filter(x=>x.st==='En cours').length,nProps=(DB.properties||[]).length,bpv=c.bV-c.bI;
-  const CL=[['Immobilier',c.reValue,'immo','var(--orange)',c.debt>0?'net de crédit '+eur0(c.reValue-c.debt):nProps+' bien'+(nProps>1?'s':''),''],
+  const CL0=[['Immobilier',c.reValue,'immo','var(--orange)',c.debt>0?'net de crédit '+eur0(c.reValue-c.debt):nProps+' bien'+(nProps>1?'s':''),''],
     ['Épargne',c.sV,'epargne','var(--pos)',DB.savings.length+' compte'+(DB.savings.length>1?'s':''),c.sN?eur0(c.sN)+' d\'intérêts en '+Y:''],
     ['Bourse et crypto',c.bV,'bourse','#6BA3C6',DB.assets.length+' ligne'+(DB.assets.length>1?'s':''),c.bI?`<span class="${bpv>=0?'pos':'neg'}">${bpv>=0?'+':''}${eur0(bpv)}</span> depuis l'achat`:''],
     ['Crowdfunding',c.iV,'crowd','var(--warn)',nCrowd+' projet'+(nCrowd>1?'s':'')+' en cours',c.immoMonthly?eur(c.immoMonthly)+'/mois':'']].filter(x=>x[1]>0.5);
+  // v25 : la valeur des modules masqués reste dans le total, regroupée sur une ligne « Masqué »
+  const MODOF={immo:'realty',epargne:'savings',bourse:'stocks',crowd:'crowd'},CLh=CL0.filter(x=>!modOn(MODOF[x[2]])),CL=CL0.filter(x=>modOn(MODOF[x[2]]));
+  if(CLh.length)CL.push(['Modules masqués',CLh.reduce((a,x)=>a+x[1],0),'','var(--ink3)',CLh.map(x=>x[0]).join(', '),'comptés dans le total','openModules()']);
   const tot=CL.reduce((a,x)=>a+x[1],0)||1;
   $('#v-dash').innerHTML=heroCard({label:'Patrimoine net',value:eur0(c.net),valueId:'heroval',
       pill:delta!=null?{t:`${delta>=0?'+':''}${eur0(delta)}`,tone:delta>=0?'pos':'neg',arrow:delta>=0?'up':'down'}:null,
       sub:(delta!=null?`depuis le 1<sup>er</sup> janvier ${hq('ref')} · dont ${eur0(Math.max(0,c.apports))} épargnés et ${gainTxt}${R.approx.length?' · estimation':''}`:'')+dayLine(dayStats(),'sur la bourse et la crypto')+(c.debt>0?`<div style="margin-top:2px">Actifs ${eur0(c.value)} − crédits ${eur0(c.debt)}</div>`:''),
-      stats:[{l:'Disponible',v:eur0(c.dispo),s:H.months!=null?(H.months>24?'plus de 2 ans de dépenses':fin(Math.round(H.months*10)/10)+' mois de dépenses'):'livrets + courant',on:"nav('placements');setPlace('epargne')"},
-        {l:'Revenus passifs',v:eur0(H.passive)+'<span style="font-size:11px;font-weight:500">/mois</span>',s:'intérêts, Bricks, dividendes',on:"nav('analyse')"},
-        {l:'Épargné en '+mo,v:H.m.income||H.m.spent?eur0(H.m.saved):'—',cls:H.m.saved>=0?'pos':'neg',s:H.avgSaved!=null?'moyenne '+eur0(H.avgSaved)+'/mois':'revenus − dépenses',on:"nav('budget')"}]})+`
+      stats:[{l:'Disponible',v:eur0(c.dispo),s:H.months!=null?(H.months>24?'plus de 2 ans de dépenses':fin(Math.round(H.months*10)/10)+' mois de dépenses'):'livrets + courant',on:modOn('savings')?"nav('placements');setPlace('epargne')":''},
+        {l:'Revenus passifs',v:eur0(H.passive)+'<span style="font-size:11px;font-weight:500">/mois</span>',s:'intérêts, Bricks, dividendes',on:modOn('analyse')?"nav('analyse')":''},
+        {l:'Épargné en '+mo,v:H.m.income||H.m.spent?eur0(H.m.saved):'—',cls:H.m.saved>=0?'pos':'neg',s:H.avgSaved!=null?'moyenne '+eur0(H.avgSaved)+'/mois':'revenus − dépenses',on:modOn('budget')?"nav('budget')":''}]})+`
    ${CL.length?`<div class="grp"><span>Où est votre argent ${hq('repart')}</span><b>${eur0(c.value)}</b></div>
    <div class="lgrp"><div class="stack" aria-hidden="true">${CL.map(x=>`<span style="flex:${Math.max(x[1]/tot,0.012)};background:${x[3]}"></span>`).join('')}</div>
-     ${CL.map(x=>`<div class="fiche" onclick="nav('placements');setPlace('${x[2]}')"><div class="spread"><div class="t-name" style="display:flex;align-items:center"><span class="sw" style="background:${x[3]}"></span>${x[0]}</div><div class="fv">${eur0(x[1])}</div></div>
+     ${CL.map(x=>`<div class="fiche" onclick="${x[6]||`nav('placements');setPlace('${x[2]}')`}"><div class="spread"><div class="t-name" style="display:flex;align-items:center"><span class="sw" style="background:${x[3]}"></span>${x[0]}</div><div class="fv">${eur0(x[1])}</div></div>
        <div class="spread"><span>${x[4]} · ${PCT1(x[1]/tot)}</span><span>${x[5]}</span></div></div>`).join('')}</div>`:''}
    ${A.length?`<div class="grp"><span>À surveiller</span></div><div class="lgrp">${A.slice(0,3).map(alertRow).join('')}
      ${A.length>3?`<div class="t-sub" style="padding:12px 0;cursor:pointer" onclick="allAlerts()">Voir les ${A.length} alertes ›</div>`:''}</div>`:''}
@@ -1247,6 +1260,33 @@ const NAV_ICO={dash:'<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" 
 function renderNav(){const cur=(document.querySelector('.view.on')||{}).id||'v-dash',v0=cur==='v-analyse'?'dash':cur.slice(2);
   $('#nav').innerHTML=Mods.navEntries(DB.settings.modules).map(e=>`<a ${e.v===v0?'class="on" ':''}data-v="${e.v}" onclick="${e.v==='add'?'quickAdd()':`nav('${e.v}')`}"><svg viewBox="0 0 24 24">${NAV_ICO[e.v]||NAV_ICO.add}</svg>${e.label}</a>`).join('\n  ');}
 function setPlace(t){placeTab=t;renderPlacements();viewSave();}
+// ---- v25 : Réglages ▸ Modules (piste 2 « Catalogue ») : modules actifs à réordonner, catalogue en tuiles.
+// Masquer un module ne supprime rien : ses données restent comptées dans le patrimoine et le récap fiscal.
+const MOD_SOON=[['shield','Assurance-vie complète','Fonds en euros et unités de compte'],['sun','PER','Plafond de déduction, économie d\'impôt'],['build','SCPI','Parts, dividendes trimestriels'],
+  ['gem','Or et métaux','Pièces, lingots, taxe ou plus-value'],['globe','Comptes à l\'étranger','Devise, rappel déclaration 3916'],['box','Autres actifs et dettes','Véhicule, prêt à un proche…']];
+function openModules(){const st=Mods.normalize(DB.settings.modules),MA=Mods.MODULES.filter(m=>m.toggle!==false);
+  const on=MA.filter(m=>modOn(m.id)).sort((a,b)=>st[a.id].order-st[b.id].order),off=MA.filter(m=>!modOn(m.id)),tabs=Mods.placeTabs(DB.settings.modules).map(t=>t.module);
+  const mv=(m,d)=>{const k=tabs.indexOf(m.id),ok=k>=0&&k+d>=0&&k+d<tabs.length;return `<button class="btn sm sq" aria-label="${d<0?'Monter':'Descendre'} ${esc(m.label)}" ${ok?`onclick="event.stopPropagation();modMove('${m.id}',${d})"`:'disabled'}>${svgI(d<0?'up':'down')}</button>`;};
+  openSheet(`<div class="spread"><h2>Modules</h2><button class="btn sm" onclick="openSettings()">Retour</button></div>
+   <div class="t-sub" style="margin-top:2px">${on.length} actif${on.length>1?'s':''} sur ${MA.length}</div>
+   <div class="grp"><span>Dans votre appli</span></div><div class="gsub muted">Les flèches règlent l'ordre des onglets de Placements.</div>
+   ${on.length?`<div class="lgrp rows">${on.map(m=>`<div class="rw mrow"><span class="ricon on">${svgI(m.icon)}</span><div class="m"><div class="n">${esc(m.label)}</div></div>
+     <div class="macts">${m.place?mv(m,-1)+mv(m,1):''}<button class="btn sm" onclick="modToggle('${m.id}',false)">Masquer</button></div></div>`).join('')}</div>`
+     :'<div class="emptybox">Aucun module actif : touchez un module du catalogue pour l\'ajouter.</div>'}
+   ${off.length?`<div class="grp"><span>Catalogue</span></div><div class="gsub muted">Touchez un module pour l'ajouter à votre appli.</div>
+   <div class="mgrid">${off.map(m=>`<button class="mtile" onclick="modToggle('${m.id}',true)"><span class="mt-top"><span class="ricon">${svgI(m.icon)}</span>${svgI('plus')}</span><span class="mt-n">${esc(m.label)}</span><span class="mt-d">${esc(m.desc)}</span>${Mods.hasData(DB,m.id)?'<span class="tag warn">données masquées</span>':''}</button>`).join('')}</div>`:''}
+   <div class="grp"><span>Prévus</span></div><div class="gsub muted">Modules en préparation, ajoutés un par version.</div>
+   <div class="mgrid">${MOD_SOON.map(x=>`<div class="mtile soon" aria-disabled="true"><span class="mt-top"><span class="ricon">${svgI(x[0])}</span></span><span class="mt-n">${x[1]}</span><span class="mt-d">${x[2]}</span></div>`).join('')}</div>
+   <div class="note">Masquer un module ne supprime rien : ses données restent enregistrées, sauvegardées, et comptées dans votre patrimoine net et dans votre récap fiscal.</div>`);}
+function modToggle(id,on){const before=new Set(Mods.active(DB.settings.modules).map(m=>m.id));
+  DB.settings.modules=Mods.setOn(DB.settings.modules,id,on);save();renderAll();
+  const after=new Set(Mods.active(DB.settings.modules).map(m=>m.id)),also=Mods.MODULES.filter(m=>m.id!==id&&before.has(m.id)!==after.has(m.id)&&m.toggle!==false).map(m=>m.label);
+  const m=Mods.byId(id);
+  toast(on?m.label+' ajouté'+(also.length?' (avec '+also.join(', ')+')':''):m.label+' masqué'+(also.length?' (et '+also.join(', ')+', qui en dépend)':'')+(Mods.hasData(DB,id)?' : vos données sont conservées':''));
+  openModules();}
+function modMove(id,d){const st=Mods.normalize(DB.settings.modules),T=Mods.placeTabs(st).map(t=>t.module),k=T.indexOf(id),j=k+d;
+  if(k<0||j<0||j>=T.length)return;[T[k],T[j]]=[T[j],T[k]];T.forEach((x,i)=>{st[x].order=(i+1)*10;});
+  DB.settings.modules=st;save();renderAll();openModules();}
 function opsFor(name){return DB.movements.map((m,gi)=>({m,gi})).filter(({m})=>m.p===name||(m.t==='Transfert'&&m.p2===name)).sort((a,b)=>a.m.d<b.m.d?1:-1);}
 function addOpFor(name,type){dupTemplate={d:ymd(today()),p:name,p2:'',t:type,q:'',pu:'',m:'',f:'',n:''};editMov(-1);dupTemplate=null;}
 function productDetail(name){
@@ -2171,7 +2211,9 @@ function saveResale(i){const name=$('#x_name').value.trim();if(!name){toast('Nom
 function delResale(i){DB.resale.splice(i,1);save();closeSheet();renderAll();toast('Supprimé');}
 
 function openSettings(){const s=DB.settings,y=today().getFullYear();
+  const MA=Mods.MODULES.filter(m=>m.toggle!==false),na=MA.filter(m=>modOn(m.id)).length;
   openSheet(`<div class="spread"><h2>Réglages</h2><button class="btn sm" onclick="closeSheet()">Fermer</button></div>
+   <div class="lgrp" style="margin:10px 0 14px"><div class="fiche" onclick="openModules()"><div class="row" style="gap:12px"><span class="ricon">${svgI('grid')}</span><div><div class="t-name">Modules</div><div class="t-sub">${na} actif${na>1?'s':''} sur ${MA.length} · choisissez ce que l'appli affiche</div></div></div></div></div>
    <div class="field"><label>Thème</label><select id="set_theme"><option value="dark" ${s.theme==='dark'?'selected':''}>Sombre</option><option value="light" ${s.theme==='light'?'selected':''}>Clair</option></select></div>
    <div class="field"><button class="btn" style="width:100%;justify-content:center" onclick="enableNotif()">${s.notif?svgI('bell')+' Rappels activés':svgI('bellOff')+' Activer les rappels'}</button><div class="hint">Ce qui déclenche une alerte ${hq('notif')}</div></div>
    <div class="field"><button class="btn" style="width:100%;justify-content:center" onclick="closeSheet();openGuide()">${svgI('book')} Guide : synchronisation Google Drive</button></div>

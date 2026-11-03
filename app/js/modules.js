@@ -16,7 +16,7 @@
       place: { tab: 'bourse', label: 'Bourse', order: 10 },
       add: [{ id: 'mov', label: 'Opération', sub: 'achat, vente, dépôt, retrait, transfert', icon: 'chart', fn: 'editMov', order: 10 }], data: ['assets', 'pea'] },
     { id: 'crypto', label: 'Crypto', desc: 'Cours en direct, plus-values (formulaire 2086)', icon: 'bolt', tier: 'plus', requires: ['stocks'],
-      place: null, add: [], data: [] }, // affiché dans l'onglet Bourse (enveloppe Crypto)
+      place: null, add: [], data: [], toggle: false }, // affiché dans l'onglet Bourse (enveloppe Crypto) ; pas encore masquable seul
     { id: 'realty', label: 'Immobilier et crédits', desc: 'Résidence, locatif nu ou LMNP, emprunts', icon: 'home', tier: 'plus', requires: [],
       place: { tab: 'immo', label: 'Immobilier', order: 30 },
       add: [{ id: 'property', label: 'Bien immobilier', icon: 'home', fn: 'editProperty', order: 30 }, { id: 'loan', label: 'Crédit', icon: 'bank', fn: 'editLoan', order: 40 }],

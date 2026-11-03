@@ -2,6 +2,33 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "25.0",
+      "date": "2026-11-03",
+      "title": "Choisissez vos modules",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Réglages ▸ Modules : la liste de vos modules actifs et un catalogue en tuiles. Touchez « Masquer » pour retirer un module de l'appli, touchez sa tuile pour le rajouter."
+        },
+        {
+          "type": "new",
+          "text": "Un module masqué garde toutes ses données : elles restent sauvegardées et comptées dans votre patrimoine net et votre récap fiscal. Sur l'accueil, leur valeur apparaît sur une ligne « Modules masqués »."
+        },
+        {
+          "type": "improved",
+          "text": "Les dépendances sont gérées pour vous : masquer l'Épargne masque aussi le Crowdfunding (son portefeuille est un compte d'épargne), et rajouter le Crowdfunding rajoute l'Épargne."
+        },
+        {
+          "type": "improved",
+          "text": "Flèches pour régler l'ordre des onglets de Placements ; les modules en préparation (assurance-vie complète, PER, SCPI, or, comptes à l'étranger, autres actifs et dettes) sont annoncés."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "02 · Premiers réglages : choisir vos modules"
+      ]
+    },
+    {
       "version": "24.0",
       "date": "2026-11-03",
       "title": "Les fondations de l'appli modulable",
