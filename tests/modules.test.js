@@ -20,7 +20,12 @@ log('Désactiver l\'Épargne désactive le Crowdfunding qui en dépend (portefeu
 s = M.setOn(s, 'crowd', true);
 log('Réactiver le Crowdfunding réactive l\'Épargne', M.isOn(s, 'crowd') && M.isOn(s, 'savings'));
 s = M.setOn({}, 'stocks', false);
-log('Sans Bourse, la Crypto (rangée dans l\'onglet Bourse) est inactive', !M.isOn(s, 'crypto') && !M.placeTabs(s).some((t) => t.tab === 'bourse') && !M.addEntries(s).some((a) => a.id === 'mov'));
+log('Crypto seule (v27) : un onglet « Crypto » à la place de « Bourse », « Opération » toujours proposée', M.isOn(s, 'crypto') && JSON.stringify(M.placeTabs(s).map((t) => t.label)) === JSON.stringify(['Crypto', 'Épargne', 'Immobilier', 'Crowdfunding']) && M.addEntries(s).filter((a) => a.id === 'mov').length === 1, M.placeTabs(s));
+s = M.setOn({}, 'crypto', false);
+log('Bourse sans Crypto : onglet « Bourse » ; Bourse et Crypto ensemble : un seul onglet « Bourse » et une seule « Opération »', M.placeTabs(s)[0].label === 'Bourse' && M.placeTabs({}).filter((t) => t.tab === 'bourse').length === 1 && M.addEntries({}).filter((a) => a.id === 'mov').length === 1);
+s = M.setOn(M.setOn({}, 'crypto', false), 'stocks', false);
+log('Ni Bourse ni Crypto : pas d\'onglet Bourse, pas d\'« Opération »', !M.placeTabs(s).some((t) => t.tab === 'bourse') && !M.addEntries(s).some((a) => a.id === 'mov'));
+log('Données : une crypto compte pour le module Crypto, un ETF pour la Bourse, un ETP crypto dans un PEA pour la Bourse', M.hasData({ assets: [{ type: 'Crypto', env: 'Bitstack' }] }, 'crypto') && !M.hasData({ assets: [{ type: 'Crypto', env: 'Bitstack' }] }, 'stocks') && M.hasData({ assets: [{ type: 'ETF', env: 'PEA' }] }, 'stocks') && M.hasData({ assets: [{ type: 'Crypto', env: 'PEA' }] }, 'stocks') && !M.hasData({ assets: [{ type: 'Crypto', env: 'PEA' }] }, 'crypto'));
 const only = {}; M.ids().forEach((id) => { only[id] = { on: id === 'savings' || id === 'import' }; });
 log('Épargne seule : barre Accueil, Placements, Ajouter ; un seul sous-onglet ; « Ajouter » limité à l\'import', J(M.navEntries(only).map((e) => e.label)) === J(['Accueil', 'Placements', 'Ajouter']) && J(M.placeTabs(only).map((t) => t.tab)) === J(['epargne']) && J(M.addEntries(only).map((a) => a.id)) === J(['import']), { nav: M.navEntries(only), add: M.addEntries(only) });
 const none = {}; M.ids().forEach((id) => { none[id] = { on: false }; });

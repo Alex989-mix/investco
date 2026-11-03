@@ -2,6 +2,29 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "27.0",
+      "date": "2026-11-03",
+      "title": "La Crypto, un module à part entière",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Réglages ▸ Modules : la Crypto se masque désormais seule. L'onglet Bourse ne montre alors que vos titres (PEA, compte-titres), et la carte s'intitule « Bourse »."
+        },
+        {
+          "type": "new",
+          "text": "Vous pouvez aussi ne suivre que des cryptos : sans le module Bourse, l'onglet s'appelle « Crypto » et ne montre que vos plateformes crypto. Le premier écran « Composez votre appli » propose désormais la Crypto en tuile."
+        },
+        {
+          "type": "improved",
+          "text": "Sur l'accueil, « Bourse et crypto » se scinde quand un seul des deux modules est actif ; la partie masquée rejoint « Modules masqués », toujours comptée dans le total. Les ETP crypto logés dans un PEA restent rattachés à la Bourse."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "03 · Bourse et crypto : onglet Crypto"
+      ]
+    },
+    {
       "version": "26.0",
       "date": "2026-11-03",
       "title": "Composez votre appli dès le premier lancement",

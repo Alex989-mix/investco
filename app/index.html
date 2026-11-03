@@ -890,7 +890,7 @@ const OB_PRESETS=[['saver','Épargnant',['savings','budget','import']],['stocks'
   ['realty','Immobilier',['savings','realty','crowd','analyse','import']],['all','Tout',null]];
 let obSel=null;
 function obPreset(k){const P=OB_PRESETS.find(x=>x[0]===k);const o={};Mods.ids().forEach(id=>{o[id]={on:!P[2]||P[2].includes(id),order:Mods.defaults()[id].order};});obSel=o;onboardCompose();}
-function obToggle(id){obSel=Mods.setOn(obSel,id,!Mods.isOn(obSel,id));obSel.crypto.on=obSel.stocks.on;onboardCompose();}
+function obToggle(id){obSel=Mods.setOn(obSel,id,!Mods.isOn(obSel,id));onboardCompose();}
 function onboardCompose(){if(!obSel){obPreset('saver');return;}
   const MA=Mods.MODULES.filter(m=>m.toggle!==false),n=MA.filter(m=>Mods.isOn(obSel,m.id)).length;
   const cur=(OB_PRESETS.find(P=>MA.every(m=>Mods.isOn(obSel,m.id)===(!P[2]||P[2].includes(m.id))))||[])[0];
@@ -990,7 +990,11 @@ function renderDash(){
     ['Bourse et crypto',c.bV,'bourse','#6BA3C6',DB.assets.length+' ligne'+(DB.assets.length>1?'s':''),c.bI?`<span class="${bpv>=0?'pos':'neg'}">${bpv>=0?'+':''}${eur0(bpv)}</span> depuis l'achat`:''],
     ['Crowdfunding',c.iV,'crowd','var(--warn)',nCrowd+' projet'+(nCrowd>1?'s':'')+' en cours',c.immoMonthly?eur(c.immoMonthly)+'/mois':'']].filter(x=>x[1]>0.5);
   // v25 : la valeur des modules masqués reste dans le total, regroupée sur une ligne « Masqué »
-  const MODOF={immo:'realty',epargne:'savings',bourse:'stocks',crowd:'crowd'},CLh=CL0.filter(x=>!modOn(MODOF[x[2]])),CL=CL0.filter(x=>modOn(MODOF[x[2]]));
+  const cV=DB.assets.filter(Mods.isCryptoAsset).reduce((t,a)=>t+assetCalc(a).value,0),kB=CL0.findIndex(x=>x[2]==='bourse');
+  if(kB>=0&&modOn('stocks')!==modOn('crypto')){const b=CL0[kB],parts=[['Bourse',b[1]-cV,'stocks'],['Crypto',cV,'crypto']];
+    CL0.splice(kB,1,...parts.filter(p=>p[1]>0.5).map(p=>[p[0],p[1],'bourse',b[3],p[0]==='Crypto'?'plateformes crypto':'PEA, compte-titres','',null,p[2]]));}
+  const MODOF={immo:'realty',epargne:'savings',bourse:'stocks',crowd:'crowd'},mOf=x=>x[7]||MODOF[x[2]],
+    shown=x=>x[2]==='bourse'&&!x[7]?(modOn('stocks')||modOn('crypto')):modOn(mOf(x)),CLh=CL0.filter(x=>!shown(x)),CL=CL0.filter(shown);
   if(CLh.length)CL.push(['Modules masqués',CLh.reduce((a,x)=>a+x[1],0),'','var(--ink3)',CLh.map(x=>x[0]).join(', '),'comptés dans le total','openModules()']);
   const tot=CL.reduce((a,x)=>a+x[1],0)||1;
   $('#v-dash').innerHTML=heroCard({label:'Patrimoine net',value:eur0(c.net),valueId:'heroval',
@@ -1340,26 +1344,28 @@ function productDetail(name){
 // Groupe d'une ligne : enveloppe (PEA, compte-titres) ou plateforme crypto
 function assetGroup(a){return a.env==='PEA'?'PEA':a.type==='Crypto'?'Crypto · '+(a.env||'plateforme'):(a.env==='CTO'||!a.env?'Compte-titres':a.env);}
 const unitOf=(a)=>a.type==='Crypto'?((a.ticker||'').split('-')[0]||''):a.type==='ETF'?'parts':'actions';
-function placeBourse(){
-  const rows=DB.assets.map((a,i)=>({a,c:assetCalc(a),i}));
+// v27 : une ligne de Bourse s'affiche si son module (Bourse ou Crypto) est actif ; ses montants restent dans le patrimoine
+const assetShown=(a)=>Mods.isCryptoAsset(a)?modOn('crypto'):modOn('stocks');
+function placeBourse(){const onS=modOn('stocks'),onC=modOn('crypto'),SH=DB.assets.filter(assetShown);
+  const rows=SH.map((a,i)=>({a,c:assetCalc(a),i}));
   const tI=rows.reduce((s,r)=>s+r.c.inv,0),tV=rows.reduce((s,r)=>s+r.c.value,0),P=peaCalc(),pv=tV-tI;
   const order=['PEA','Compte-titres'],G={};rows.forEach(r=>{const g=assetGroup(r.a);(G[g]=G[g]||[]).push(r);});
   const keys=Object.keys(G).sort((x,y)=>{const ix=order.indexOf(x),iy=order.indexOf(y);return (ix<0?9:ix)-(iy<0?9:iy)||x.localeCompare(y);});
-  if((DB.pea&&DB.pea.open)&&!G.PEA){G.PEA=[];keys.unshift('PEA');}
+  if(onS&&(DB.pea&&DB.pea.open)&&!G.PEA){G.PEA=[];keys.unshift('PEA');}
   const fiche=({a,c})=>`<div class="fiche" onclick="productDetail(DB.assets[${DB.assets.indexOf(a)}].name)">
      <div class="spread" style="align-items:flex-start;gap:10px"><div style="min-width:0"><div class="t-name">${esc(a.name)}</div><div class="t-sub">${esc(a.ticker||'')}${c.qty?' · '+QTY(c.qty)+' '+esc(unitOf(a)):''}${a.price?' · '+eur(a.price):''}${c.divs?' · div. '+eur0(c.divs):''}</div></div>
        <div class="fv">${eur0(c.value)}</div></div>
      <div class="spread" style="margin-top:6px;font-size:12.5px"><span>${dayChgHtml(a)||'<span class="muted">—</span>'}</span>${c.inv?`<span class="${c.pv>=0?'pos':'neg'}"><b>${c.pv>=0?'+':''}${eur0(c.pv)}</b> · ${c.pvp>=0?'+':''}${PCT1(c.pvp)}</span>`:''}</div></div>`;
   const GS=keys.map(k=>({k,v:G[k].reduce((t,r)=>t+r.c.value,0)}));
-  $('#place-body').innerHTML=heroCard({label:'Bourse et crypto',labelExtra:` ${hq('bourse')} <span data-live-badge>${liveBadgeHtml()}</span>`,value:eur0(tV),
+  $('#place-body').innerHTML=heroCard({label:onS&&onC?'Bourse et crypto':onS?'Bourse':'Crypto',labelExtra:` ${hq('bourse')} <span data-live-badge>${liveBadgeHtml()}</span>`,value:eur0(tV),
       pill:tI?{t:`${pv>=0?'+':''}${eur0(pv)} · ${pv>=0?'+':''}${PCT1(tI?pv/tI:0)}`,tone:pv>=0?'pos':'neg',arrow:pv>=0?'up':'down'}:null,
-      sub:(tI?`de ${pv>=0?'plus':'moins'}-value depuis l'achat · ${eur0(tI)} investis`:'')+dayLine(dayStats()),
+      sub:(tI?`de ${pv>=0?'plus':'moins'}-value depuis l'achat · ${eur0(tI)} investis`:'')+dayLine(dayStats(SH)),
       stats:GS.slice(0,3).map(g=>({l:esc(g.k==='PEA'&&DB.pea&&DB.pea.bank?'PEA':g.k.split(' · ')[0]),v:eur0(g.v)}))})+`
    <div class="acts"><button class="btn" onclick="refreshPrices()">${svgI('refresh')}Actualiser</button><button class="btn sq" onclick="priceDetail()" title="Détail de l'actualisation" aria-label="Détail de l'actualisation">${svgI('info')}</button><button class="btn primary" onclick="editAsset(-1)">${svgI('plus')}Actif</button></div>
    ${keys.map(k=>{const L=G[k],sub=L.reduce((t,r)=>t+r.c.value,0),GD=dayStats(L.map(r=>r.a));
      const peaLine=k==='PEA'?`<div class="gsub">${P.versed?eur0(P.versed)+' versés'+(P.real?'':' (estim.)')+' sur '+eur0(P.ceil):'versements à renseigner'}${P.open?(P.mature?' · plus de 5 ans ✓':' · 5 ans le '+pd(P.fiveYears).toLocaleDateString('fr-FR')):''}${P.real&&P.cash?' · '+eur0(P.cash)+' de liquidités':''} · <span class="lnk" onclick="editPea()">fiche PEA</span></div>`:'';
      return `<div class="grp"><span>${esc(k==='PEA'&&DB.pea&&DB.pea.bank?'PEA · '+DB.pea.bank:k)}${k==='PEA'?' '+hq('peaVers'):''}</span><b>${GD.amount!=null?`<span class="gday">${dayAmt(GD)} auj.</span> `:''}${eur0(sub)}</b></div>${peaLine}${L.length?`<div class="lgrp">${L.map(fiche).join('')}</div>`:''}`;}).join('')
-     ||`<div class="card" style="margin-top:12px"><div class="emptybox">Aucun actif. Ajoutez une action, un ETF ou une crypto.</div></div>`}
+     ||`<div class="card" style="margin-top:12px"><div class="emptybox">Aucun actif. Ajoutez ${onS&&onC?'une action, un ETF ou une crypto':onS?'une action ou un ETF':'une crypto'}.</div></div>`}
    ${rows.length?'<div class="note" style="text-align:center">Touchez une ligne pour le détail, les seuils de revente et les opérations</div>':''}`;
 }
 function dayChgHtml(a){const h=liveChg(a);return h?h.replace(/^ · /,''):'';}

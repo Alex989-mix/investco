@@ -25,7 +25,7 @@ const sel = (page) => page.evaluate(() => [...document.querySelectorAll('#sheet 
   await page.locator('#sheet .mtile', { hasText: 'Crowdfunding' }).click(); await sleep(150);
   log('Ajouter le Crowdfunding rajoute l\'Épargne', (await sel(page)).includes('Épargne réglementée') && (await sel(page)).includes('Crowdfunding'));
   await page.locator('#sheet .obp button', { hasText: 'Tout' }).click(); await sleep(150);
-  log('Raccourci « Tout » : les 8 modules', (await sel(page)).length === 8 && N(await page.textContent('#sheet .btn.wide')) === 'Continuer · 8 modules');
+  log('Raccourci « Tout » : les 9 modules', (await sel(page)).length === 9 && N(await page.textContent('#sheet .btn.wide')) === 'Continuer · 9 modules');
   for (let k = 0; k < 10 && (await sel(page)).length; k++) { await page.locator('#sheet .mtile.on').first().click(); await sleep(80); }
   await sleep(150);
   log('Aucun module coché : « Continuer » désactivé', await page.evaluate(() => document.querySelector('#sheet .btn.wide').disabled) && N(await page.textContent('#sheet .btn.wide')) === 'Continuer · 0 module');

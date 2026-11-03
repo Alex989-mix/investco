@@ -14,9 +14,13 @@
       place: { tab: 'epargne', label: 'Épargne', order: 20 }, add: [], data: ['savings'] },
     { id: 'stocks', label: 'Bourse', desc: 'PEA, compte-titres, ETF, actions, dividendes', icon: 'chart', tier: 'base', requires: [],
       place: { tab: 'bourse', label: 'Bourse', order: 10 },
-      add: [{ id: 'mov', label: 'Opération', sub: 'achat, vente, dépôt, retrait, transfert', icon: 'chart', fn: 'editMov', order: 10 }], data: ['assets', 'pea'] },
-    { id: 'crypto', label: 'Crypto', desc: 'Cours en direct, plus-values (formulaire 2086)', icon: 'bolt', tier: 'plus', requires: ['stocks'],
-      place: null, add: [], data: [], toggle: false }, // affiché dans l'onglet Bourse (enveloppe Crypto) ; pas encore masquable seul
+      add: [{ id: 'mov', label: 'Opération', sub: 'achat, vente, dépôt, retrait, transfert', icon: 'chart', fn: 'editMov', order: 10 }], data: ['pea'],
+      has: (db) => (db.assets || []).some((a) => !isCryptoAsset(a)) },
+    // v27 : la Crypto partage l'onglet de la Bourse (« Bourse » si les deux sont actifs, « Crypto » si elle est seule)
+    { id: 'crypto', label: 'Crypto', desc: 'Cours en direct, plus-values (formulaire 2086)', icon: 'bolt', tier: 'plus', requires: [],
+      place: { tab: 'bourse', label: 'Crypto', order: 10, shared: true },
+      add: [{ id: 'mov', label: 'Opération', sub: 'achat, vente, dépôt, retrait, transfert', icon: 'chart', fn: 'editMov', order: 10 }], data: [],
+      has: (db) => (db.assets || []).some(isCryptoAsset) },
     { id: 'realty', label: 'Immobilier et crédits', desc: 'Résidence, locatif nu ou LMNP, emprunts', icon: 'home', tier: 'plus', requires: [],
       place: { tab: 'immo', label: 'Immobilier', order: 30 },
       add: [{ id: 'property', label: 'Bien immobilier', icon: 'home', fn: 'editProperty', order: 30 }, { id: 'loan', label: 'Crédit', icon: 'bank', fn: 'editLoan', order: 40 }],
@@ -36,6 +40,8 @@
     { id: 'import', label: 'Import de relevés', desc: 'CSV ou PDF de banque, de livret, de plateforme crypto', icon: 'upload', tier: 'base', requires: [],
       add: [{ id: 'import', label: 'Importer un relevé', sub: 'CSV ou PDF', icon: 'upload', fn: 'openImport', order: 80 }], data: [] },
   ];
+  // Une crypto hors PEA (les ETP crypto logés dans un PEA restent de la Bourse)
+  const isCryptoAsset = (a) => !!a && a.type === 'Crypto' && a.env !== 'PEA';
   const byId = (id) => MODULES.find((m) => m.id === id) || null;
   const ids = () => MODULES.map((m) => m.id);
 
@@ -46,7 +52,7 @@
       if (!/^[a-z]+$/.test(m.id)) errors.push('identifiant invalide : ' + m.id);
       if (seen.has(m.id)) errors.push('identifiant en double : ' + m.id); seen.add(m.id);
       (m.requires || []).forEach((r) => { if (!known.has(r)) errors.push(m.id + ' dépend d\'un module inconnu : ' + r); });
-      const t = m.place && m.place.tab; if (t) { if (tabs.has(t)) errors.push('onglet en double : ' + t); tabs.add(t); }
+      const t = m.place && !m.place.shared && m.place.tab; if (t) { if (tabs.has(t)) errors.push('onglet en double : ' + t); tabs.add(t); }
     });
     const visit = (id, path) => { if (path.includes(id)) { errors.push('dépendance circulaire : ' + path.concat(id).join(' → ')); return; }
       const m = list.find((x) => x.id === id); (m && m.requires || []).forEach((r) => visit(r, path.concat(id))); };
@@ -54,7 +60,8 @@
     return errors;
   }
   // Un module est-il utilisé ? (au moins une ligne dans l'une de ses données)
-  function hasData(db, id) { const m = byId(id); return !!m && m.data.some((k) => Array.isArray(db && db[k]) && db[k].length > 0); }
+  function hasData(db, id) { const m = byId(id); if (!m || !db) return false;
+    return (m.has ? m.has(db) : false) || m.data.some((k) => k === 'pea' ? !!(db.pea && db.pea.open) : Array.isArray(db[k]) && db[k].length > 0); }
   // Réglages par défaut : tous les modules d'aujourd'hui sont actifs (rien ne change pour un utilisateur existant)
   function defaults() { const o = {}; MODULES.forEach((m, i) => { o[m.id] = { on: true, order: m.place ? m.place.order : (i + 1) * 10 }; }); return o; }
   // Réglages complétés : un module apparu dans une version récente reçoit sa valeur par défaut, sans toucher aux choix existants
@@ -80,11 +87,14 @@
     return s;
   }
   // Ce que l'interface affiche, construit depuis les modules actifs
-  function placeTabs(settings) { const s = normalize(settings);
-    return active(settings).filter((m) => m.place).map((m) => ({ tab: m.place.tab, label: m.place.label, module: m.id, order: s[m.id].order }))
-      .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label)); }
-  function addEntries(settings) {
-    return active(settings).flatMap((m) => m.add.map((a) => Object.assign({ module: m.id }, a))).sort((a, b) => a.order - b.order); }
+  // Un onglet partagé (Bourse + Crypto) n'apparaît qu'une fois : libellé et ordre du module principal s'il est actif
+  function placeTabs(settings) { const s = normalize(settings), out = [];
+    active(settings).filter((m) => m.place).forEach((m) => { const t = { tab: m.place.tab, label: m.place.label, module: m.id, order: s[m.id].order };
+      const k = out.findIndex((x) => x.tab === t.tab);
+      if (k < 0) out.push(t); else if (!m.place.shared) out[k] = Object.assign(t, { shared: out[k].module }); else out[k].shared = m.id; });
+    return out.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label)); }
+  function addEntries(settings) { const seen = new Set();
+    return active(settings).flatMap((m) => m.add.map((a) => Object.assign({ module: m.id }, a))).filter((a) => !seen.has(a.id) && seen.add(a.id)).sort((a, b) => a.order - b.order); }
   // Barre du bas : Accueil, Placements (si au moins un sous-onglet), modules à onglet propre, Ajouter
   function navEntries(settings) {
     const out = [{ v: 'dash', label: 'Accueil' }];
@@ -93,7 +103,7 @@
     out.push({ v: 'add', label: 'Ajouter' });
     return out;
   }
-  const api = { MODULES, byId, ids, validate, hasData, defaults, normalize, isOn, active, setOn, placeTabs, addEntries, navEntries };
+  const api = { MODULES, isCryptoAsset, byId, ids, validate, hasData, defaults, normalize, isOn, active, setOn, placeTabs, addEntries, navEntries };
   root.Mods = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);

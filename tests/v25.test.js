@@ -20,10 +20,10 @@ const TU = /(?<!\p{L})(tu|ton|ta|tes|toi|Ajoute|Touche|Choisis|Masque|Active)(?!
 
   // ===== 1. Entrée dans les Réglages =====
   await page.evaluate(() => openSettings()); await sleep(150);
-  log('Réglages : entrée « Modules » en tête, « 8 actifs sur 8 »', N(await page.textContent('#sheet .fiche')).includes('Modules') && N(await page.textContent('#sheet')).includes('8 actifs sur 8'));
+  log('Réglages : entrée « Modules » en tête, « 9 actifs sur 9 »', N(await page.textContent('#sheet .fiche')).includes('Modules') && N(await page.textContent('#sheet')).includes('9 actifs sur 9'));
   await page.locator('#sheet .fiche', { hasText: 'Modules' }).click(); await sleep(150);
   const s0 = await page.evaluate(() => ({ rows: [...document.querySelectorAll('#sheet .mrow .n')].map((x) => x.textContent), tiles: document.querySelectorAll('#sheet .mtile:not(.soon)').length, soon: document.querySelectorAll('#sheet .mtile.soon').length }));
-  log('Modules : 8 modules dans « Dans votre appli », catalogue vide, 6 modules prévus', s0.rows.length === 8 && s0.tiles === 0 && s0.soon === 6 && !s0.rows.includes('Crypto'), s0);
+  log('Modules : 9 modules dans « Dans votre appli » (Crypto comprise), catalogue vide, 6 modules prévus', s0.rows.length === 9 && s0.tiles === 0 && s0.soon === 6 && s0.rows.includes('Crypto'), s0);
 
   // ===== 2. Masquer au doigt =====
   await page.locator('#sheet .mrow', { hasText: 'Crowdfunding' }).locator('button', { hasText: 'Masquer' }).click(); await sleep(200);
