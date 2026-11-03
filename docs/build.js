@@ -64,6 +64,8 @@ async function shots(browser) {
     DB.crowd.forEach((c, k) => { c.id = c.id || 'c' + k; c.wallet = 'Portefeuille Bricks'; });
     DB.crowd.forEach((c, k) => { const due = crowdSchedule(c).filter((q) => q.d <= today()); due.forEach((q) => { const i = DB.crowd.indexOf(c); if (!(c.paid || []).includes(q.mk)) togglePaid(i, q.mk); }); });
     DB.loans = [{ id: 'l1', name: 'Crédit studio', capital: 120000, rate: 0.0385, months: 240, start: '2023-06-01', insurance: 18, propertyId: 'p1' }];
+    // v22.2 : variation du jour des actions et ETF (comme après « Actualiser »), pour les captures
+    DB.assets.filter((x) => x.type !== 'Crypto').forEach((x, k) => { x.chg = [0.62, -0.35, 1.1][k % 3]; x.chgT = Date.now(); });
     save(); renderAll(); nav('dash');
   });
   await page.waitForTimeout(1200); await shot('tableau', null, top);

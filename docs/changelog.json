@@ -2,6 +2,34 @@
   "_lisezmoi": "Historique des versions destiné aux utilisateurs (vouvoiement). Ajoutez la nouvelle version EN TÊTE de la liste. 'guide' : true si le guide utilisateur a été modifié dans cette version, avec la liste des sections concernées dans 'guideChanges'. Les notes affichées dans l'application restent dans app/version.js.",
   "versions": [
     {
+      "version": "22.2",
+      "date": "2026-11-03",
+      "title": "La variation du jour de tout votre portefeuille",
+      "highlights": [
+        {
+          "type": "new",
+          "text": "Accueil : la carte du patrimoine affiche la variation du jour de votre bourse et de vos cryptos, en euros et en pourcentage."
+        },
+        {
+          "type": "new",
+          "text": "Bourse : variation du jour de l'ensemble du portefeuille dans la carte du haut, et de chaque enveloppe (PEA, compte-titres, plateforme crypto) à côté de son sous-total."
+        },
+        {
+          "type": "improved",
+          "text": "Crypto : la variation sur 24 heures est aussi récupérée par « Actualiser » quand le flux en direct n'est pas disponible, et conservée après un rechargement."
+        },
+        {
+          "type": "fixed",
+          "text": "Glisser vers le bas pour actualiser ne vous ramène plus à l'accueil : vous restez sur l'écran et l'onglet où vous étiez."
+        }
+      ],
+      "guide": true,
+      "guideChanges": [
+        "03 · Bourse : variation du jour du portefeuille et de chaque enveloppe",
+        "07 · L'accueil : variation du jour, actualisation sur place"
+      ]
+    },
+    {
       "version": "22.1",
       "date": "2026-10-31",
       "title": "Le nouveau design partout",

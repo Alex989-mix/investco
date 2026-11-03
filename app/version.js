@@ -2,12 +2,12 @@
    C'est le SEUL endroit à modifier à chaque nouvelle version : le service worker (sw.js)
    et l'appli (index.html) lisent tous les deux ce fichier. Changer APP_VERSION suffit
    pour que chaque appareil détecte la mise à jour et propose de l'installer. */
-self.APP_VERSION = '22.1';
+self.APP_VERSION = '22.2';
 self.APP_RELEASE = {
-  date: '2026-10-31',
+  date: '2026-11-03',
   notes: [
-    'Analyse et Achat-revente adoptent le nouveau design : une carte de synthèse en tête, puis des sections claires et des lignes faciles à toucher.',
-    'Réglages, « Ajouter » et l\'import de relevés : icônes au trait à la place des emojis, boutons plus grands.',
-    'Récap fiscal : taux affichés à la française (18,6 % au lieu de 18.6%).'
+    'Accueil et Bourse : la variation du jour de tout votre portefeuille, en euros et en pourcentage, et celle de chaque enveloppe.',
+    'Crypto : la variation sur 24 heures est aussi récupérée par « Actualiser » quand le direct n\'est pas disponible.',
+    'Glisser vers le bas pour actualiser vous laisse sur l\'écran où vous étiez.'
   ]
 };

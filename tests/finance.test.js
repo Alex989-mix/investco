@@ -150,6 +150,12 @@ console.log(out.every(Boolean) ? '\n✓ finance.js : tout est bon' : '\n✗ fina
   const CT3 = F.cryptoTax([{ d: '2026-01-01', t: 'Achat', cost: 100 }, { d: '2026-03-01', t: 'Vente', price: 300, fees: 0, vg: 400 }], 2026, 305);
   log('Cessions de l\'année ≤ 305 € : plus-value exonérée (225 € non imposables)', CT3.exempt && CT3.taxable === 0 && CT3.total === 225);
   log('Cessions d\'une autre année ignorées pour l\'année demandée, mais elles réduisent le PTA', F.cryptoTax([{ d: '2025-01-01', t: 'Achat', cost: 1000 }, { d: '2025-06-01', t: 'Vente', price: 500, fees: 0, vg: 1000 }, { d: '2026-06-01', t: 'Vente', price: 500, fees: 0, vg: 500 }], 2026, 305).lines[0].pta === 500);
+  // v22.2 : variation du jour du portefeuille
+  const PD = F.portfolioDayChange([{ value: 1010, pct: 1 }, { value: 495, pct: -1 }, { value: 300, pct: null }, { value: 0, pct: 5 }]);
+  log('Variation du jour : 1 010 € à +1 % (+10 €) et 495 € à −1 % (−5 €) → +5 €, rapportés à 1 500 € de la veille (+0,33 %)', PD.amount === 5 && PD.pct === 0.33 && PD.covered === 2, PD);
+  log('Variation du jour : ligne sans variation comptée à part (1 ligne, 300 €), ligne à 0 € ignorée', PD.missing === 1 && PD.missingValue === 300, PD);
+  log('Variation du jour : aucune ligne connue → montant et % nuls (null)', F.portfolioDayChange([{ value: 100, pct: null }]).amount === null && F.portfolioDayChange([]).pct === null);
+  log('Variation du jour : valeurs aberrantes (≥ 100 %, texte) écartées', F.portfolioDayChange([{ value: 100, pct: 150 }, { value: 100, pct: 'x' }]).missing === 2);
   console.log(out.every(Boolean) ? '✓ hachage OK' : '✗ erreurs');
   process.exitCode = out.every(Boolean) ? 0 : 1;
 })();

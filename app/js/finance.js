@@ -469,9 +469,26 @@
     return Math.round(pct * 100) / 100;
   }
 
+  // Variation du jour d'un ensemble de lignes : lines = [{value, pct}] (valeur actuelle en €, variation en % ou null).
+  // Valeur de la veille d'une ligne = valeur / (1 + pct/100) ; variation = somme(valeur − valeur de la veille).
+  // Le pourcentage global est rapporté à la valeur de la veille des seules lignes dont la variation est connue.
+  function portfolioDayChange(lines) {
+    let amt = 0, prev = 0, covered = 0, missing = 0, missingValue = 0;
+    for (const l of lines || []) {
+      const v = Number(l && l.value);
+      if (!Number.isFinite(v) || v <= 0) continue;
+      const p = l.pct == null ? NaN : Number(l.pct);
+      if (!Number.isFinite(p) || p <= -100 || Math.abs(p) >= 100) { missing++; missingValue += v; continue; }
+      const pv = v / (1 + p / 100);
+      amt += v - pv; prev += pv; covered++;
+    }
+    return { amount: covered ? round2(amt) : null, pct: prev > 0 ? Math.round(amt / prev * 10000) / 100 : null,
+      covered, missing, missingValue: round2(missingValue) };
+  }
+
   const api = { round2, budgetVsActual, detectRecurring, sameExpense, toCents, fromCents, MONEY_FIELDS, serialize, deserialize, PARAM_DEFAULTS, getParam, paramHistory, paramKeys,
     addMonthsYmd, monthsDiff, loanPayment, amortization, loanStatus, propertyValue, propertyStats, resaleItem, resaleYear,
-    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange, rateOn, dailyInterest, quinzStart, quinzStop, crowdDues, crowdCapitalAt, cryptoTax };
+    ceilingStatus, peaVersements, goalProgress, propertyCost, monthCashflow, cashflowSeries, isinValid, peaStatus, hashPin, krakenPair, acceptTick, dayChange, rateOn, dailyInterest, quinzStart, quinzStop, crowdDues, crowdCapitalAt, cryptoTax, portfolioDayChange };
   root.Fin = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof self !== 'undefined' ? self : this);
